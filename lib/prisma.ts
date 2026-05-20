@@ -9,7 +9,18 @@ function createPrismaClient() {
   if (!connectionString) {
     throw new Error("DATABASE_URL is not set");
   }
-  const pool = new Pool({ connectionString });
+
+  const pool = new Pool({
+    connectionString,
+    max: process.env.VERCEL ? 1 : 10,
+    idleTimeoutMillis: 20_000,
+    connectionTimeoutMillis: 15_000,
+    ssl:
+      connectionString.includes("supabase.com") ?
+        { rejectUnauthorized: false }
+      : undefined,
+  });
+
   const adapter = new PrismaPg(pool);
   return new PrismaClient({ adapter });
 }
