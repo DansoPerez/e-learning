@@ -1,36 +1,110 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Bravio
 
-## Getting Started
+A secure e-learning marketplace built with Next.js, connecting students, instructors, and administrators through structured courses, assessments, and monetization.
 
-First, run the development server:
+## Features
+
+- **Authentication** — Email/password and Google OAuth (Auth.js)
+- **Roles** — Student, Instructor, Super Admin
+- **Courses** — Modules, lessons, video/text content, approval workflow
+- **Enrollment** — Free and paid (Paystack) courses
+- **Instructor system** — Application, admin approval, earnings (60/40 split)
+- **Quizzes** — MCQ, true/false, auto-grading, attempt history
+- **Admin control** — Users, courses, instructors, withdrawals, commission, audit logs
+- **Announcements** — Platform-wide (admin)
+
+## Tech stack
+
+| Layer | Technology |
+|-------|------------|
+| Frontend | Next.js 16, React 19, Tailwind CSS 4 |
+| Backend | Next.js Server Actions & API Routes |
+| Database | PostgreSQL (Supabase) |
+| ORM | Prisma 7 |
+| Auth | Auth.js (next-auth v5) |
+| Payments | Paystack |
+| Hosting | Vercel |
+
+## Deploy to Vercel
+
+See **[DEPLOY.md](./DEPLOY.md)** for a full step-by-step guide (Supabase + Vercel + Blob storage).
+
+## Getting started
+
+### 1. Clone and install
+
+```bash
+npm install
+```
+
+### 2. Environment variables
+
+Copy `.env.example` to `.env` and fill in:
+
+- `DATABASE_URL` — Supabase PostgreSQL connection string
+- `AUTH_SECRET` — Run `openssl rand -base64 32`
+- `NEXTAUTH_URL` — `http://localhost:3000` for local dev
+- `PAYSTACK_SECRET_KEY` — From Paystack dashboard (test key for dev)
+- `GOOGLE_CLIENT_ID` / `GOOGLE_CLIENT_SECRET` — Optional, for Google login
+
+### 3. Database
+
+```bash
+npm run db:push    # or: npm run db:migrate
+npm run db:seed
+```
+
+### 4. Run dev server
 
 ```bash
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Open [http://localhost:3000](http://localhost:3000).
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Demo accounts (after seed)
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+| Role | Email | Password |
+|------|-------|----------|
+| Admin | admin@bravio.app | Admin123! |
+| Instructor | instructor@bravio.app | Instructor123! |
+| Student | student@bravio.app | Student123! |
 
-## Learn More
+## Paystack webhook
 
-To learn more about Next.js, take a look at the following resources:
+For local testing, use [ngrok](https://ngrok.com/) and set your Paystack webhook URL to:
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+```
+https://your-ngrok-url/api/paystack/webhook
+```
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+## Project structure
 
-## Deploy on Vercel
+```
+app/
+  actions/          # Server actions
+  api/              # API routes (auth, paystack webhook)
+  courses/          # Public course catalog
+  dashboard/        # Role-based dashboards
+  learn/            # Learning player & quizzes
+components/         # UI components
+lib/                # Prisma, auth, services, validations
+prisma/             # Schema & seed
+```
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+## Deployment (Vercel + Supabase)
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+1. Create a Supabase project and copy the connection string to `DATABASE_URL`
+2. Deploy to Vercel and add all env vars from `.env.example`
+3. Run migrations against production: `npx prisma migrate deploy`
+4. Seed production once: `npm run db:seed`
+5. Configure Paystack live keys and webhook URL
+
+## Roadmap status
+
+| Phase | Status |
+|-------|--------|
+| Phase 1 — Core MVP (auth, courses, learning, enrollment) | Implemented |
+| Phase 2 — Marketplace (payments, instructor approval, admin) | Implemented |
+| Phase 3 — Quizzes, analytics, audit logs | Implemented |
+| Phase 4 — AI features | Not implemented (optional) |
