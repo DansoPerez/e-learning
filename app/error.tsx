@@ -22,8 +22,11 @@ export default function Error({
       <p className="mt-3 max-w-lg text-sm text-[var(--foreground-muted)]">
         {message.includes("DATABASE_URL") ?
           "Database is not configured. Add DATABASE_URL in Vercel → Settings → Environment Variables, then redeploy."
-        : message.includes("does not exist") || message.includes("P2021") ?
-          "Database tables are missing. Run npx prisma db push against your Supabase URL, then redeploy."
+        : message.includes("does not exist") ||
+            message.includes("P2021") ||
+            message.includes("Course") ||
+            message.includes("findMany") ?
+          "Your Supabase database has no tables yet. Run npx prisma db push with your pooler URL (see DEPLOY.md), then redeploy Vercel."
         : "Check Vercel deployment logs (Functions) for details."}
       </p>
       <Button type="button" className="mt-6" onClick={() => reset()}>
