@@ -36,7 +36,8 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
 
         if (!user?.passwordHash || user.status !== "ACTIVE") return null;
 
-        if (!user.emailVerified) return null;
+        // Email OTP verification (disabled — see EMAIL_VERIFICATION_ENABLED in lib/constants.ts)
+        // if (!user.emailVerified) return null;
 
         const valid = await bcrypt.compare(
           parsed.data.password,
