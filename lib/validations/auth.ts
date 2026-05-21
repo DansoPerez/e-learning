@@ -1,8 +1,9 @@
 import { z } from "zod";
+import { normalizeEmail } from "@/lib/normalize-email";
 
 export const registerSchema = z.object({
   name: z.string().min(2, "Name must be at least 2 characters"),
-  email: z.email("Invalid email address"),
+  email: z.email("Invalid email address").transform(normalizeEmail),
   password: z
     .string()
     .min(8, "Password must be at least 8 characters")

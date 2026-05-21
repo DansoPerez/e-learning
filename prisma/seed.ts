@@ -15,6 +15,7 @@ async function main() {
       userCode: adminCode,
       adminSensitiveApproved: true,
       adminSensitiveSuspended: false,
+      emailVerified: new Date(),
     },
     create: {
       name: "Super Admin",
@@ -24,6 +25,7 @@ async function main() {
       userCode: adminCode,
       isSuperAdmin: true,
       adminSensitiveApproved: true,
+      emailVerified: new Date(),
     },
   });
 
@@ -31,13 +33,14 @@ async function main() {
   const instructorCode = await generateUserCode("INSTRUCTOR", "Demo Instructor");
   const instructor = await prisma.user.upsert({
     where: { email: "instructor@bravio.app" },
-    update: { userCode: instructorCode },
+    update: { userCode: instructorCode, emailVerified: new Date() },
     create: {
       name: "Demo Instructor",
       email: "instructor@bravio.app",
       passwordHash: instructorHash,
       role: "INSTRUCTOR",
       userCode: instructorCode,
+      emailVerified: new Date(),
     },
   });
 
@@ -58,13 +61,14 @@ async function main() {
   const studentCode = await generateUserCode("STUDENT", "Demo Student");
   await prisma.user.upsert({
     where: { email: "student@bravio.app" },
-    update: { userCode: studentCode },
+    update: { userCode: studentCode, emailVerified: new Date() },
     create: {
       name: "Demo Student",
       email: "student@bravio.app",
       passwordHash: studentHash,
       role: "STUDENT",
       userCode: studentCode,
+      emailVerified: new Date(),
     },
   });
 

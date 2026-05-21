@@ -625,6 +625,7 @@ export async function createAdminAccountAction(
       passwordHash,
       role: "ADMIN",
       userCode,
+      emailVerified: new Date(),
       isSuperAdmin: false,
       adminSensitiveApproved: false,
       adminSensitiveSuspended: false,

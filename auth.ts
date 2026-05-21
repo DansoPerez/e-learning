@@ -36,6 +36,8 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
 
         if (!user?.passwordHash || user.status !== "ACTIVE") return null;
 
+        if (!user.emailVerified) return null;
+
         const valid = await bcrypt.compare(
           parsed.data.password,
           user.passwordHash,
@@ -105,9 +107,13 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
     async signIn({ user, account }) {
       if (account?.provider === "google" && user.email) {
         const existing = await prisma.user.findUnique({
-          where: { email: user.email },
+          where: { email: user.email.toLowerCase() },
         });
         if (existing?.status !== "ACTIVE") return false;
+        await prisma.user.updateMany({
+          where: { email: user.email.toLowerCase() },
+          data: { emailVerified: new Date() },
+        });
       }
       return true;
     },

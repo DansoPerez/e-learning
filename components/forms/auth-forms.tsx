@@ -2,7 +2,7 @@
 
 import { useActionState } from "react";
 import Link from "next/link";
-import { loginAction, registerAction, type ActionState } from "@/app/actions/auth";
+import { loginAction, type ActionState } from "@/app/actions/auth";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -82,50 +82,3 @@ export function LoginForm() {
   );
 }
 
-export function RegisterForm() {
-  const [state, action, pending] = useActionState(registerAction, initial);
-
-  return (
-    <AuthShell title="Start your journey" subtitle="Join as a student or apply to teach on Bravio.">
-      <CardHeader className="px-0 pt-0 lg:hidden">
-        <CardTitle className="text-2xl">Create account</CardTitle>
-        <CardDescription>Join Bravio in seconds</CardDescription>
-      </CardHeader>
-      <form action={action} className="space-y-5">
-        {state?.error ?
-          <p className="rounded-xl border border-red-200 bg-[var(--danger-bg)] px-4 py-3 text-sm font-medium text-red-800">
-            {state.error}
-          </p>
-        : null}
-        <div className="space-y-2">
-          <Label htmlFor="name">Full name</Label>
-          <Input id="name" name="name" required placeholder="Your name" />
-        </div>
-        <div className="space-y-2">
-          <Label htmlFor="email">Email</Label>
-          <Input id="email" name="email" type="email" required placeholder="you@example.com" />
-        </div>
-        <div className="space-y-2">
-          <Label htmlFor="password">Password</Label>
-          <Input id="password" name="password" type="password" required />
-        </div>
-        <div className="space-y-2">
-          <Label htmlFor="role">I want to</Label>
-          <select id="role" name="role" className="input-field" defaultValue="STUDENT">
-            <option value="STUDENT">Learn as a student</option>
-            <option value="INSTRUCTOR">Teach as an instructor</option>
-          </select>
-        </div>
-        <Button type="submit" className="w-full" size="lg" disabled={pending}>
-          {pending ? "Creating..." : "Create account"}
-        </Button>
-      </form>
-      <p className="mt-6 text-center text-sm text-[var(--foreground-muted)]">
-        Already have an account?{" "}
-        <Link href="/login" className="font-semibold text-[var(--primary)] hover:underline">
-          Sign in
-        </Link>
-      </p>
-    </AuthShell>
-  );
-}
