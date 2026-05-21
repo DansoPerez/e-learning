@@ -10,6 +10,8 @@ export type SessionUser = {
   image?: string | null;
   role: Role;
   status: UserStatus;
+  userCode?: string | null;
+  isSuperAdmin?: boolean;
 };
 
 export async function getSessionUser(): Promise<SessionUser | null> {

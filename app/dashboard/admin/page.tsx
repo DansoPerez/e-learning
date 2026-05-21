@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { prisma } from "@/lib/prisma";
-import { requireRole } from "@/lib/auth";
+import { requireRole, getSessionUser } from "@/lib/auth";
+import { OnlineUsersPanel } from "@/components/presence/online-users-panel";
 import { DashboardWrapper } from "@/components/layout/dashboard-wrapper";
 import { StatCard } from "@/components/ui/stat-card";
 import { formatCurrency } from "@/lib/utils";
@@ -18,9 +19,11 @@ import {
 
 export default async function AdminDashboardPage() {
   await requireRole("ADMIN");
+  const session = await getSessionUser();
 
+  // Single connection via $transaction — avoids pool drops with Prisma Dev locally
   const [users, courses, revenue, pendingInstructors, pendingCourses, allAccessUsers] =
-    await Promise.all([
+    await prisma.$transaction([
       prisma.user.count(),
       prisma.course.count({ where: { status: "PUBLISHED" } }),
       prisma.payment.aggregate({
@@ -44,13 +47,22 @@ export default async function AdminDashboardPage() {
   return (
     <DashboardWrapper role="ADMIN" title="Admin command center">
       <div className="mb-8 rounded-2xl border border-indigo-200 bg-gradient-to-r from-indigo-600 to-violet-700 p-6 text-white shadow-lg">
-        <p className="text-sm font-medium text-indigo-200">Super Admin</p>
-        <h2 className="mt-1 text-2xl font-extrabold">Full platform control</h2>
+        <p className="text-sm font-medium text-indigo-200">
+          {session?.isSuperAdmin ? "Super Admin" : "Admin"}
+        </p>
+        <h2 className="mt-1 text-2xl font-extrabold">Platform control</h2>
         <p className="mt-2 max-w-2xl text-indigo-100">
-          Manage users, suspend or activate accounts, grant all-course access, approve content,
-          and oversee payments.
+          {session?.isSuperAdmin ?
+            "Manage all users, approve sensitive admin access, and see who is online."
+          : "Approve instructors and courses. Sensitive actions need super admin approval."}
         </p>
       </div>
+
+      {session?.isSuperAdmin ?
+        <div className="mb-8">
+          <OnlineUsersPanel />
+        </div>
+      : null}
 
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <StatCard label="Total users" value={users} />

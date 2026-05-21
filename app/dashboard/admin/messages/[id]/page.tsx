@@ -4,6 +4,7 @@ import { prisma } from "@/lib/prisma";
 import { requireRole } from "@/lib/auth";
 import { DashboardWrapper } from "@/components/layout/dashboard-wrapper";
 import { ChatThread } from "@/components/messages/chat-thread";
+import { MessageList } from "@/components/messages/message-list";
 import { Badge } from "@/components/ui/badge";
 import { ArrowLeft } from "lucide-react";
 
@@ -23,7 +24,11 @@ export default async function AdminConversationPage({
       course: { select: { title: true } },
       messages: {
         orderBy: { createdAt: "asc" },
-        include: { sender: { select: { id: true, name: true, role: true } } },
+        include: {
+          sender: {
+            select: { id: true, name: true, role: true, userCode: true },
+          },
+        },
       },
     },
   });
@@ -68,17 +73,13 @@ export default async function AdminConversationPage({
           conversationId={conversation.id}
           messages={conversation.messages}
           currentUserId={user.id}
+          viewerIsAdmin
         />
-      : <div className="max-h-[28rem] space-y-3 overflow-y-auto rounded-xl border border-[var(--border)] bg-[var(--background)] p-4">
-          {conversation.messages.map((m) => (
-            <div key={m.id} className="rounded-lg border border-[var(--border)] bg-white p-3 text-sm">
-              <p className="text-xs font-semibold text-[var(--foreground-muted)]">
-                {m.sender.name ?? "User"} ({m.sender.role})
-              </p>
-              <p className="mt-1 whitespace-pre-wrap">{m.body}</p>
-            </div>
-          ))}
-        </div>
+      : <MessageList
+          messages={conversation.messages}
+          currentUserId={user.id}
+          viewerIsAdmin
+        />
       }
     </DashboardWrapper>
   );

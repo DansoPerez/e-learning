@@ -1,6 +1,7 @@
 "use client";
 
-import { useActionState, useState } from "react";
+import { useActionState, useState, useEffect } from "react";
+import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { registerAction, type ActionState } from "@/app/actions/auth";
 import { Button } from "@/components/ui/button";
@@ -41,9 +42,16 @@ function AuthShell({
 }
 
 export function RegisterForm() {
+  const searchParams = useSearchParams();
   const [state, action, pending] = useActionState(registerAction, initial);
   const [role, setRole] = useState<"STUDENT" | "INSTRUCTOR">("STUDENT");
   const [selfieUrl, setSelfieUrl] = useState("");
+
+  useEffect(() => {
+    const param = searchParams.get("role")?.toLowerCase();
+    if (param === "instructor") setRole("INSTRUCTOR");
+    else if (param === "student") setRole("STUDENT");
+  }, [searchParams]);
 
   const isInstructor = role === "INSTRUCTOR";
 

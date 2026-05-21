@@ -5,6 +5,8 @@ import { prisma } from "@/lib/prisma";
 import { requireAuth, requireRole } from "@/lib/auth";
 import { hasCourseAccess } from "@/lib/services/enrollment";
 import { reviewSchema, reviewReplySchema } from "@/lib/validations/course";
+import { logAudit } from "@/lib/audit-log";
+import { notifyReviewReply } from "@/lib/notifications";
 
 export type ReviewActionState = { error?: string; success?: boolean };
 
@@ -31,8 +33,16 @@ export async function submitReviewAction(
 
   await prisma.review.upsert({
     where: { userId_courseId: { userId: user.id, courseId } },
-    create: { userId: user.id, courseId, ...parsed.data },
-    update: parsed.data,
+    create: { userId: user.id, courseId, ...parsed.data, deletedAt: null },
+    update: { ...parsed.data, deletedAt: null },
+  });
+
+  await logAudit({
+    actorId: user.id,
+    action: "SUBMIT_REVIEW",
+    targetType: "Review",
+    targetId: courseId,
+    description: `Submitted review on course ${courseSlug}`,
   });
 
   revalidatePath(`/courses/${courseSlug}`);
@@ -67,12 +77,22 @@ export async function replyToReviewAction(
     return { error: "You cannot reply to this review" };
   }
 
+  const body = parsed.data.body.trim();
   await prisma.reviewReply.create({
     data: {
       reviewId,
       authorId: user.id,
-      body: parsed.data.body,
+      body,
     },
+  });
+
+  await notifyReviewReply(reviewId, user.id, review.course.slug, body);
+  await logAudit({
+    actorId: user.id,
+    action: "REPLY_REVIEW",
+    targetType: "ReviewReply",
+    targetId: reviewId,
+    description: `Replied on review for ${review.course.slug}`,
   });
 
   revalidatePath(`/courses/${courseSlug}`);
@@ -108,4 +128,52 @@ export async function adminCommentOnReviewAction(
   revalidatePath(`/courses/${review.course.slug}`);
   revalidatePath("/dashboard/admin/reviews");
   revalidatePath(`/dashboard/instructor/courses/${review.course.id}`);
+}
+
+export async function deleteReviewAction(reviewId: string, courseSlug: string) {
+  const user = await requireAuth();
+  const review = await prisma.review.findUnique({ where: { id: reviewId } });
+  if (!review || review.userId !== user.id) {
+    throw new Error("Cannot delete this review");
+  }
+
+  await prisma.review.update({
+    where: { id: reviewId },
+    data: { deletedAt: new Date() },
+  });
+
+  await logAudit({
+    actorId: user.id,
+    action: "DELETE_REVIEW",
+    targetType: "Review",
+    targetId: reviewId,
+    description: `Soft-deleted review on ${courseSlug}`,
+  });
+
+  revalidatePath(`/courses/${courseSlug}`);
+  revalidatePath("/dashboard/admin/reviews");
+}
+
+export async function deleteReviewReplyAction(replyId: string, courseSlug: string) {
+  const user = await requireAuth();
+  const reply = await prisma.reviewReply.findUnique({ where: { id: replyId } });
+  if (!reply || reply.authorId !== user.id) {
+    throw new Error("Cannot delete this reply");
+  }
+
+  await prisma.reviewReply.update({
+    where: { id: replyId },
+    data: { deletedAt: new Date() },
+  });
+
+  await logAudit({
+    actorId: user.id,
+    action: "DELETE_REVIEW_REPLY",
+    targetType: "ReviewReply",
+    targetId: replyId,
+    description: `Soft-deleted reply on ${courseSlug}`,
+  });
+
+  revalidatePath(`/courses/${courseSlug}`);
+  revalidatePath("/dashboard/admin/reviews");
 }

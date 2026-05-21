@@ -23,7 +23,11 @@ export default async function StudentConversationPage({
       course: { select: { title: true } },
       messages: {
         orderBy: { createdAt: "asc" },
-        include: { sender: { select: { id: true, name: true, role: true } } },
+        include: {
+          sender: {
+            select: { id: true, name: true, role: true, userCode: true },
+          },
+        },
       },
     },
   });
@@ -58,6 +62,7 @@ export default async function StudentConversationPage({
         conversationId={conversation.id}
         messages={conversation.messages}
         currentUserId={user.id}
+        viewerIsAdmin={user.role === "ADMIN"}
       />
     </DashboardWrapper>
   );

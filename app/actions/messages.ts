@@ -11,6 +11,10 @@ import {
   studentCanMessageInstructor,
 } from "@/lib/messaging";
 import { z } from "zod";
+import {
+  notifyConversationParticipants,
+} from "@/lib/notifications";
+import { logAudit } from "@/lib/audit-log";
 
 const messageSchema = z.object({
   body: z.string().min(1, "Message cannot be empty").max(5000),
@@ -41,12 +45,14 @@ export async function sendMessageAction(
   const allowed = canSendInConversation(user.id, user.role, conversation);
   if (!allowed) return { error: "Access denied" };
 
+  const body = parsed.data.body.trim();
+
   await prisma.$transaction([
     prisma.message.create({
       data: {
         conversationId,
         senderId: user.id,
-        body: parsed.data.body.trim(),
+        body,
       },
     }),
     prisma.conversation.update({
@@ -54,6 +60,15 @@ export async function sendMessageAction(
       data: { updatedAt: new Date() },
     }),
   ]);
+
+  await notifyConversationParticipants(conversationId, user.id, body);
+  await logAudit({
+    actorId: user.id,
+    action: "SEND_MESSAGE",
+    targetType: "Message",
+    targetId: conversationId,
+    description: `Sent message in conversation ${conversationId}`,
+  });
 
   revalidateMessagePaths();
   revalidatePath(`/dashboard/student/messages/${conversationId}`);
@@ -117,4 +132,37 @@ export async function startSupportChatAction(): Promise<void> {
   });
 
   redirect(`/dashboard/student/messages/${conversation.id}`);
+}
+
+export async function deleteMessageAction(messageId: string): Promise<{ error?: string }> {
+  const user = await requireAuth();
+
+  const message = await prisma.message.findUnique({
+    where: { id: messageId },
+    include: { conversation: true },
+  });
+  if (!message) return { error: "Message not found" };
+  if (message.senderId !== user.id && user.role !== "ADMIN") {
+    return { error: "You can only delete your own messages" };
+  }
+  if (message.deletedAt) return {};
+
+  await prisma.message.update({
+    where: { id: messageId },
+    data: { deletedAt: new Date() },
+  });
+
+  await logAudit({
+    actorId: user.id,
+    action: "DELETE_MESSAGE",
+    targetType: "Message",
+    targetId: messageId,
+    description: `Soft-deleted message in conversation ${message.conversationId}`,
+  });
+
+  revalidateMessagePaths();
+  revalidatePath(`/dashboard/student/messages/${message.conversationId}`);
+  revalidatePath(`/dashboard/instructor/messages/${message.conversationId}`);
+  revalidatePath(`/dashboard/admin/messages/${message.conversationId}`);
+  return {};
 }

@@ -2,6 +2,12 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { requireRole } from "@/lib/auth";
+import {
+  canUseSensitiveAdminFeatures,
+  getAdminRecord,
+  canCurrentAdminManageUser,
+} from "@/lib/admin-permissions";
+import { OnlineBadge } from "@/components/presence/online-badge";
 import { DashboardWrapper } from "@/components/layout/dashboard-wrapper";
 import { AdminSection } from "@/components/admin/admin-section";
 import { Badge } from "@/components/ui/badge";
@@ -16,6 +22,8 @@ import {
   revokeAllCoursesAccessAction,
   revokeEnrollmentAction,
   revokeInstructorAction,
+  restoreAdminSensitivePermissionsAction,
+  suspendAdminSensitivePermissionsAction,
   suspendUserAction,
   unfreezeInstructorEarningsAction,
   updateUserRoleAction,
@@ -23,6 +31,7 @@ import {
 import { DeleteUserButton } from "@/components/admin/delete-user-button";
 import { formatDate } from "@/lib/utils";
 import { ArrowLeft } from "lucide-react";
+import type { Role } from "@/app/generated/prisma/client";
 
 export default async function AdminUserDetailPage({
   params,
@@ -35,7 +44,19 @@ export default async function AdminUserDetailPage({
 
   const user = await prisma.user.findUnique({
     where: { id },
-    include: {
+    select: {
+      id: true,
+      name: true,
+      email: true,
+      userCode: true,
+      role: true,
+      status: true,
+      allCoursesAccess: true,
+      isSuperAdmin: true,
+      adminSensitiveApproved: true,
+      adminSensitiveSuspended: true,
+      lastSeenAt: true,
+      createdAt: true,
       instructorProfile: true,
       enrollments: {
         include: { course: { select: { id: true, title: true, slug: true, price: true } } },
@@ -51,6 +72,13 @@ export default async function AdminUserDetailPage({
 
   if (!user) notFound();
 
+  const actorRecord = await getAdminRecord(admin.id);
+  const canManage = await canCurrentAdminManageUser(admin.id, {
+    isSuperAdmin: user.isSuperAdmin,
+    role: user.role,
+  });
+  const canSensitive = actorRecord ? canUseSensitiveAdminFeatures(actorRecord) : false;
+
   const publishedCourses = await prisma.course.findMany({
     where: { status: "PUBLISHED" },
     select: { id: true, title: true, price: true },
@@ -58,6 +86,28 @@ export default async function AdminUserDetailPage({
   });
 
   const enrolledIds = new Set(user.enrollments.map((e) => e.courseId));
+
+  if (!canManage) {
+    return (
+      <DashboardWrapper role="ADMIN" title="Account protected">
+        <Link
+          href="/dashboard/admin/users"
+          className="mb-6 inline-flex items-center gap-2 text-sm font-semibold text-[var(--primary)] hover:underline"
+        >
+          <ArrowLeft className="h-4 w-4" />
+          Back to users
+        </Link>
+        <div className="surface-card p-8 text-center">
+          <h2 className="text-xl font-bold text-[var(--foreground)]">Protected account</h2>
+          <p className="mt-2 text-sm text-[var(--foreground-muted)]">
+            Only a super admin can manage{" "}
+            {user.isSuperAdmin ? "super admin" : "admin"} accounts.
+          </p>
+          <p className="mt-4 font-mono text-sm text-[var(--primary)]">{user.userCode}</p>
+        </div>
+      </DashboardWrapper>
+    );
+  }
 
   return (
     <DashboardWrapper role="ADMIN" title="Manage user">
@@ -69,16 +119,29 @@ export default async function AdminUserDetailPage({
         Back to users
       </Link>
 
+      {!canSensitive ?
+        <p className="mb-4 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
+          You do not have sensitive admin access. A super admin must approve you before you can
+          change finances, delete users, or grant all-course access.
+        </p>
+      : null}
+
       <div className="surface-card mb-6 p-6">
         <div className="flex flex-wrap items-start justify-between gap-4">
           <div>
             <h2 className="text-2xl font-extrabold text-[var(--foreground)]">
               {user.name ?? "Unnamed user"}
             </h2>
+            <p className="font-mono text-sm font-semibold text-[var(--primary)]">
+              {user.userCode ?? "No user ID"}
+            </p>
             <p className="text-[var(--foreground-muted)]">{user.email}</p>
             <p className="mt-2 text-xs text-[var(--foreground-muted)]">
               Joined {formatDate(user.createdAt)}
             </p>
+            <div className="mt-2">
+              <OnlineBadge lastSeenAt={user.lastSeenAt} />
+            </div>
           </div>
           <div className="flex flex-wrap gap-2">
             <Badge variant={user.role === "ADMIN" ? "info" : "default"}>{user.role}</Badge>
@@ -94,8 +157,36 @@ export default async function AdminUserDetailPage({
             {user.allCoursesAccess ?
               <Badge variant="info">All courses access</Badge>
             : null}
+            {user.role === "ADMIN" && user.isSuperAdmin ?
+              <Badge variant="info">Super admin</Badge>
+            : null}
+            {user.role === "ADMIN" && !user.isSuperAdmin && user.adminSensitiveApproved ?
+              <Badge variant="success">Sensitive access approved</Badge>
+            : null}
+            {user.role === "ADMIN" && !user.isSuperAdmin && !user.adminSensitiveApproved ?
+              <Badge variant="warning">No sensitive access</Badge>
+            : null}
+            {user.role === "ADMIN" && user.adminSensitiveSuspended ?
+              <Badge variant="danger">Sensitive access revoked</Badge>
+            : null}
           </div>
         </div>
+        {!isSelf && user.role === "ADMIN" && !user.isSuperAdmin && admin.isSuperAdmin ?
+          <div className="mt-4 flex flex-wrap gap-2">
+            {user.adminSensitiveApproved && !user.adminSensitiveSuspended ?
+              <form action={suspendAdminSensitivePermissionsAction.bind(null, user.id)}>
+                <Button type="submit" size="sm" variant="outline">
+                  Revoke sensitive access
+                </Button>
+              </form>
+            : <form action={restoreAdminSensitivePermissionsAction.bind(null, user.id)}>
+                <Button type="submit" size="sm" variant="primary">
+                  Approve sensitive access
+                </Button>
+              </form>
+            }
+          </div>
+        : null}
         {isSelf ?
           <p className="mt-4 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
             This is your admin account. Status and role changes are disabled here for safety.
@@ -135,7 +226,7 @@ export default async function AdminUserDetailPage({
           </AdminSection>
         : null}
 
-        {!isSelf ?
+        {!isSelf && canSensitive ?
           <AdminSection
             title="Delete account"
             description="Permanently remove this user and their courses, enrollments, and related records."
@@ -151,7 +242,13 @@ export default async function AdminUserDetailPage({
         {!isSelf ?
           <AdminSection title="Role" description="Change platform role for this user.">
             <div className="flex flex-wrap gap-2">
-              {(["STUDENT", "INSTRUCTOR", "ADMIN"] as const).map((r) => (
+              {(
+                [
+                  "STUDENT",
+                  "INSTRUCTOR",
+                  ...(admin.isSuperAdmin ? ["ADMIN"] : []),
+                ] as Role[]
+              ).map((r) => (
                 <form key={r} action={updateUserRoleAction.bind(null, id, r)}>
                   <Button
                     type="submit"
@@ -167,7 +264,7 @@ export default async function AdminUserDetailPage({
           </AdminSection>
         : null}
 
-        {!isSelf && (user.role === "STUDENT" || user.allCoursesAccess) ?
+        {!isSelf && canSensitive && (user.role === "STUDENT" || user.allCoursesAccess) ?
           <AdminSection
             title="Course access"
             description="Grant access to every published course (free and paid) without payment."
@@ -239,13 +336,13 @@ export default async function AdminUserDetailPage({
                   </Button>
                 </form>
               : null}
-              {user.instructorProfile.earningsFrozen ?
+              {canSensitive && user.instructorProfile.earningsFrozen ?
                 <form action={unfreezeInstructorEarningsAction.bind(null, id)}>
                   <Button type="submit" variant="outline" size="sm">
                     Unfreeze earnings
                   </Button>
                 </form>
-              : !isSelf ?
+              : canSensitive && !isSelf ?
                 <form action={freezeInstructorEarningsAction.bind(null, id)}>
                   <Button type="submit" variant="outline" size="sm">
                     Freeze earnings

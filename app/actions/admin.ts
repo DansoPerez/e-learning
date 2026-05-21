@@ -4,9 +4,18 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { requireRole } from "@/lib/auth";
-import { logAdminAction } from "@/lib/admin-log";
+import { logAudit } from "@/lib/audit-log";
 import { setPlatformCommission } from "@/lib/settings";
-import { assertCanModifyUser } from "@/lib/admin-guard";
+import { assertCanManageUser } from "@/lib/admin-guard";
+import {
+  requireAdmin,
+  requireSensitiveAdmin,
+  requireSuperAdmin,
+} from "@/lib/admin-permissions";
+import { generateUserCode } from "@/lib/user-code";
+import { createNotification } from "@/lib/notifications";
+import bcrypt from "bcryptjs";
+import { randomBytes } from "crypto";
 import {
   enrollUserInAllPublishedCourses,
   ensureEnrollment,
@@ -14,7 +23,7 @@ import {
 import type { Role, UserStatus } from "@/app/generated/prisma/client";
 
 async function adminOnly() {
-  return requireRole("ADMIN");
+  return requireAdmin();
 }
 
 function revalidateUserPaths(userId: string) {
@@ -32,8 +41,16 @@ export async function approveInstructorAction(userId: string): Promise<void> {
     data: { status: "APPROVED", rejectionReason: null },
   });
 
-  await logAdminAction({
-    adminId: admin.id,
+  await createNotification({
+    userId,
+    type: "INSTRUCTOR_PENDING",
+    title: "Instructor application approved",
+    body: "You can now access the instructor dashboard.",
+    link: "/dashboard/instructor",
+  });
+
+  await logAudit({
+    actorId: admin.id,
     action: "APPROVE_INSTRUCTOR",
     targetType: "InstructorProfile",
     targetId: userId,
@@ -51,8 +68,8 @@ export async function rejectInstructorAction(userId: string, reason: string): Pr
     data: { status: "REJECTED", rejectionReason: reason },
   });
 
-  await logAdminAction({
-    adminId: admin.id,
+  await logAudit({
+    actorId: admin.id,
     action: "REJECT_INSTRUCTOR",
     targetType: "InstructorProfile",
     targetId: userId,
@@ -64,15 +81,15 @@ export async function rejectInstructorAction(userId: string, reason: string): Pr
 
 export async function revokeInstructorAction(userId: string): Promise<void> {
   const admin = await adminOnly();
-  assertCanModifyUser(admin.id, userId);
+  await assertCanManageUser(admin.id, userId);
 
   await prisma.instructorProfile.update({
     where: { userId },
     data: { status: "REVOKED" },
   });
 
-  await logAdminAction({
-    adminId: admin.id,
+  await logAudit({
+    actorId: admin.id,
     action: "REVOKE_INSTRUCTOR",
     targetType: "InstructorProfile",
     targetId: userId,
@@ -91,8 +108,8 @@ export async function reinstateInstructorAction(userId: string): Promise<void> {
     data: { status: "APPROVED", rejectionReason: null },
   });
 
-  await logAdminAction({
-    adminId: admin.id,
+  await logAudit({
+    actorId: admin.id,
     action: "REINSTATE_INSTRUCTOR",
     targetType: "InstructorProfile",
     targetId: userId,
@@ -104,16 +121,16 @@ export async function reinstateInstructorAction(userId: string): Promise<void> {
 }
 
 export async function freezeInstructorEarningsAction(userId: string): Promise<void> {
-  const admin = await adminOnly();
-  assertCanModifyUser(admin.id, userId);
+  const admin = await requireSensitiveAdmin();
+  await assertCanManageUser(admin.id, userId);
 
   await prisma.instructorProfile.update({
     where: { userId },
     data: { earningsFrozen: true },
   });
 
-  await logAdminAction({
-    adminId: admin.id,
+  await logAudit({
+    actorId: admin.id,
     action: "FREEZE_EARNINGS",
     targetType: "InstructorProfile",
     targetId: userId,
@@ -124,15 +141,15 @@ export async function freezeInstructorEarningsAction(userId: string): Promise<vo
 }
 
 export async function unfreezeInstructorEarningsAction(userId: string): Promise<void> {
-  const admin = await adminOnly();
+  const admin = await requireSensitiveAdmin();
 
   await prisma.instructorProfile.update({
     where: { userId },
     data: { earningsFrozen: false },
   });
 
-  await logAdminAction({
-    adminId: admin.id,
+  await logAudit({
+    actorId: admin.id,
     action: "UNFREEZE_EARNINGS",
     targetType: "InstructorProfile",
     targetId: userId,
@@ -150,8 +167,8 @@ export async function approveCourseAction(courseId: string): Promise<void> {
     data: { status: "APPROVED", rejectionReason: null },
   });
 
-  await logAdminAction({
-    adminId: admin.id,
+  await logAudit({
+    actorId: admin.id,
     action: "APPROVE_COURSE",
     targetType: "Course",
     targetId: courseId,
@@ -169,8 +186,8 @@ export async function publishCourseAction(courseId: string): Promise<void> {
     data: { status: "PUBLISHED" },
   });
 
-  await logAdminAction({
-    adminId: admin.id,
+  await logAudit({
+    actorId: admin.id,
     action: "PUBLISH_COURSE",
     targetType: "Course",
     targetId: courseId,
@@ -189,8 +206,8 @@ export async function rejectCourseAction(courseId: string, reason: string): Prom
     data: { status: "REJECTED", rejectionReason: reason },
   });
 
-  await logAdminAction({
-    adminId: admin.id,
+  await logAudit({
+    actorId: admin.id,
     action: "REJECT_COURSE",
     targetType: "Course",
     targetId: courseId,
@@ -208,8 +225,8 @@ export async function hideCourseAction(courseId: string): Promise<void> {
     data: { status: "HIDDEN" },
   });
 
-  await logAdminAction({
-    adminId: admin.id,
+  await logAudit({
+    actorId: admin.id,
     action: "HIDE_COURSE",
     targetType: "Course",
     targetId: courseId,
@@ -234,8 +251,8 @@ export async function unhideCourseAction(courseId: string): Promise<void> {
     data: { status: "PUBLISHED" },
   });
 
-  await logAdminAction({
-    adminId: admin.id,
+  await logAudit({
+    actorId: admin.id,
     action: "UNHIDE_COURSE",
     targetType: "Course",
     targetId: courseId,
@@ -249,15 +266,15 @@ export async function unhideCourseAction(courseId: string): Promise<void> {
 
 export async function suspendUserAction(userId: string): Promise<void> {
   const admin = await adminOnly();
-  assertCanModifyUser(admin.id, userId);
+  await assertCanManageUser(admin.id, userId);
 
   await prisma.user.update({
     where: { id: userId },
     data: { status: "SUSPENDED" },
   });
 
-  await logAdminAction({
-    adminId: admin.id,
+  await logAudit({
+    actorId: admin.id,
     action: "SUSPEND_USER",
     targetType: "User",
     targetId: userId,
@@ -269,15 +286,15 @@ export async function suspendUserAction(userId: string): Promise<void> {
 
 export async function activateUserAction(userId: string): Promise<void> {
   const admin = await adminOnly();
-  assertCanModifyUser(admin.id, userId);
+  await assertCanManageUser(admin.id, userId);
 
   await prisma.user.update({
     where: { id: userId },
     data: { status: "ACTIVE" },
   });
 
-  await logAdminAction({
-    adminId: admin.id,
+  await logAudit({
+    actorId: admin.id,
     action: "ACTIVATE_USER",
     targetType: "User",
     targetId: userId,
@@ -289,15 +306,15 @@ export async function activateUserAction(userId: string): Promise<void> {
 
 export async function banUserAction(userId: string): Promise<void> {
   const admin = await adminOnly();
-  assertCanModifyUser(admin.id, userId);
+  await assertCanManageUser(admin.id, userId);
 
   await prisma.user.update({
     where: { id: userId },
     data: { status: "BANNED" },
   });
 
-  await logAdminAction({
-    adminId: admin.id,
+  await logAudit({
+    actorId: admin.id,
     action: "BAN_USER",
     targetType: "User",
     targetId: userId,
@@ -312,15 +329,15 @@ export async function updateUserRoleAction(
   role: Role,
 ): Promise<void> {
   const admin = await adminOnly();
-  assertCanModifyUser(admin.id, userId);
+  await assertCanManageUser(admin.id, userId);
 
   await prisma.user.update({
     where: { id: userId },
     data: { role },
   });
 
-  await logAdminAction({
-    adminId: admin.id,
+  await logAudit({
+    actorId: admin.id,
     action: "CHANGE_ROLE",
     targetType: "User",
     targetId: userId,
@@ -331,8 +348,8 @@ export async function updateUserRoleAction(
 }
 
 export async function grantAllCoursesAccessAction(userId: string): Promise<void> {
-  const admin = await adminOnly();
-  assertCanModifyUser(admin.id, userId);
+  const admin = await requireSensitiveAdmin();
+  await assertCanManageUser(admin.id, userId);
 
   await prisma.user.update({
     where: { id: userId },
@@ -341,8 +358,8 @@ export async function grantAllCoursesAccessAction(userId: string): Promise<void>
 
   const count = await enrollUserInAllPublishedCourses(userId);
 
-  await logAdminAction({
-    adminId: admin.id,
+  await logAudit({
+    actorId: admin.id,
     action: "GRANT_ALL_COURSES",
     targetType: "User",
     targetId: userId,
@@ -353,16 +370,16 @@ export async function grantAllCoursesAccessAction(userId: string): Promise<void>
 }
 
 export async function revokeAllCoursesAccessAction(userId: string): Promise<void> {
-  const admin = await adminOnly();
-  assertCanModifyUser(admin.id, userId);
+  const admin = await requireSensitiveAdmin();
+  await assertCanManageUser(admin.id, userId);
 
   await prisma.user.update({
     where: { id: userId },
     data: { allCoursesAccess: false },
   });
 
-  await logAdminAction({
-    adminId: admin.id,
+  await logAudit({
+    actorId: admin.id,
     action: "REVOKE_ALL_COURSES",
     targetType: "User",
     targetId: userId,
@@ -377,12 +394,12 @@ export async function enrollUserInCourseAction(
   courseId: string,
 ): Promise<void> {
   const admin = await adminOnly();
-  assertCanModifyUser(admin.id, userId);
+  await assertCanManageUser(admin.id, userId);
 
   await ensureEnrollment(userId, courseId);
 
-  await logAdminAction({
-    adminId: admin.id,
+  await logAudit({
+    actorId: admin.id,
     action: "ADMIN_ENROLL_COURSE",
     targetType: "Enrollment",
     targetId: courseId,
@@ -397,14 +414,14 @@ export async function revokeEnrollmentAction(
   courseId: string,
 ): Promise<void> {
   const admin = await adminOnly();
-  assertCanModifyUser(admin.id, userId);
+  await assertCanManageUser(admin.id, userId);
 
   await prisma.enrollment.deleteMany({
     where: { userId, courseId },
   });
 
-  await logAdminAction({
-    adminId: admin.id,
+  await logAudit({
+    actorId: admin.id,
     action: "REVOKE_ENROLLMENT",
     targetType: "Enrollment",
     targetId: courseId,
@@ -431,7 +448,7 @@ async function processWithdrawalAction(
   action: "APPROVE" | "REJECT" | "COMPLETE",
   adminNote?: string,
 ) {
-  const admin = await adminOnly();
+  const admin = await requireSensitiveAdmin();
   const withdrawal = await prisma.withdrawal.findUnique({
     where: { id: withdrawalId },
   });
@@ -460,8 +477,8 @@ async function processWithdrawalAction(
     });
   }
 
-  await logAdminAction({
-    adminId: admin.id,
+  await logAudit({
+    actorId: admin.id,
     action: `WITHDRAWAL_${action}`,
     targetType: "Withdrawal",
     targetId: withdrawalId,
@@ -472,11 +489,11 @@ async function processWithdrawalAction(
 }
 
 export async function updateCommissionAction(rate: number): Promise<void> {
-  const admin = await adminOnly();
+  const admin = await requireSensitiveAdmin();
   await setPlatformCommission(rate);
 
-  await logAdminAction({
-    adminId: admin.id,
+  await logAudit({
+    actorId: admin.id,
     action: "UPDATE_COMMISSION",
     targetType: "SystemSetting",
     description: `Set platform commission to ${rate * 100}%`,
@@ -498,8 +515,8 @@ export async function createAnnouncementAction(formData: FormData): Promise<void
     },
   });
 
-  await logAdminAction({
-    adminId: admin.id,
+  await logAudit({
+    actorId: admin.id,
     action: "CREATE_ANNOUNCEMENT",
     targetType: "Announcement",
     description: `Announcement to ${scope}: ${message.slice(0, 80)}`,
@@ -516,8 +533,8 @@ export async function deleteAnnouncementAction(announcementId: string): Promise<
 
   await prisma.announcement.delete({ where: { id: announcementId } });
 
-  await logAdminAction({
-    adminId: admin.id,
+  await logAudit({
+    actorId: admin.id,
     action: "DELETE_ANNOUNCEMENT",
     targetType: "Announcement",
     targetId: announcementId,
@@ -531,8 +548,8 @@ export async function deleteAnnouncementAction(announcementId: string): Promise<
 }
 
 export async function deleteUserAction(userId: string): Promise<void> {
-  const admin = await adminOnly();
-  assertCanModifyUser(admin.id, userId);
+  const admin = await requireSensitiveAdmin();
+  await assertCanManageUser(admin.id, userId);
 
   const user = await prisma.user.findUnique({
     where: { id: userId },
@@ -556,12 +573,12 @@ export async function deleteUserAction(userId: string): Promise<void> {
     await tx.withdrawal.deleteMany({ where: { instructorId: userId } });
     await tx.earningsLedger.deleteMany({ where: { userId } });
     await tx.announcement.deleteMany({ where: { authorId: userId } });
-    await tx.adminLog.deleteMany({ where: { adminId: userId } });
+    await tx.auditLog.deleteMany({ where: { actorId: userId } });
     await tx.user.delete({ where: { id: userId } });
   });
 
-  await logAdminAction({
-    adminId: admin.id,
+  await logAudit({
+    actorId: admin.id,
     action: "DELETE_USER",
     targetType: "User",
     targetId: userId,
@@ -571,4 +588,118 @@ export async function deleteUserAction(userId: string): Promise<void> {
   revalidatePath("/dashboard/admin");
   revalidatePath("/dashboard/admin/users");
   redirect("/dashboard/admin/users");
+}
+
+export type CreateAdminResult = {
+  userCode: string;
+  email: string;
+  password: string;
+  error?: string;
+};
+
+export async function createAdminAccountAction(
+  _prev: CreateAdminResult | null,
+  formData: FormData,
+): Promise<CreateAdminResult> {
+  const superAdmin = await requireSuperAdmin();
+
+  const name = (formData.get("name") as string)?.trim();
+  const email = (formData.get("email") as string)?.trim().toLowerCase();
+  if (!name || !email) {
+    return { userCode: "", email: "", password: "", error: "Name and email are required" };
+  }
+
+  const existing = await prisma.user.findUnique({ where: { email } });
+  if (existing) {
+    return { userCode: "", email: "", password: "", error: "Email already in use" };
+  }
+
+  const password = randomBytes(9).toString("base64url");
+  const passwordHash = await bcrypt.hash(password, 12);
+  const userCode = await generateUserCode("ADMIN", name);
+
+  const created = await prisma.user.create({
+    data: {
+      name,
+      email,
+      passwordHash,
+      role: "ADMIN",
+      userCode,
+      isSuperAdmin: false,
+      adminSensitiveApproved: false,
+      adminSensitiveSuspended: false,
+    },
+  });
+
+  await logAudit({
+    actorId: superAdmin.id,
+    action: "CREATE_ADMIN",
+    targetType: "User",
+    targetId: created.id,
+    description: `Created admin account ${userCode} for ${email}`,
+  });
+
+  revalidatePath("/dashboard/admin/users");
+  return { userCode, email, password };
+}
+
+export async function suspendAdminSensitivePermissionsAction(
+  targetAdminId: string,
+): Promise<void> {
+  const superAdmin = await requireSuperAdmin();
+  await assertCanManageUser(superAdmin.id, targetAdminId);
+
+  const target = await prisma.user.findUnique({
+    where: { id: targetAdminId },
+    select: { role: true, isSuperAdmin: true, userCode: true },
+  });
+  if (!target || target.role !== "ADMIN") {
+    throw new Error("Target is not an admin");
+  }
+  if (target.isSuperAdmin) {
+    throw new Error("Cannot suspend super admin permissions");
+  }
+
+  await prisma.user.update({
+    where: { id: targetAdminId },
+    data: {
+      adminSensitiveApproved: false,
+      adminSensitiveSuspended: true,
+    },
+  });
+
+  await logAudit({
+    actorId: superAdmin.id,
+    action: "REVOKE_ADMIN_SENSITIVE",
+    targetType: "User",
+    targetId: targetAdminId,
+    description: `Revoked sensitive access for admin ${target.userCode}`,
+  });
+
+  revalidateUserPaths(targetAdminId);
+}
+
+export async function restoreAdminSensitivePermissionsAction(
+  targetAdminId: string,
+): Promise<void> {
+  const superAdmin = await requireSuperAdmin();
+  await assertCanManageUser(superAdmin.id, targetAdminId);
+
+  await prisma.user.update({
+    where: { id: targetAdminId },
+    data: {
+      adminSensitiveApproved: true,
+      adminSensitiveSuspended: false,
+    },
+  });
+
+  await logAudit({
+    actorId: superAdmin.id,
+    action: "APPROVE_ADMIN_SENSITIVE",
+    targetType: "User",
+    targetId: targetAdminId,
+    description: `Approved sensitive access for admin ${targetAdminId}`,
+  });
+
+  revalidateUserPaths(targetAdminId);
 }

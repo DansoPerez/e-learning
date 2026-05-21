@@ -66,16 +66,21 @@ enum ConversationType {
 
 model User {
   id            String     @id @default(cuid())
+  userCode      String?    @unique
   name          String?
   email         String     @unique
   emailVerified DateTime?
   image         String?
   passwordHash  String?
-  role             Role       @default(STUDENT)
-  status           UserStatus @default(ACTIVE)
-  allCoursesAccess Boolean    @default(false)
-  createdAt        DateTime   @default(now())
-  updatedAt        DateTime   @updatedAt
+  role                      Role       @default(STUDENT)
+  status                    UserStatus @default(ACTIVE)
+  allCoursesAccess          Boolean    @default(false)
+  isSuperAdmin              Boolean    @default(false)
+  adminSensitiveApproved    Boolean    @default(false)
+  adminSensitiveSuspended   Boolean    @default(false)
+  lastSeenAt                DateTime?
+  createdAt                 DateTime   @default(now())
+  updatedAt                 DateTime   @updatedAt
 
   accounts           Account[]
   sessions           Session[]
@@ -90,7 +95,8 @@ model User {
   announcements      Announcement[]       @relation("AnnouncementAuthor")
   announcementReads  AnnouncementRead[]
   reviewReplies      ReviewReply[]
-  adminLogs          AdminLog[]           @relation("AdminLogActor")
+  auditLogs          AuditLog[]           @relation("AuditLogActor")
+  notifications      Notification[]
   earningsLedger     EarningsLedger[]
   conversationsAsStudent Conversation[] @relation("ConversationStudent")
   conversationsAsOther   Conversation[] @relation("ConversationOther")
@@ -343,13 +349,14 @@ model QuizAttempt {
 }
 
 model Review {
-  id        String   @id @default(cuid())
+  id        String    @id @default(cuid())
   userId    String
   courseId  String
   rating    Int
-  comment   String   @db.Text
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  comment   String    @db.Text
+  deletedAt DateTime?
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
 
   user    User          @relation(fields: [userId], references: [id], onDelete: Cascade)
   course  Course        @relation(fields: [courseId], references: [id], onDelete: Cascade)
@@ -360,12 +367,13 @@ model Review {
 }
 
 model ReviewReply {
-  id        String   @id @default(cuid())
+  id        String    @id @default(cuid())
   reviewId  String
   authorId  String
-  body      String   @db.Text
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  body      String    @db.Text
+  deletedAt DateTime?
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
 
   review Review @relation(fields: [reviewId], references: [id], onDelete: Cascade)
   author User   @relation(fields: [authorId], references: [id], onDelete: Cascade)
@@ -399,18 +407,44 @@ model AnnouncementRead {
   @@index([userId])
 }
 
-model AdminLog {
+model AuditLog {
   id          String   @id @default(cuid())
-  adminId     String
+  actorId     String
   action      String
   targetType  String
   targetId    String?
   description String   @db.Text
   createdAt   DateTime @default(now())
 
-  admin User @relation("AdminLogActor", fields: [adminId], references: [id])
+  actor User @relation("AuditLogActor", fields: [actorId], references: [id])
 
-  @@index([adminId])
+  @@index([actorId])
+  @@index([createdAt])
+}
+
+enum NotificationType {
+  MESSAGE
+  COMMENT_REPLY
+  INSTRUCTOR_PENDING
+  ANNOUNCEMENT
+  WITHDRAWAL
+  SYSTEM
+}
+
+model Notification {
+  id        String           @id @default(cuid())
+  userId    String
+  type      NotificationType
+  title     String
+  body      String?
+  link      String?
+  readAt    DateTime?
+  metadata  Json?
+  createdAt DateTime         @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, readAt])
   @@index([createdAt])
 }
 
@@ -442,11 +476,12 @@ model Conversation {
 }
 
 model Message {
-  id             String   @id @default(cuid())
+  id             String    @id @default(cuid())
   conversationId String
   senderId       String
-  body           String   @db.Text
-  createdAt      DateTime @default(now())
+  body           String    @db.Text
+  deletedAt      DateTime?
+  createdAt      DateTime  @default(now())
 
   conversation Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
   sender       User         @relation(fields: [senderId], references: [id], onDelete: Cascade)

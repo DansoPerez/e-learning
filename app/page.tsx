@@ -5,25 +5,26 @@ import { CourseCard } from "@/components/courses/course-card";
 import { GraduationCap, Shield, Sparkles, Wallet } from "lucide-react";
 
 export default async function HomePage() {
-  const featured = await prisma.course.findMany({
-    where: { status: "PUBLISHED", featured: true },
-    take: 3,
-    include: {
-      category: true,
-      instructor: { select: { name: true } },
-    },
-    orderBy: { createdAt: "desc" },
-  });
-
-  const latest = await prisma.course.findMany({
-    where: { status: "PUBLISHED" },
-    take: 6,
-    include: {
-      category: true,
-      instructor: { select: { name: true } },
-    },
-    orderBy: { createdAt: "desc" },
-  });
+  const [featured, latest] = await prisma.$transaction([
+    prisma.course.findMany({
+      where: { status: "PUBLISHED", featured: true },
+      take: 3,
+      include: {
+        category: true,
+        instructor: { select: { name: true } },
+      },
+      orderBy: { createdAt: "desc" },
+    }),
+    prisma.course.findMany({
+      where: { status: "PUBLISHED" },
+      take: 6,
+      include: {
+        category: true,
+        instructor: { select: { name: true } },
+      },
+      orderBy: { createdAt: "desc" },
+    }),
+  ]);
 
   const courses = featured.length > 0 ? featured : latest;
 

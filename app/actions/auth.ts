@@ -5,9 +5,13 @@ import { redirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { registerSchema } from "@/lib/validations/auth";
 import { instructorRegisterSchema } from "@/lib/validations/instructor";
-import { signIn } from "@/auth";
+import { auth, signIn, signOut } from "@/auth";
 import { AuthError } from "next-auth";
 import { dashboardPathForRole } from "@/lib/auth";
+import { generateUserCode, findUserByLoginIdentifier } from "@/lib/user-code";
+import { logAudit } from "@/lib/audit-log";
+import { createNotification } from "@/lib/notifications";
+import { markOffline, touchPresence } from "@/lib/presence";
 
 export type ActionState = {
   success?: boolean;
@@ -15,29 +19,43 @@ export type ActionState = {
   fieldErrors?: Record<string, string[]>;
 };
 
+function authRedirectPath(
+  role: "STUDENT" | "INSTRUCTOR" | "ADMIN",
+  instructorProfile: { status: string } | null | undefined,
+): string {
+  if (role === "INSTRUCTOR") {
+    if (!instructorProfile) return "/dashboard/instructor/apply";
+    if (instructorProfile.status !== "APPROVED") return "/dashboard/instructor/pending";
+  }
+  return dashboardPathForRole(role);
+}
+
 async function redirectAfterAuth(email: string, password: string): Promise<never> {
   const user = await prisma.user.findUnique({
     where: { email },
     include: { instructorProfile: true },
   });
 
+  const redirectTo = authRedirectPath(
+    user?.role ?? "STUDENT",
+    user?.instructorProfile,
+  );
+
   try {
     await signIn("credentials", {
       email,
+      identifier: email,
       password,
-      redirect: false,
+      redirectTo,
     });
-  } catch {
-    redirect("/login?registered=1");
-  }
-
-  if (user?.role === "INSTRUCTOR") {
-    if (!user.instructorProfile || user.instructorProfile.status !== "APPROVED") {
-      redirect("/dashboard/instructor/pending");
+  } catch (error) {
+    if (error instanceof AuthError) {
+      redirect("/login?registered=1");
     }
+    throw error;
   }
 
-  redirect(dashboardPathForRole(user?.role ?? "STUDENT"));
+  redirect(redirectTo);
 }
 
 export async function registerAction(
@@ -74,13 +92,15 @@ export async function registerAction(
     }
 
     const passwordHash = await bcrypt.hash(parsed.data.password, 12);
+    const userCode = await generateUserCode("INSTRUCTOR", parsed.data.name);
 
-    await prisma.user.create({
+    const instructor = await prisma.user.create({
       data: {
         name: parsed.data.name,
         email: parsed.data.email,
         passwordHash,
         role: "INSTRUCTOR",
+        userCode,
         instructorProfile: {
           create: {
             bio: parsed.data.bio,
@@ -93,6 +113,28 @@ export async function registerAction(
         },
       },
     });
+
+    await logAudit({
+      actorId: instructor.id,
+      action: "REGISTER_INSTRUCTOR",
+      targetType: "User",
+      targetId: instructor.id,
+      description: `Instructor registered (${userCode}), pending approval`,
+    });
+
+    const superAdmins = await prisma.user.findMany({
+      where: { role: "ADMIN", isSuperAdmin: true, status: "ACTIVE" },
+      select: { id: true },
+    });
+    for (const sa of superAdmins) {
+      await createNotification({
+        userId: sa.id,
+        type: "INSTRUCTOR_PENDING",
+        title: "New instructor application",
+        body: `${parsed.data.name} (${userCode}) applied to teach`,
+        link: "/dashboard/admin/instructors",
+      });
+    }
 
     return redirectAfterAuth(parsed.data.email, parsed.data.password);
   }
@@ -118,14 +160,24 @@ export async function registerAction(
   }
 
   const passwordHash = await bcrypt.hash(parsed.data.password, 12);
+  const userCode = await generateUserCode("STUDENT", parsed.data.name);
 
-  await prisma.user.create({
+  const student = await prisma.user.create({
     data: {
       name: parsed.data.name,
       email: parsed.data.email,
       passwordHash,
       role: "STUDENT",
+      userCode,
     },
+  });
+
+  await logAudit({
+    actorId: student.id,
+    action: "REGISTER_STUDENT",
+    targetType: "User",
+    targetId: student.id,
+    description: `Student registered (${userCode})`,
   });
 
   return redirectAfterAuth(parsed.data.email, parsed.data.password);
@@ -135,46 +187,65 @@ export async function loginAction(
   _prev: ActionState,
   formData: FormData,
 ): Promise<ActionState> {
-  const email = formData.get("email") as string;
+  const identifier = (formData.get("identifier") ?? formData.get("email")) as string;
   const password = formData.get("password") as string;
 
-  const user = await prisma.user.findUnique({
-    where: { email },
-    include: { instructorProfile: true },
-  });
+  const user = await findUserByLoginIdentifier(identifier);
+  const userWithProfile =
+    user ?
+      await prisma.user.findUnique({
+        where: { id: user.id },
+        include: { instructorProfile: true },
+      })
+    : null;
 
-  if (!user) {
-    return { error: "Invalid email or password" };
+  if (!userWithProfile) {
+    return { error: "Invalid user ID or password" };
   }
 
-  if (user.status === "SUSPENDED") {
+  if (userWithProfile.status === "SUSPENDED") {
     return { error: "Your account is suspended. Contact support." };
   }
-  if (user.status === "BANNED") {
+  if (userWithProfile.status === "BANNED") {
     return { error: "Your account has been banned." };
   }
 
+  const redirectTo = authRedirectPath(
+    userWithProfile.role,
+    userWithProfile.instructorProfile,
+  );
+
+  await touchPresence(userWithProfile.id);
+
+  await logAudit({
+    actorId: userWithProfile.id,
+    action: "LOGIN",
+    targetType: "User",
+    targetId: userWithProfile.id,
+    description: `User signed in (${userWithProfile.userCode ?? userWithProfile.email})`,
+  });
+
   try {
     await signIn("credentials", {
-      email,
+      identifier: userWithProfile.email,
+      email: userWithProfile.email,
       password,
-      redirect: false,
+      redirectTo,
     });
   } catch (error) {
     if (error instanceof AuthError) {
-      return { error: "Invalid email or password" };
+      return { error: "Invalid user ID or password" };
     }
     throw error;
   }
 
-  if (user.role === "INSTRUCTOR") {
-    if (!user.instructorProfile) {
-      redirect("/dashboard/instructor/apply");
-    }
-    if (user.instructorProfile.status !== "APPROVED") {
-      redirect("/dashboard/instructor/pending");
-    }
-  }
+  redirect(redirectTo);
+}
 
-  redirect(dashboardPathForRole(user.role));
+export async function signOutAction() {
+  const session = await auth();
+  if (session?.user?.id) {
+    await markOffline(session.user.id);
+  }
+  await signOut({ redirectTo: "/" });
 }

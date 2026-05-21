@@ -7,11 +7,13 @@ const BASE_APPROVED: NavItem[] = [
   { href: "/dashboard/instructor/courses", label: "My courses" },
   { href: "/dashboard/instructor/messages", label: "Messages" },
   { href: "/dashboard/instructor/withdrawals", label: "Withdrawals" },
+  { href: "/dashboard/instructor/profile", label: "Profile" },
 ];
 
 const BASE_PENDING: NavItem[] = [
   { href: "/dashboard/instructor/pending", label: "Application status" },
   { href: "/dashboard/instructor/apply", label: "Application" },
+  { href: "/dashboard/instructor/profile", label: "Profile" },
 ];
 
 export function getInstructorNavItems(
@@ -24,6 +26,7 @@ export function getInstructorNavItems(
       { href: "/dashboard/instructor/courses", label: "My courses" },
       { href: "/dashboard/instructor/messages", label: "Messages" },
       { href: "/dashboard/instructor/withdrawals", label: "Withdrawals" },
+      { href: "/dashboard/instructor/profile", label: "Profile" },
     ];
   }
 

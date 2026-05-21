@@ -1,31 +1,66 @@
 "use client";
 
-import { useActionState } from "react";
-import { sendMessageAction } from "@/app/actions/messages";
+import { useActionState, useCallback, useEffect, useState } from "react";
+import { sendMessageAction, deleteMessageAction } from "@/app/actions/messages";
+import { MessageBubble, type MessageBubbleData } from "@/components/messages/message-bubble";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-import { formatDate } from "@/lib/utils";
-
-type Message = {
-  id: string;
-  body: string;
-  createdAt: Date;
-  sender: { id: string; name: string | null; role: string };
-};
 
 export function ChatThread({
   conversationId,
-  messages,
+  messages: initialMessages,
   currentUserId,
+  viewerIsAdmin = false,
 }: {
   conversationId: string;
-  messages: Message[];
+  messages: MessageBubbleData[];
   currentUserId: string;
+  /** When true, deleted messages show original text in red (admin moderation view) */
+  viewerIsAdmin?: boolean;
 }) {
+  const [messages, setMessages] = useState(initialMessages);
   const [state, action, pending] = useActionState(
     sendMessageAction.bind(null, conversationId),
     {},
   );
+
+  const refreshMessages = useCallback(async () => {
+    try {
+      const res = await fetch(`/api/conversations/${conversationId}/messages`, {
+        cache: "no-store",
+      });
+      if (!res.ok) return;
+      const data = await res.json();
+      setMessages(
+        data.messages.map(
+          (m: MessageBubbleData & { displayBody: string; isDeleted: boolean; body: string }) => ({
+            id: m.id,
+            body: viewerIsAdmin && m.isDeleted ? m.body : (m.displayBody ?? m.body),
+            createdAt: new Date(m.createdAt),
+            deletedAt: m.deletedAt ? new Date(m.deletedAt) : null,
+            sender: m.sender,
+          }),
+        ),
+      );
+    } catch {
+      /* ignore */
+    }
+  }, [conversationId, viewerIsAdmin]);
+
+  useEffect(() => {
+    setMessages(initialMessages);
+  }, [initialMessages]);
+
+  useEffect(() => {
+    const id = setInterval(refreshMessages, 8_000);
+    return () => clearInterval(id);
+  }, [refreshMessages]);
+
+  useEffect(() => {
+    if (!pending && !state.error) {
+      refreshMessages();
+    }
+  }, [pending, state.error, refreshMessages]);
 
   return (
     <div className="flex flex-col gap-4">
@@ -34,37 +69,22 @@ export function ChatThread({
           <p className="text-center text-sm text-[var(--foreground-muted)]">
             No messages yet. Say hello!
           </p>
-        : messages.map((m) => {
-            const isMine = m.sender.id === currentUserId;
-            return (
-              <div
-                key={m.id}
-                className={`flex ${isMine ? "justify-end" : "justify-start"}`}
-              >
-                <div
-                  className={`max-w-[85%] rounded-2xl px-4 py-2.5 text-sm ${
-                    isMine ?
-                      "bg-[var(--primary)] text-white"
-                    : "border border-[var(--border)] bg-white text-[var(--foreground-secondary)]"
-                  }`}
-                >
-                  {!isMine ?
-                    <p className="mb-1 text-xs font-semibold opacity-80">
-                      {m.sender.name ?? "User"}
-                      {m.sender.role === "ADMIN" ? " (Admin)" : ""}
-                      {m.sender.role === "INSTRUCTOR" ? " (Instructor)" : ""}
-                    </p>
-                  : null}
-                  <p className="whitespace-pre-wrap">{m.body}</p>
-                  <p
-                    className={`mt-1 text-[10px] ${isMine ? "text-indigo-200" : "text-[var(--foreground-muted)]"}`}
-                  >
-                    {formatDate(m.createdAt)}
-                  </p>
-                </div>
-              </div>
-            );
-          })
+        : messages.map((m) => (
+            <MessageBubble
+              key={m.id}
+              message={m}
+              isMine={m.sender.id === currentUserId}
+              viewerIsAdmin={viewerIsAdmin}
+              onDelete={
+                m.sender.id === currentUserId && !m.deletedAt ?
+                  async () => {
+                    await deleteMessageAction(m.id);
+                    await refreshMessages();
+                  }
+                : undefined
+              }
+            />
+          ))
         }
       </div>
 

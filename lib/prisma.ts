@@ -10,15 +10,28 @@ function createPrismaClient() {
     throw new Error("DATABASE_URL is not set");
   }
 
+  const isLocalDev =
+    connectionString.includes("localhost") ||
+    connectionString.includes("127.0.0.1");
+
   const pool = new Pool({
     connectionString,
-    max: process.env.VERCEL ? 1 : 10,
-    idleTimeoutMillis: 20_000,
-    connectionTimeoutMillis: 15_000,
+    // Fewer connections locally — avoids exhausting Prisma Dev / small pools
+    max: process.env.VERCEL ? 1 : isLocalDev ? 5 : 10,
+    idleTimeoutMillis: isLocalDev ? 60_000 : 20_000,
+    connectionTimeoutMillis: 10_000,
+    keepAlive: true,
     ssl:
       connectionString.includes("supabase.com") ?
         { rejectUnauthorized: false }
       : undefined,
+  });
+
+  pool.on("error", (err) => {
+    console.error(
+      "[prisma] Database pool error — if using local dev, run: npx prisma dev",
+      err.message,
+    );
   });
 
   const adapter = new PrismaPg(pool);

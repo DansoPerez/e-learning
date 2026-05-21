@@ -54,8 +54,15 @@ export function LoginForm() {
           </p>
         : null}
         <div className="space-y-2">
-          <Label htmlFor="email">Email</Label>
-          <Input id="email" name="email" type="email" required placeholder="you@example.com" />
+          <Label htmlFor="identifier">User ID or email</Label>
+          <Input
+            id="identifier"
+            name="identifier"
+            type="text"
+            required
+            placeholder="S1001DS or you@example.com"
+            autoComplete="username"
+          />
         </div>
         <div className="space-y-2">
           <Label htmlFor="password">Password</Label>

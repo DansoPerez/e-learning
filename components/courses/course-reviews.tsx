@@ -3,6 +3,8 @@
 import { useActionState } from "react";
 import {
   adminCommentOnReviewAction,
+  deleteReviewAction,
+  deleteReviewReplyAction,
   replyToReviewAction,
   submitReviewAction,
 } from "@/app/actions/reviews";
@@ -17,6 +19,7 @@ type Reply = {
   id: string;
   body: string;
   createdAt: Date;
+  deletedAt?: Date | null;
   author: { id: string; name: string | null; role: string };
 };
 
@@ -25,6 +28,7 @@ type Review = {
   rating: number;
   comment: string;
   createdAt: Date;
+  deletedAt?: Date | null;
   user: { id: string; name: string | null };
   replies: Reply[];
 };
@@ -67,6 +71,7 @@ export function CourseReviews({
               canReply={canReplyAsInstructor || isAdmin}
               isAdmin={isAdmin}
               isOwnReview={currentUserId === r.user.id}
+              currentUserId={currentUserId}
             />
           ))}
         </div>
@@ -123,15 +128,24 @@ function ReviewCard({
   canReply,
   isAdmin,
   isOwnReview,
+  currentUserId,
 }: {
   review: Review;
   courseSlug: string;
   canReply: boolean;
   isAdmin: boolean;
   isOwnReview: boolean;
+  currentUserId?: string;
 }) {
+  const deleted = !!review.deletedAt;
+
   return (
-    <div className="surface-card p-4">
+    <div
+      className={`surface-card p-4 ${isAdmin && deleted ? "border-2 border-red-300 bg-red-50" : ""}`}
+    >
+      {isAdmin && deleted ?
+        <p className="mb-2 text-xs font-bold text-red-700">Deleted review (visible to admin)</p>
+      : null}
       <div className="flex flex-wrap items-center gap-2">
         <p className="font-semibold text-[var(--foreground)]">
           {review.user.name ?? "Student"}
@@ -149,12 +163,32 @@ function ReviewCard({
           {formatDate(review.createdAt)}
         </span>
       </div>
-      <p className="mt-2 text-sm text-[var(--foreground-secondary)]">{review.comment}</p>
+      <p
+        className={`mt-2 text-sm ${deleted && !isAdmin ? "italic text-[var(--foreground-muted)]" : "text-[var(--foreground-secondary)]"}`}
+      >
+        {deleted && !isAdmin ? "[Review deleted]" : review.comment}
+      </p>
+      {isOwnReview && !deleted ?
+        <form action={deleteReviewAction.bind(null, review.id, courseSlug)} className="mt-2">
+          <Button type="submit" size="sm" variant="outline">
+            Delete my review
+          </Button>
+        </form>
+      : null}
 
       {review.replies.length > 0 ?
         <ul className="mt-4 space-y-3 border-l-2 border-indigo-100 pl-4">
-          {review.replies.map((reply) => (
-            <li key={reply.id}>
+          {review.replies.map((reply) => {
+            const replyDeleted = !!reply.deletedAt;
+            const isOwnReply = reply.author.id === currentUserId;
+            return (
+            <li
+              key={reply.id}
+              className={isAdmin && replyDeleted ? "rounded-lg border border-red-200 bg-red-50/80 p-2" : ""}
+            >
+              {isAdmin && replyDeleted ?
+                <p className="text-xs font-bold text-red-700">Deleted reply</p>
+              : null}
               <div className="flex flex-wrap items-center gap-2">
                 <span className="text-sm font-medium text-[var(--foreground)]">
                   {reply.author.name ?? "User"}
@@ -176,9 +210,22 @@ function ReviewCard({
                   {formatDate(reply.createdAt)}
                 </span>
               </div>
-              <p className="mt-1 text-sm text-[var(--foreground-secondary)]">{reply.body}</p>
+              <p className="mt-1 text-sm text-[var(--foreground-secondary)]">
+                {replyDeleted && !isAdmin ? "[Reply deleted]" : reply.body}
+              </p>
+              {isOwnReply && !replyDeleted ?
+                <form
+                  action={deleteReviewReplyAction.bind(null, reply.id, courseSlug)}
+                  className="mt-1"
+                >
+                  <Button type="submit" size="sm" variant="outline">
+                    Delete
+                  </Button>
+                </form>
+              : null}
             </li>
-          ))}
+          );
+          })}
         </ul>
       : null}
 

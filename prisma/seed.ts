@@ -2,30 +2,42 @@ import "dotenv/config";
 import bcrypt from "bcryptjs";
 import { prisma } from "../lib/prisma";
 import { slugify } from "../lib/utils";
+import { generateUserCode, backfillMissingUserCodes } from "../lib/user-code";
 
 async function main() {
   const passwordHash = await bcrypt.hash("Admin123!", 12);
 
+  const adminCode = await generateUserCode("ADMIN", "Super Admin");
   const admin = await prisma.user.upsert({
     where: { email: "admin@bravio.app" },
-    update: {},
+    update: {
+      isSuperAdmin: true,
+      userCode: adminCode,
+      adminSensitiveApproved: true,
+      adminSensitiveSuspended: false,
+    },
     create: {
       name: "Super Admin",
       email: "admin@bravio.app",
       passwordHash,
       role: "ADMIN",
+      userCode: adminCode,
+      isSuperAdmin: true,
+      adminSensitiveApproved: true,
     },
   });
 
   const instructorHash = await bcrypt.hash("Instructor123!", 12);
+  const instructorCode = await generateUserCode("INSTRUCTOR", "Demo Instructor");
   const instructor = await prisma.user.upsert({
     where: { email: "instructor@bravio.app" },
-    update: {},
+    update: { userCode: instructorCode },
     create: {
       name: "Demo Instructor",
       email: "instructor@bravio.app",
       passwordHash: instructorHash,
       role: "INSTRUCTOR",
+      userCode: instructorCode,
     },
   });
 
@@ -43,16 +55,20 @@ async function main() {
   });
 
   const studentHash = await bcrypt.hash("Student123!", 12);
+  const studentCode = await generateUserCode("STUDENT", "Demo Student");
   await prisma.user.upsert({
     where: { email: "student@bravio.app" },
-    update: {},
+    update: { userCode: studentCode },
     create: {
       name: "Demo Student",
       email: "student@bravio.app",
       passwordHash: studentHash,
       role: "STUDENT",
+      userCode: studentCode,
     },
   });
+
+  await backfillMissingUserCodes();
 
   const categories = ["Programming", "Design", "Business"];
   for (const name of categories) {
@@ -149,9 +165,9 @@ async function main() {
   });
 
   console.log("Seed complete.");
-  console.log("Admin: admin@bravio.app / Admin123!");
-  console.log("Instructor: instructor@bravio.app / Instructor123!");
-  console.log("Student: student@bravio.app / Student123!");
+  console.log(`Admin: ${admin.userCode ?? adminCode} / admin@bravio.app / Admin123!`);
+  console.log(`Instructor: ${instructor.userCode ?? instructorCode} / instructor@bravio.app / Instructor123!`);
+  console.log(`Student: ${studentCode} / student@bravio.app / Student123!`);
 }
 
 main()

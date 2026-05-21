@@ -27,6 +27,10 @@ export default function Error({
             message.includes("Course") ||
             message.includes("findMany") ?
           "Your Supabase database has no tables yet. Run npx prisma db push with your pooler URL (see DEPLOY.md), then redeploy Vercel."
+        : message.includes("Connection terminated") ||
+            message.includes("Can't reach database") ||
+            message.includes("P1001") ?
+          "Database is not reachable. For local dev, run npx prisma dev in a second terminal, then restart npm run dev."
         : "Check Vercel deployment logs (Functions) for details."}
       </p>
       <Button type="button" className="mt-6" onClick={() => reset()}>

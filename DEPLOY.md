@@ -52,19 +52,27 @@ Save this as your **production `DATABASE_URL`**.
 
 ### 4. Create tables in production (run once on your PC)
 
+**Important:** `prisma db push` must **not** use the **Transaction** pooler (port 6543) — it often hangs or fails. Use one of these for `db push` only:
+
+| Use for | Connection in Supabase UI |
+|---------|---------------------------|
+| `db push` + `db:seed` | **Session pooler** (port **5432**) or **Direct connection** |
+| Vercel `DATABASE_URL` | **Transaction pooler** (port **6543**) |
+
 In a terminal, from the project folder:
 
 ```bash
 cd "c:/Users/danso/Documents/personal projects/e_learning"
 
-# Windows PowerShell — set URL for this command only:
-$env:DATABASE_URL="postgresql://postgres....your-pooler-url...."
+# Session pooler OR direct URL (NOT :6543 transaction pooler):
+export DATABASE_URL="postgresql://postgres.[ref]:[PASSWORD]@aws-0-....pooler.supabase.com:5432/postgres"
 
 npx prisma db push
 npm run db:seed
+npm run db:check
 ```
 
-Use the **same** pooler URL you will put in Vercel.
+Encode `@` in passwords as `%40`. Put the **transaction pooler (:6543)** URL in Vercel only.
 
 After seed, you can log in with:
 

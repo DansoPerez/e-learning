@@ -20,6 +20,10 @@ export const authConfig = {
         session.user.id = token.id as string;
         session.user.role = (token.role as Role) ?? "STUDENT";
         session.user.status = (token.status as UserStatus) ?? "ACTIVE";
+        session.user.userCode = (token.userCode as string | null) ?? null;
+        session.user.isSuperAdmin = (token.isSuperAdmin as boolean) ?? false;
+        session.user.adminSensitiveApproved =
+          (token.adminSensitiveApproved as boolean) ?? false;
       }
       return session;
     },

@@ -2,6 +2,7 @@
 
 import { usePathname } from "next/navigation";
 import { DashboardShell, type NavItem } from "@/components/layout/dashboard-shell";
+import { PresenceHeartbeat } from "@/components/presence/presence-heartbeat";
 import type { Role } from "@/app/generated/prisma/client";
 
 export function DashboardWrapper({
@@ -17,8 +18,11 @@ export function DashboardWrapper({
 }) {
   const pathname = usePathname();
   return (
-    <DashboardShell role={role} title={title} pathname={pathname} navItems={navItems}>
-      {children}
-    </DashboardShell>
+    <>
+      <PresenceHeartbeat />
+      <DashboardShell role={role} title={title} pathname={pathname} navItems={navItems}>
+        {children}
+      </DashboardShell>
+    </>
   );
 }

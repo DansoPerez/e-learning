@@ -5,6 +5,7 @@ import Google from "next-auth/providers/google";
 import bcrypt from "bcryptjs";
 import { prisma } from "@/lib/prisma";
 import { loginSchema } from "@/lib/validations/auth";
+import { findUserByLoginIdentifier } from "@/lib/user-code";
 import { authConfig } from "@/auth.config";
 import type { Role, UserStatus } from "@/app/generated/prisma/client";
 
@@ -20,16 +21,18 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
     Credentials({
       name: "credentials",
       credentials: {
-        email: { label: "Email", type: "email" },
+        identifier: { label: "User ID or email", type: "text" },
         password: { label: "Password", type: "password" },
       },
       async authorize(credentials) {
-        const parsed = loginSchema.safeParse(credentials);
+        const cred = credentials as Record<string, string> | undefined;
+        const parsed = loginSchema.safeParse({
+          identifier: cred?.identifier ?? cred?.email,
+          password: cred?.password,
+        });
         if (!parsed.success) return null;
 
-        const user = await prisma.user.findUnique({
-          where: { email: parsed.data.email },
-        });
+        const user = await findUserByLoginIdentifier(parsed.data.identifier);
 
         if (!user?.passwordHash || user.status !== "ACTIVE") return null;
 
@@ -46,6 +49,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
           image: user.image,
           role: user.role,
           status: user.status,
+          userCode: user.userCode,
         };
       },
     }),
@@ -57,6 +61,10 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         token.id = user.id;
         token.role = (user as { role?: Role }).role ?? "STUDENT";
         token.status = (user as { status?: UserStatus }).status ?? "ACTIVE";
+        token.userCode = (user as { userCode?: string | null }).userCode ?? null;
+        token.isSuperAdmin = (user as { isSuperAdmin?: boolean }).isSuperAdmin ?? false;
+        token.adminSensitiveApproved =
+          (user as { adminSensitiveApproved?: boolean }).adminSensitiveApproved ?? false;
       }
 
       if (trigger === "update" && session?.user) {
@@ -65,15 +73,30 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       }
 
       if (token.id && trigger !== "signIn") {
-        const dbUser = await prisma.user.findUnique({
-          where: { id: token.id as string },
-          select: { role: true, status: true, name: true, image: true },
+        try {
+          const dbUser = await prisma.user.findUnique({
+            where: { id: token.id as string },
+            select: {
+              role: true,
+              status: true,
+              name: true,
+              image: true,
+            userCode: true,
+            isSuperAdmin: true,
+            adminSensitiveApproved: true,
+          },
         });
         if (dbUser) {
           token.role = dbUser.role;
           token.status = dbUser.status;
           token.name = dbUser.name;
           token.picture = dbUser.image;
+          token.userCode = dbUser.userCode;
+          token.isSuperAdmin = dbUser.isSuperAdmin;
+          token.adminSensitiveApproved = dbUser.adminSensitiveApproved;
+        }
+        } catch {
+          // Schema out of sync (run `npx prisma db push`) — keep existing token claims
         }
       }
 

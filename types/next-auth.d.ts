@@ -7,12 +7,18 @@ declare module "next-auth" {
       id: string;
       role: Role;
       status: UserStatus;
+      userCode?: string | null;
+      isSuperAdmin?: boolean;
+      adminSensitiveApproved?: boolean;
     } & DefaultSession["user"];
   }
 
   interface User {
     role?: Role;
     status?: UserStatus;
+    userCode?: string | null;
+    isSuperAdmin?: boolean;
+    adminSensitiveApproved?: boolean;
   }
 }
 
@@ -21,5 +27,8 @@ declare module "next-auth/jwt" {
     id?: string;
     role?: Role;
     status?: UserStatus;
+    userCode?: string | null;
+    isSuperAdmin?: boolean;
+    adminSensitiveApproved?: boolean;
   }
 }

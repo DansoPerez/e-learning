@@ -1,20 +1,21 @@
-import Link from "next/link";
-import { cn } from "@/lib/utils";
 import type { Role } from "@/app/generated/prisma/client";
+import { DashboardHeader, DashboardNav } from "@/components/layout/dashboard-nav";
 
 export type NavItem = { href: string; label: string };
 
-const navByRole: Record<Role, NavItem[]> = {
+export const navByRole: Record<Role, NavItem[]> = {
   STUDENT: [
     { href: "/dashboard/student", label: "Overview" },
     { href: "/dashboard/student/courses", label: "My courses" },
     { href: "/dashboard/student/messages", label: "Messages" },
+    { href: "/dashboard/student/profile", label: "Profile" },
   ],
   INSTRUCTOR: [
     { href: "/dashboard/instructor", label: "Overview" },
     { href: "/dashboard/instructor/courses", label: "My courses" },
     { href: "/dashboard/instructor/messages", label: "Messages" },
     { href: "/dashboard/instructor/withdrawals", label: "Withdrawals" },
+    { href: "/dashboard/instructor/profile", label: "Profile" },
   ],
   ADMIN: [
     { href: "/dashboard/admin", label: "Overview" },
@@ -27,17 +28,15 @@ const navByRole: Record<Role, NavItem[]> = {
     { href: "/dashboard/admin/withdrawals", label: "Withdrawals" },
     { href: "/dashboard/admin/settings", label: "Settings" },
     { href: "/dashboard/admin/logs", label: "Audit logs" },
+    { href: "/dashboard/admin/profile", label: "Profile" },
   ],
 };
 
-function isNavItemActive(pathname: string, href: string, items: NavItem[]): boolean {
-  const matches = items.filter(
-    (item) => pathname === item.href || pathname.startsWith(`${item.href}/`),
-  );
-  if (matches.length === 0) return false;
-  const best = matches.reduce((a, b) => (a.href.length >= b.href.length ? a : b));
-  return best.href === href;
-}
+const roleLabels: Record<Role, string> = {
+  STUDENT: "Student",
+  INSTRUCTOR: "Instructor",
+  ADMIN: "Admin",
+};
 
 export function DashboardShell({
   role,
@@ -55,36 +54,17 @@ export function DashboardShell({
   const items = navItems ?? navByRole[role];
 
   return (
-    <div className="page-container grid gap-8 py-8 lg:grid-cols-[240px_1fr]">
-      <aside className="surface-card h-fit p-4 lg:sticky lg:top-24">
-        <p className="mb-3 px-2 text-xs font-bold uppercase tracking-wider text-[var(--foreground-muted)]">
-          {role.toLowerCase()} menu
-        </p>
-        <nav className="space-y-0.5">
-          {items.map((item) => {
-            const active = isNavItemActive(pathname, item.href, items);
-            return (
-              <Link
-                key={item.href}
-                href={item.href}
-                className={cn(
-                  "block rounded-xl px-3 py-2.5 text-sm font-medium transition-all",
-                  active ?
-                    "bg-[var(--primary)] text-white shadow-md shadow-indigo-500/25"
-                  : "text-[var(--foreground-secondary)] hover:bg-[var(--primary-light)] hover:text-[var(--primary)]",
-                )}
-              >
-                {item.label}
-              </Link>
-            );
-          })}
-        </nav>
-      </aside>
-      <div>
-        <h1 className="mb-6 text-3xl font-extrabold tracking-tight text-[var(--foreground)]">
-          {title}
-        </h1>
-        {children}
+    <div className="page-container py-6 sm:py-8">
+      <div className="grid gap-6 lg:grid-cols-[240px_1fr] lg:gap-8">
+        <DashboardNav
+          items={items}
+          pathname={pathname}
+          roleLabel={roleLabels[role]}
+        />
+        <div className="min-w-0">
+          <DashboardHeader title={title} />
+          {children}
+        </div>
       </div>
     </div>
   );
