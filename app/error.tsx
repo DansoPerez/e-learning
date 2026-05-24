@@ -26,11 +26,11 @@ export default function Error({
             message.includes("P2021") ||
             message.includes("Course") ||
             message.includes("findMany") ?
-          "Your Supabase database has no tables yet. Run npx prisma db push with your pooler URL (see DEPLOY.md), then redeploy Vercel."
+          "Your MongoDB database has no collections yet. Run npx prisma db push (see DEPLOY.md), then redeploy Vercel."
         : message.includes("Connection terminated") ||
             message.includes("Can't reach database") ||
             message.includes("P1001") ?
-          "Database is not reachable. For local dev, run npx prisma dev in a second terminal, then restart npm run dev."
+          "Database is not reachable. Check DATABASE_URL (mongodb:// or mongodb+srv://) and that MongoDB Atlas allows your IP (or 0.0.0.0/0 for Vercel)."
         : "Check Vercel deployment logs (Functions) for details."}
       </p>
       <Button type="button" className="mt-6" onClick={() => reset()}>

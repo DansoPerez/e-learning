@@ -34,19 +34,19 @@ function AuthShell({
   subtitle: string;
 }) {
   return (
-    <div className="mx-auto grid w-full max-w-4xl overflow-hidden rounded-2xl border border-[var(--border)] bg-[var(--card)] shadow-[var(--shadow-lg)] lg:grid-cols-2">
-      <div className="hidden flex-col justify-between bg-gradient-to-br from-indigo-600 via-violet-600 to-indigo-800 p-10 text-white lg:flex">
+    <div className="mx-auto grid w-full max-w-4xl overflow-hidden rounded-[var(--radius)] border border-[var(--border)] bg-white shadow-[var(--shadow-lg)] lg:grid-cols-2">
+      <div className="hidden flex-col justify-between bg-[var(--primary)] p-10 text-white lg:flex">
         <div>
           <div className="flex items-center gap-2 text-xl font-bold">
             <BookOpen className="h-7 w-7" />
             Bravio
           </div>
           <p className="mt-8 text-2xl font-bold leading-snug">{title}</p>
-          <p className="mt-3 text-indigo-100">{subtitle}</p>
+          <p className="mt-3 text-blue-100">{subtitle}</p>
         </div>
-        <p className="text-sm text-indigo-200">Admin-verified instructors · Secure learning</p>
+        <p className="text-sm text-blue-200">Admin-verified instructors · Secure learning</p>
       </div>
-      <div className="max-h-[90vh] overflow-y-auto p-8 sm:p-10">{children}</div>
+      <div className="max-h-[90vh] overflow-y-auto p-6 sm:p-10">{children}</div>
     </div>
   );
 }
@@ -125,9 +125,9 @@ export function RegisterForm() {
         </div>
 
         {isInstructor ?
-          <div className="space-y-4 rounded-xl border border-indigo-200 bg-indigo-50/50 p-4">
-            <p className="text-sm font-semibold text-indigo-900">Instructor application (required)</p>
-            <p className="text-xs text-indigo-800">
+          <div className="space-y-4 rounded-[var(--radius)] border border-[var(--border)] bg-[var(--background)] p-4">
+            <p className="text-sm font-semibold text-[var(--foreground)]">Instructor application (required)</p>
+            <p className="text-xs text-[var(--foreground-muted)]">
               You cannot create or publish courses until an admin approves this application.
             </p>
             <div className="space-y-2">

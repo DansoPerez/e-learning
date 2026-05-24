@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { Badge } from "@/components/ui/badge";
 import { formatCurrency } from "@/lib/utils";
-import { User } from "lucide-react";
+import { BookOpen, Star } from "lucide-react";
 
 type CourseCardProps = {
   slug: string;
@@ -23,40 +23,41 @@ export function CourseCard({
   featured,
 }: CourseCardProps) {
   return (
-    <Link href={`/courses/${slug}`} className="group block h-full">
-      <article className="surface-card flex h-full flex-col overflow-hidden transition-all duration-300 group-hover:-translate-y-1 group-hover:shadow-[var(--shadow-lg)]">
-        <div className="relative h-36 bg-gradient-to-br from-indigo-500 via-violet-500 to-sky-500 p-4">
-          <div className="absolute inset-0 bg-[radial-gradient(circle_at_30%_20%,white,transparent_50%)] opacity-20" />
-          <div className="relative flex flex-wrap gap-2">
+    <Link href={`/courses/${slug}`} className="group block h-full min-w-0">
+      <article className="flex h-full flex-col overflow-hidden rounded-[var(--radius)] border border-[var(--border)] bg-white shadow-[var(--shadow-sm)] transition-shadow duration-200 hover:shadow-[var(--shadow-md)]">
+        <div className="relative flex h-32 items-center justify-center bg-[var(--background-subtle)] sm:h-36">
+          <BookOpen className="h-12 w-12 text-[var(--border-strong)]" strokeWidth={1.25} />
+          <div className="absolute left-3 top-3 flex flex-wrap gap-1.5">
             {category ?
-              <Badge variant="info" className="border-0 bg-white/95 text-indigo-800 shadow-sm">
+              <Badge variant="info" className="bg-white/95 text-xs">
                 {category}
               </Badge>
             : null}
             {featured ?
-              <Badge variant="warning" className="border-0 bg-amber-400 text-amber-950 shadow-sm">
+              <Badge variant="warning" className="text-xs">
                 Featured
               </Badge>
             : null}
           </div>
         </div>
-        <div className="flex flex-1 flex-col p-5">
-          <h3 className="line-clamp-2 text-lg font-bold text-[var(--foreground)] transition-colors group-hover:text-[var(--primary)]">
+        <div className="flex flex-1 flex-col p-4">
+          <h3 className="line-clamp-2 text-base font-bold leading-snug text-[var(--foreground)] group-hover:text-[var(--primary)]">
             {title}
           </h3>
-          <p className="mt-2 line-clamp-3 flex-1 text-sm leading-relaxed text-[var(--foreground-muted)]">
+          {instructor ?
+            <p className="mt-1 text-xs text-[var(--foreground-muted)]">{instructor}</p>
+          : null}
+          <p className="mt-2 line-clamp-2 flex-1 text-sm leading-relaxed text-[var(--foreground-muted)]">
             {description}
           </p>
-          <div className="mt-4 flex items-center justify-between border-t border-[var(--border)] pt-4">
-            <span className="text-lg font-extrabold text-[var(--primary)]">
+          <div className="mt-3 flex items-center justify-between gap-2 border-t border-[var(--border)] pt-3">
+            <span className="text-base font-bold text-[var(--foreground)]">
               {price > 0 ? formatCurrency(price) : "Free"}
             </span>
-            {instructor ?
-              <span className="flex max-w-[120px] items-center gap-1 truncate text-xs font-medium text-[var(--foreground-muted)]">
-                <User className="h-3.5 w-3.5 shrink-0" />
-                {instructor}
-              </span>
-            : null}
+            <span className="flex items-center gap-0.5 text-xs font-medium text-[var(--foreground-muted)]">
+              <Star className="h-3.5 w-3.5 fill-[var(--accent)] text-[var(--accent)]" />
+              Professional
+            </span>
           </div>
         </div>
       </article>

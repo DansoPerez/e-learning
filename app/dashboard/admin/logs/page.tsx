@@ -1,4 +1,5 @@
 import { prisma } from "@/lib/prisma";
+import { containsFilter } from "@/lib/prisma-search";
 import { requireRole, getSessionUser } from "@/lib/auth";
 import { DashboardWrapper } from "@/components/layout/dashboard-wrapper";
 import { AuditLogFilters } from "@/components/admin/audit-log-filters";
@@ -25,18 +26,19 @@ function buildWhere(
   if (role) {
     and.push({ actor: { role } });
   }
-  if (action) {
-    and.push({ action: { contains: action, mode: "insensitive" } });
+  if (action && containsFilter(action)) {
+    and.push({ action: containsFilter(action) });
   }
-  if (q) {
+  if (q && containsFilter(q)) {
+    const match = containsFilter(q)!;
     and.push({
       OR: [
-        { action: { contains: q, mode: "insensitive" } },
-        { description: { contains: q, mode: "insensitive" } },
-        { targetType: { contains: q, mode: "insensitive" } },
-        { actor: { userCode: { contains: q, mode: "insensitive" } } },
-        { actor: { name: { contains: q, mode: "insensitive" } } },
-        { actor: { email: { contains: q, mode: "insensitive" } } },
+        { action: match },
+        { description: match },
+        { targetType: match },
+        { actor: { userCode: match } },
+        { actor: { name: match } },
+        { actor: { email: match } },
       ],
     });
   }

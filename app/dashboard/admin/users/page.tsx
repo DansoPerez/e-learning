@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { prisma } from "@/lib/prisma";
+import { containsFilter } from "@/lib/prisma-search";
 import { requireRole, getSessionUser } from "@/lib/auth";
 import { CreateAdminForm } from "@/components/admin/create-admin-form";
 import { DashboardWrapper } from "@/components/layout/dashboard-wrapper";
@@ -34,12 +35,12 @@ export default async function AdminUsersPage({
 
   const users = await prisma.user.findMany({
     where: {
-      ...(q ?
+      ...(containsFilter(q ?? "") ?
         {
           OR: [
-            { name: { contains: q, mode: "insensitive" } },
-            { email: { contains: q, mode: "insensitive" } },
-            { userCode: { contains: q, mode: "insensitive" } },
+            { name: containsFilter(q ?? "") },
+            { email: containsFilter(q ?? "") },
+            { userCode: containsFilter(q ?? "") },
           ],
         }
       : {}),

@@ -2,164 +2,97 @@
 
 import Link from "next/link";
 import { useSession } from "next-auth/react";
-import { PLATFORM_NAME, DASHBOARD_ROUTES } from "@/lib/constants";
-import { BookOpen, Mail, ShieldCheck } from "lucide-react";
-import type { Role } from "@/app/generated/prisma/client";
+import type { Session } from "next-auth";
+import { PLATFORM_NAME } from "@/lib/constants";
+import { dashboardNavLabelForRole, dashboardPathForRole } from "@/lib/dashboard-nav";
+import { BookOpen } from "lucide-react";
 
-function dashboardPathForRole(role: Role): string {
-  switch (role) {
-    case "ADMIN":
-      return DASHBOARD_ROUTES.ADMIN;
-    case "INSTRUCTOR":
-      return DASHBOARD_ROUTES.INSTRUCTOR;
-    default:
-      return DASHBOARD_ROUTES.STUDENT;
-  }
-}
-
-function profilePathForRole(role: Role): string {
-  switch (role) {
-    case "ADMIN":
-      return "/dashboard/admin/profile";
-    case "INSTRUCTOR":
-      return "/dashboard/instructor/profile";
-    default:
-      return "/dashboard/student/profile";
-  }
-}
-
-const guestPlatformLinks = [
-  { href: "/courses", label: "Browse courses" },
-  { href: "/login", label: "Sign in" },
-  { href: "/register", label: "Create account" },
-];
-
-const guestAccountLinks = [
-  { href: "/register?role=student", label: "Join as a student" },
-  { href: "/register?role=instructor", label: "Apply to teach" },
-];
-
-export function Footer() {
-  const { data: session, status } = useSession();
+export function Footer({ initialSession }: { initialSession: Session | null }) {
+  const { data: clientSession } = useSession();
+  const session = clientSession ?? initialSession;
   const year = new Date().getFullYear();
-  const isAuthenticated = status === "authenticated" && !!session?.user;
+  const isAuthenticated = !!session?.user?.id;
   const role = session?.user?.role ?? "STUDENT";
 
-  const platformLinks =
-    isAuthenticated ?
-      [
-        { href: "/courses", label: "Browse courses" },
-        { href: dashboardPathForRole(role), label: "Dashboard" },
-      ]
-    : guestPlatformLinks;
-
-  const accountLinks =
-    isAuthenticated ?
-      [
-        { href: dashboardPathForRole(role), label: "My dashboard" },
-        { href: profilePathForRole(role), label: "Profile" },
-        ...(role === "STUDENT" ?
-          [{ href: "/dashboard/student/courses", label: "My courses" }]
-        : role === "INSTRUCTOR" ?
-          [{ href: "/dashboard/instructor/courses", label: "My courses" }]
-        : []),
-      ]
-    : guestAccountLinks;
-
-  const accountSectionTitle = isAuthenticated ? "Your account" : "Get started";
-
   return (
-    <footer className="mt-auto border-t border-[var(--border)] bg-white">
-      <div className="page-container py-12 lg:py-16">
-        <div className="grid gap-10 md:grid-cols-2 lg:grid-cols-12 lg:gap-8">
-          <div className="lg:col-span-5">
-            <Link
-              href="/"
-              className="inline-flex items-center gap-2.5 text-lg font-bold text-[var(--primary)]"
-            >
-              <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-[var(--primary)] text-white shadow-md shadow-indigo-500/25">
+    <footer className="mt-auto border-t border-[var(--border)] bg-[#1c1d1f] text-slate-300">
+      <div className="page-container py-10 sm:py-12">
+        <div className="grid gap-8 sm:grid-cols-2 lg:grid-cols-4">
+          <div className="sm:col-span-2 lg:col-span-1">
+            <Link href="/" className="inline-flex items-center gap-2 text-white">
+              <span className="flex h-9 w-9 items-center justify-center rounded-md bg-[var(--primary)]">
                 <BookOpen className="h-5 w-5" />
               </span>
-              {PLATFORM_NAME}
+              <span className="text-lg font-bold">{PLATFORM_NAME}</span>
             </Link>
-            <p className="mt-4 max-w-sm text-sm leading-relaxed text-[var(--foreground-muted)]">
-              Structured courses, verified instructors, and transparent administration — built for students and educators who expect a professional learning experience.
+            <p className="mt-4 max-w-xs text-sm leading-relaxed text-slate-400">
+              Professional online courses for students and instructors worldwide.
             </p>
-            <a
-              href="mailto:support@bravio.app"
-              className="mt-5 inline-flex items-center gap-2 text-sm font-medium text-[var(--primary)] hover:underline"
-            >
-              <Mail className="h-4 w-4" aria-hidden />
-              support@bravio.app
-            </a>
           </div>
 
-          <div className="lg:col-span-2 lg:col-start-7">
-            <p className="text-xs font-bold uppercase tracking-wider text-[var(--foreground-secondary)]">
+          <div>
+            <p className="text-xs font-bold uppercase tracking-wider text-slate-500">
               Platform
             </p>
-            <ul className="mt-4 space-y-3">
-              {platformLinks.map((link) => (
-                <li key={link.href}>
-                  <Link
-                    href={link.href}
-                    className="text-sm text-[var(--foreground-muted)] transition-colors hover:text-[var(--primary)]"
-                  >
-                    {link.label}
+            <ul className="mt-4 space-y-2.5 text-sm">
+              <li>
+                <Link href="/courses" className="hover:text-white">
+                  Browse courses
+                </Link>
+              </li>
+              {isAuthenticated ?
+                <li>
+                  <Link href={dashboardPathForRole(role)} className="hover:text-white">
+                    {dashboardNavLabelForRole(role)}
                   </Link>
                 </li>
-              ))}
+              : <>
+                  <li>
+                    <Link href="/login" className="hover:text-white">
+                      Sign in
+                    </Link>
+                  </li>
+                  <li>
+                    <Link href="/register" className="hover:text-white">
+                      Join for free
+                    </Link>
+                  </li>
+                </>
+              }
             </ul>
           </div>
 
-          <div className="lg:col-span-2">
-            <p className="text-xs font-bold uppercase tracking-wider text-[var(--foreground-secondary)]">
-              {accountSectionTitle}
+          <div>
+            <p className="text-xs font-bold uppercase tracking-wider text-slate-500">
+              Teach
             </p>
-            <ul className="mt-4 space-y-3">
-              {accountLinks.map((link) => (
-                <li key={link.href}>
-                  <Link
-                    href={link.href}
-                    className="text-sm text-[var(--foreground-muted)] transition-colors hover:text-[var(--primary)]"
-                  >
-                    {link.label}
-                  </Link>
-                </li>
-              ))}
+            <ul className="mt-4 space-y-2.5 text-sm">
+              <li>
+                <Link href="/register?role=instructor" className="hover:text-white">
+                  Become an instructor
+                </Link>
+              </li>
+              <li>
+                <a href="mailto:support@bravio.app" className="hover:text-white">
+                  Contact support
+                </a>
+              </li>
             </ul>
           </div>
 
-          <div className="lg:col-span-3">
-            <p className="text-xs font-bold uppercase tracking-wider text-[var(--foreground-secondary)]">
-              Trust &amp; safety
+          <div>
+            <p className="text-xs font-bold uppercase tracking-wider text-slate-500">
+              Legal
             </p>
-            <ul className="mt-4 space-y-3">
-              <li className="flex gap-2.5 text-sm text-[var(--foreground-muted)]">
-                <ShieldCheck className="mt-0.5 h-4 w-4 shrink-0 text-[var(--primary)]" aria-hidden />
-                <span>Secure payments processed via Paystack</span>
-              </li>
-              <li className="flex gap-2.5 text-sm text-[var(--foreground-muted)]">
-                <ShieldCheck className="mt-0.5 h-4 w-4 shrink-0 text-[var(--primary)]" aria-hidden />
-                <span>Instructor applications reviewed by admins</span>
-              </li>
-              <li className="flex gap-2.5 text-sm text-[var(--foreground-muted)]">
-                <ShieldCheck className="mt-0.5 h-4 w-4 shrink-0 text-[var(--primary)]" aria-hidden />
-                <span>Course quality and community standards enforced</span>
-              </li>
+            <ul className="mt-4 space-y-2.5 text-sm text-slate-400">
+              <li>Secure payments via Paystack</li>
+              <li>Admin-verified instructors</li>
             </ul>
           </div>
         </div>
 
-        <div className="mt-12 flex flex-col gap-3 border-t border-[var(--border)] pt-8 sm:flex-row sm:items-center sm:justify-between">
-          <p className="text-sm text-[var(--foreground-muted)]">
-            © {year} {PLATFORM_NAME}. All rights reserved.
-          </p>
-          <p className="text-xs text-[var(--foreground-muted)]">
-            {isAuthenticated && session?.user?.userCode ?
-              `Signed in as ${session.user.userCode}`
-            : "Professional e-learning for modern teams and classrooms."}
-          </p>
+        <div className="mt-10 border-t border-slate-700 pt-6 text-center text-xs text-slate-500 sm:text-left">
+          © {year} {PLATFORM_NAME}. All rights reserved.
         </div>
       </div>
     </footer>

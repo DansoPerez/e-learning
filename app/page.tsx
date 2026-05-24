@@ -1,14 +1,46 @@
 import Link from "next/link";
+import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { Button } from "@/components/ui/button";
 import { CourseCard } from "@/components/courses/course-card";
-import { GraduationCap, Shield, Sparkles, Wallet } from "lucide-react";
+import {
+  dashboardCtaLabelForRole,
+  dashboardPathForRole,
+} from "@/lib/dashboard-nav";
+import type { Role } from "@/app/generated/prisma/client";
+import { Award, BookOpen, Globe, Users } from "lucide-react";
+
+function homepageClosingCopy(role: Role): { heading: string; body: string; cta: string } {
+  switch (role) {
+    case "ADMIN":
+      return {
+        heading: "Manage the platform",
+        body: "Review users, courses, payouts, and platform settings from your admin panel.",
+        cta: "Open admin panel",
+      };
+    case "INSTRUCTOR":
+      return {
+        heading: "Grow your teaching",
+        body: "Update your courses, respond to learners, and track earnings from your dashboard.",
+        cta: "Open teaching dashboard",
+      };
+    default:
+      return {
+        heading: "Ready to start learning?",
+        body: "Join thousands building skills with instructor-led courses on Bravio.",
+        cta: "Get started — it's free",
+      };
+  }
+}
 
 export default async function HomePage() {
-  const [featured, latest] = await prisma.$transaction([
+  const session = await auth();
+  const isAuthenticated = !!session?.user?.id;
+  const [featured, latest, publishedCount, categoryCount, enrollmentCount] =
+    await prisma.$transaction([
     prisma.course.findMany({
       where: { status: "PUBLISHED", featured: true },
-      take: 3,
+      take: 4,
       include: {
         category: true,
         instructor: { select: { name: true } },
@@ -17,118 +49,112 @@ export default async function HomePage() {
     }),
     prisma.course.findMany({
       where: { status: "PUBLISHED" },
-      take: 6,
+      take: 8,
       include: {
         category: true,
         instructor: { select: { name: true } },
       },
       orderBy: { createdAt: "desc" },
     }),
+    prisma.course.count({ where: { status: "PUBLISHED" } }),
+    prisma.category.count(),
+    prisma.enrollment.count(),
   ]);
 
-  const courses = featured.length > 0 ? featured : latest;
+  const courses = featured.length > 0 ? featured : latest.slice(0, 8);
 
   return (
-    <div>
-      <section className="relative overflow-hidden border-b border-indigo-200/50 bg-gradient-to-br from-indigo-600 via-violet-600 to-indigo-800 px-4 py-24 text-white sm:py-28">
-        <div className="pointer-events-none absolute -left-20 top-10 h-72 w-72 rounded-full bg-sky-400/30 blur-3xl" />
-        <div className="pointer-events-none absolute -right-10 bottom-0 h-80 w-80 rounded-full bg-violet-400/40 blur-3xl" />
-        <div className="relative mx-auto max-w-4xl text-center">
-          <span className="mb-6 inline-flex items-center gap-2 rounded-full border border-white/25 bg-white/10 px-4 py-1.5 text-sm font-medium backdrop-blur-sm">
-            <Sparkles className="h-4 w-4 text-amber-300" />
-            Learn from expert instructors
-          </span>
-          <h1 className="text-4xl font-extrabold tracking-tight sm:text-6xl sm:leading-tight">
-            Learn. Teach. Grow with{" "}
-            <span className="bg-gradient-to-r from-amber-200 to-sky-200 bg-clip-text text-transparent">
-              Bravio
-            </span>
-          </h1>
-          <p className="mx-auto mt-6 max-w-2xl text-lg leading-relaxed text-indigo-100">
-            A modern e-learning marketplace with structured courses, quizzes, and
-            fair instructor payouts — built for students, lecturers, and institutions.
-          </p>
-          <div className="mt-10 flex flex-wrap justify-center gap-4">
-            <Link href="/courses">
-              <Button size="lg" className="bg-white text-indigo-700 shadow-xl hover:bg-indigo-50">
-                Browse courses
-              </Button>
-            </Link>
-            <Link href="/register">
-              <Button
-                size="lg"
-                variant="outline"
-                className="border-2 border-white/80 bg-transparent text-white hover:bg-white/15"
-              >
-                Start learning free
-              </Button>
-            </Link>
+    <div className="bg-white">
+      <section className="border-b border-[var(--border)] bg-[var(--background)]">
+        <div className="page-container py-12 sm:py-16 lg:py-20">
+          <div className="mx-auto max-w-3xl text-center lg:max-w-4xl">
+            <p className="text-sm font-semibold uppercase tracking-wider text-[var(--primary)]">
+              Professional online learning
+            </p>
+            <h1 className="mt-3 text-3xl font-bold leading-tight tracking-tight text-[var(--foreground)] sm:text-4xl lg:text-5xl">
+              Learn without limits on {""}
+              <span className="text-[var(--primary)]">Bravio</span>
+            </h1>
+            <p className="mx-auto mt-4 max-w-2xl text-base leading-relaxed text-[var(--foreground-muted)] sm:text-lg">
+              Structured courses from verified instructors — modules, quizzes, and
+              credentials designed for students, professionals, and institutions.
+            </p>
+            <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:justify-center">
+              {isAuthenticated && session.user ?
+                <Link href={dashboardPathForRole(session.user.role)} className="w-full sm:w-auto">
+                  <Button size="lg" variant="accent" className="w-full sm:min-w-[200px]">
+                    {dashboardCtaLabelForRole(session.user.role)}
+                  </Button>
+                </Link>
+              : <Link href="/register" className="w-full sm:w-auto">
+                  <Button size="lg" variant="accent" className="w-full sm:min-w-[200px]">
+                    Join for free
+                  </Button>
+                </Link>
+              }
+              <Link href="/courses" className="w-full sm:w-auto">
+                <Button size="lg" variant="outline" className="w-full sm:min-w-[200px]">
+                  Explore courses
+                </Button>
+              </Link>
+            </div>
+            {!isAuthenticated ?
+              <p className="mt-4 text-sm text-[var(--foreground-muted)]">
+                Already learning?{" "}
+                <Link href="/login" className="font-semibold text-[var(--primary)] hover:underline">
+                  Log in
+                </Link>
+              </p>
+            : null}
           </div>
         </div>
       </section>
 
-      <section className="page-container py-16 sm:py-20">
-        <div className="mb-10 text-center">
-          <h2 className="text-3xl font-extrabold text-[var(--foreground)]">Why Bravio?</h2>
-          <p className="mt-2 text-[var(--foreground-muted)]">
-            Everything you need to learn, teach, and manage courses in one place
-          </p>
-        </div>
-        <div className="grid gap-6 md:grid-cols-3">
-          {[
-            {
-              icon: GraduationCap,
-              title: "Structured learning",
-              text: "Courses with modules, video lessons, and built-in quizzes.",
-              color: "from-indigo-500 to-violet-500",
-            },
-            {
-              icon: Wallet,
-              title: "Fair earnings",
-              text: "Instructors keep 60% of revenue with transparent payouts.",
-              color: "from-emerald-500 to-teal-500",
-            },
-            {
-              icon: Shield,
-              title: "Full governance",
-              text: "Admins control quality, users, and platform settings.",
-              color: "from-sky-500 to-blue-500",
-            },
-          ].map(({ icon: Icon, title, text, color }) => (
-            <div
-              key={title}
-              className="surface-card group p-6 transition-all hover:-translate-y-1 hover:shadow-[var(--shadow-lg)]"
-            >
-              <div
-                className={`mb-4 inline-flex rounded-xl bg-gradient-to-br ${color} p-3 text-white shadow-lg`}
-              >
-                <Icon className="h-6 w-6" />
+      <section className="border-b border-[var(--border)] bg-white py-6">
+        <div className="page-container">
+          <div className="grid grid-cols-2 gap-4 sm:grid-cols-4 sm:gap-6">
+            {[
+              { icon: BookOpen, label: "Courses", value: `${publishedCount}+` },
+              { icon: Users, label: "Learners", value: `${enrollmentCount}+` },
+              { icon: Globe, label: "Categories", value: `${categoryCount}` },
+              { icon: Award, label: "Instructors", value: "Verified" },
+            ].map(({ icon: Icon, label, value }) => (
+              <div key={label} className="text-center">
+                <Icon className="mx-auto h-6 w-6 text-[var(--primary)]" />
+                <p className="mt-2 text-xl font-bold text-[var(--foreground)] sm:text-2xl">
+                  {value}
+                </p>
+                <p className="text-xs font-medium text-[var(--foreground-muted)] sm:text-sm">
+                  {label}
+                </p>
               </div>
-              <h3 className="text-lg font-bold text-[var(--foreground)]">{title}</h3>
-              <p className="mt-2 text-sm leading-relaxed text-[var(--foreground-muted)]">{text}</p>
-            </div>
-          ))}
+            ))}
+          </div>
         </div>
       </section>
 
-      <section className="page-container pb-20">
-        <div className="mb-8 flex items-end justify-between gap-4">
+      <section className="page-container py-12 sm:py-16">
+        <div className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
           <div>
-            <h2 className="text-3xl font-extrabold text-[var(--foreground)]">Popular courses</h2>
-            <p className="mt-1 text-[var(--foreground-muted)]">Start learning today</p>
+            <h2 className="section-title">Most popular</h2>
+            <p className="mt-1 text-[var(--foreground-muted)]">
+              Courses learners are enrolling in now
+            </p>
           </div>
           <Link
             href="/courses"
-            className="shrink-0 text-sm font-semibold text-[var(--primary)] hover:underline"
+            className="text-sm font-bold text-[var(--primary)] hover:underline"
           >
-            View all →
+            View all courses →
           </Link>
         </div>
         {courses.length === 0 ?
           <div className="surface-card py-16 text-center">
-            <p className="text-[var(--foreground-muted)]">No published courses yet. Check back soon.</p>
+            <p className="text-[var(--foreground-muted)]">
+              New courses are coming soon. Check back shortly.
+            </p>
           </div>
-        : <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+        : <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 sm:gap-5 lg:grid-cols-3 xl:grid-cols-4">
             {courses.map((c) => (
               <CourseCard
                 key={c.id}
@@ -143,6 +169,72 @@ export default async function HomePage() {
             ))}
           </div>
         }
+      </section>
+
+      <section className="border-t border-[var(--border)] bg-[var(--background)] py-12 sm:py-16">
+        <div className="page-container">
+          <h2 className="section-title text-center">Why learners choose Bravio</h2>
+          <p className="mx-auto mt-2 max-w-xl text-center text-[var(--foreground-muted)]">
+            A classic learning experience — clear paths, fair pricing, and admin oversight.
+          </p>
+          <div className="mt-10 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+            {[
+              {
+                title: "Structured curriculum",
+                text: "Modules, lessons, and assessments in a clear sequence — like leading MOOC platforms.",
+              },
+              {
+                title: "Expert instructors",
+                text: "Every teaching application is reviewed before courses go live.",
+              },
+              {
+                title: "Learn on any device",
+                text: "Mobile-friendly design so you can study on phone, tablet, or desktop.",
+              },
+            ].map((item) => (
+              <div key={item.title} className="surface-card p-6">
+                <h3 className="text-lg font-bold text-[var(--foreground)]">{item.title}</h3>
+                <p className="mt-2 text-sm leading-relaxed text-[var(--foreground-muted)]">
+                  {item.text}
+                </p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      <section className="border-t border-[var(--border)] bg-[var(--primary)] py-12 text-white sm:py-14">
+        <div className="page-container text-center">
+          {(() => {
+            const closing =
+              isAuthenticated && session.user ?
+                homepageClosingCopy(session.user.role)
+              : {
+                  heading: "Ready to start learning?",
+                  body: "Join thousands building skills with instructor-led courses on Bravio.",
+                  cta: "Get started — it's free",
+                };
+            const closingHref =
+              isAuthenticated && session.user ?
+                dashboardPathForRole(session.user.role)
+              : "/register";
+            return (
+              <>
+                <h2 className="text-2xl font-bold sm:text-3xl">{closing.heading}</h2>
+                <p className="mx-auto mt-3 max-w-lg text-blue-100">{closing.body}</p>
+                <Link href={closingHref} className="mt-6 inline-block w-full sm:w-auto">
+                  <Button
+                    size="lg"
+                    variant="accent"
+                    className="w-full sm:min-w-[220px]"
+                  >
+                    {closing.cta}
+                  </Button>
+                </Link>
+              </>
+            );
+          })()}
+        </div>
       </section>
     </div>
   );

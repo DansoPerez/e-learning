@@ -1,9 +1,9 @@
 /**
- * Verify DATABASE_URL reaches Postgres and the Course table exists.
- * Usage: DATABASE_URL="postgresql://..." npm run db:check
+ * Verify DATABASE_URL reaches MongoDB and core collections exist.
+ * Usage: npm run db:check
  */
 import "dotenv/config";
-import { Pool } from "pg";
+import { prisma } from "../lib/prisma";
 
 async function main() {
   const url = process.env.DATABASE_URL;
@@ -12,44 +12,46 @@ async function main() {
     process.exit(1);
   }
 
-  const host = url.match(/@([^/?]+)/)?.[1] ?? "unknown";
-  console.log(`Checking database at ${host} ...`);
+  if (!url.startsWith("mongodb")) {
+    console.error("❌ DATABASE_URL must be a MongoDB connection string (mongodb:// or mongodb+srv://).");
+    process.exit(1);
+  }
 
-  const pool = new Pool({
-    connectionString: url,
-    ssl:
-      url.includes("supabase.com") ?
-        { rejectUnauthorized: false }
-      : undefined,
-  });
+  const hasDatabaseName = /mongodb(\+srv)?:\/\/[^/]+\/[^/?]+/.test(url);
+  if (!hasDatabaseName) {
+    console.error(
+      "❌ DATABASE_URL is missing the database name. Use:\n" +
+        "   mongodb+srv://USER:PASSWORD@cluster.mongodb.net/bravio?retryWrites=true&w=majority\n" +
+        "   (insert /bravio — or your DB name — before the ?)",
+    );
+    process.exit(1);
+  }
+
+  const host = url.match(/@([^/?]+)/)?.[1] ?? url.replace(/^mongodb(\+srv)?:\/\//, "").split("/")[0];
+  console.log(`Checking MongoDB at ${host} ...`);
 
   try {
-    await pool.query("SELECT 1");
+    await prisma.$connect();
     console.log("✓ Connected");
 
-    const { rows } = await pool.query<{ exists: string | null }>(
-      `SELECT to_regclass('public."Course"') AS exists`,
-    );
-    const table = rows[0]?.exists;
-
-    if (!table) {
-      console.error('❌ Table "Course" is missing. Run: npx prisma db push');
-      process.exit(1);
-    }
-
-    const count = await pool.query<{ n: string }>(
-      `SELECT COUNT(*)::text AS n FROM "Course"`,
-    );
-    console.log(`✓ Course table exists (${count.rows[0].n} rows)`);
+    const courseCount = await prisma.course.count();
+    console.log(`✓ Course collection ready (${courseCount} documents)`);
     console.log("Database is ready for Bravio.");
   } catch (e) {
-    console.error("❌ Database check failed:", e instanceof Error ? e.message : e);
-    if (String(e).includes("password authentication failed")) {
-      console.error("   Tip: encode @ in passwords as %40 in the connection URL.");
+    const msg = e instanceof Error ? e.message : String(e);
+    console.error("❌ Database check failed:", msg);
+    if (msg.includes("DNS") || msg.includes("10051") || msg.includes("unreachable network")) {
+      console.error(
+        "   Tip: `mongodb+srv://` SRV lookup may be blocked on your network.\n" +
+          "   In Atlas → Connect → Drivers, copy the **Standard connection string** (mongodb://…)\n" +
+          "   with /bravio before ? and use that as DATABASE_URL instead.",
+      );
+    } else {
+      console.error("   Tip: run `npx prisma db push` then `npm run db:seed` after setting DATABASE_URL.");
     }
     process.exit(1);
   } finally {
-    await pool.end();
+    await prisma.$disconnect();
   }
 }
 

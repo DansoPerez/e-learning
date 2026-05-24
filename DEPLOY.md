@@ -1,6 +1,6 @@
 # Deploy Bravio to Vercel (step by step)
 
-You deploy from GitHub. Vercel builds the app; Supabase holds the database.
+You deploy from GitHub. **MongoDB Atlas** holds the database.
 
 **Time:** about 20–30 minutes the first time.
 
@@ -31,48 +31,58 @@ If it is already on GitHub, just commit and push your latest changes.
 
 ---
 
-## Part B — Supabase database (10 min)
+## Part B — MongoDB Atlas (10 min)
 
-### 2. Create a Supabase project
+### 2. Create a MongoDB Atlas cluster
 
-1. Go to [supabase.com](https://supabase.com) → **Start your project** → sign in.
-2. **New project** → pick a name (e.g. `bravio`), set a **database password** (save it).
-3. Wait until the project is ready.
+1. Go to [mongodb.com/cloud/atlas](https://www.mongodb.com/cloud/atlas) → sign up / sign in.
+2. **Build a Database** → choose **M0 Free** (or a paid tier for production).
+3. Pick a cloud region close to your users (and Vercel region if possible).
+4. Create the cluster and wait until it is ready.
 
-### 3. Copy the database URL (use the pooler)
+### 3. Create a database user
 
-1. In Supabase: **Project Settings** (gear) → **Database**.
-2. Under **Connection string**, choose **URI**.
-3. Select **Transaction pooler** (important for Vercel).
-4. Copy the URL. It looks like:
-   `postgresql://postgres.[ref]:[PASSWORD]@aws-0-...pooler.supabase.com:6543/postgres`
-5. Replace `[YOUR-PASSWORD]` with your database password.
+1. **Database Access** → **Add New Database User**.
+2. Username + password (save the password).
+3. Privileges: **Read and write to any database** (or restrict to `bravio`).
 
-Save this as your **production `DATABASE_URL`**.
+### 4. Allow network access
 
-### 4. Create tables in production (run once on your PC)
+1. **Network Access** → **Add IP Address**.
+2. For development: **Add Current IP Address**.
+3. For Vercel: **Allow Access from Anywhere** (`0.0.0.0/0`) — required because Vercel uses dynamic IPs.
 
-**Important:** `prisma db push` must **not** use the **Transaction** pooler (port 6543) — it often hangs or fails. Use one of these for `db push` only:
+### 5. Copy the connection string
 
-| Use for | Connection in Supabase UI |
-|---------|---------------------------|
-| `db push` + `db:seed` | **Session pooler** (port **5432**) or **Direct connection** |
-| Vercel `DATABASE_URL` | **Transaction pooler** (port **6543**) |
+1. **Database** → **Connect** → **Drivers**.
+2. Copy the `mongodb+srv://...` URI.
+3. Replace `<password>` with your user password (URL-encode special characters: `@` → `%40`).
+4. Set the database name in the path, e.g. `...mongodb.net/bravio?retryWrites=true&w=majority`.
 
-In a terminal, from the project folder:
+Example:
+
+```text
+mongodb+srv://bravio_user:YOUR_PASSWORD@cluster0.xxxxx.mongodb.net/bravio?retryWrites=true&w=majority
+```
+
+### 6. Create collections (run once on your PC)
+
+From the project folder:
 
 ```bash
 cd "c:/Users/danso/Documents/personal projects/e_learning"
 
-# Session pooler OR direct URL (NOT :6543 transaction pooler):
-export DATABASE_URL="postgresql://postgres.[ref]:[PASSWORD]@aws-0-....pooler.supabase.com:5432/postgres"
+# Paste your Atlas URI (or local mongodb://127.0.0.1:27017/bravio)
+export DATABASE_URL="mongodb+srv://..."
 
 npx prisma db push
 npm run db:seed
 npm run db:check
 ```
 
-Encode `@` in passwords as `%40`. Put the **transaction pooler (:6543)** URL in Vercel only.
+MongoDB does not use SQL migrations — **`prisma db push`** syncs the schema.
+
+> **Note:** This project uses **Prisma 6.19** for MongoDB. Prisma 7 does not yet ship the MongoDB query compiler; upgrading to Prisma 7 requires staying on PostgreSQL or waiting for MongoDB support.
 
 After seed, you can log in with:
 
@@ -82,102 +92,86 @@ After seed, you can log in with:
 | Instructor | instructor@bravio.app | Instructor123!  |
 | Student    | student@bravio.app    | Student123!     |
 
+### Local MongoDB (optional)
+
+Install [MongoDB Community](https://www.mongodb.com/try/download/community) or run via Docker:
+
+```bash
+docker run -d -p 27017:27017 --name bravio-mongo mongo:7
+```
+
+Then use `DATABASE_URL="mongodb://127.0.0.1:27017/bravio"`.
+
 ---
 
 ## Part C — Vercel (10 min)
 
-### 5. Import the project
+### 7. Import the project
 
 1. Go to [vercel.com](https://vercel.com) → sign in with **GitHub**.
 2. **Add New…** → **Project**.
-3. **Import** your `bravio` (or e_learning) repository.
+3. **Import** your GitHub repository.
 4. Framework: **Next.js** (auto-detected).  
-   Build command: `npm run build` (default).  
-   Install command: `npm install` (default).
+   Build command: `npm run build` (default).
 
-Do **not** deploy yet — add environment variables first.
+### 8. Environment variables
 
-### 6. Environment variables
-
-In **Environment Variables**, add these for **Production** (and Preview if you want):
+In Vercel → **Settings** → **Environment Variables**, add:
 
 | Name | Value |
 |------|--------|
-| `DATABASE_URL` | Your Supabase **transaction pooler** URL |
-| `AUTH_SECRET` | Run locally: `openssl rand -base64 32` and paste the output |
-| `NEXTAUTH_URL` | Leave empty for first deploy; set after step 8 |
-| `PAYSTACK_SECRET_KEY` | From [Paystack Dashboard](https://dashboard.paystack.com) → Settings → API Keys (test key is fine to start) |
+| `DATABASE_URL` | Your `mongodb+srv://...` Atlas URI |
+| `AUTH_SECRET` | `openssl rand -base64 32` (generate locally) |
+| `NEXTAUTH_URL` | Set after first deploy (see step 10) |
+| `PAYSTACK_SECRET_KEY` | From Paystack dashboard |
 | `PAYSTACK_CURRENCY` | `GHS` |
+| `GOOGLE_CLIENT_ID` / `GOOGLE_CLIENT_SECRET` | Optional OAuth |
 
-Optional (Google login):
+### 9. Deploy
 
-| Name | Value |
-|------|--------|
-| `GOOGLE_CLIENT_ID` | Google Cloud Console |
-| `GOOGLE_CLIENT_SECRET` | Google Cloud Console |
+Click **Deploy**. Wait for the build to finish.
 
-### 7. Vercel Blob (instructor selfie uploads)
+### 10. Fix `NEXTAUTH_URL` after first deploy
 
-1. In your Vercel project → **Storage** tab → **Create Database** → **Blob**.
-2. Name it (e.g. `bravio-blob`) → **Create**.
-3. **Connect to Project** → select this Next.js project.
+1. Copy your live URL, e.g. `https://bravio-edu.vercel.app`.
+2. Set `NEXTAUTH_URL` and `AUTH_URL` to that URL (no trailing slash).
+3. **Redeploy** Production.
 
-Vercel adds `BLOB_READ_WRITE_TOKEN` automatically. No manual copy needed.
+Also update:
 
-### 8. Deploy
-
-Click **Deploy**. Wait for the build to finish (green **Visit**).
-
-### 9. Fix `NEXTAUTH_URL` after first deploy
-
-1. Copy your live URL, e.g. `https://bravio-xxx.vercel.app`.
-2. Vercel → **Settings** → **Environment Variables**.
-3. Set `NEXTAUTH_URL` = `https://bravio-xxx.vercel.app` (no trailing slash).
-4. **Deployments** → latest deployment → **⋯** → **Redeploy**.
-
-Login and sessions will work correctly after this redeploy.
+| Service | URL |
+|---------|-----|
+| Paystack webhook | `https://YOUR-URL/api/paystack/webhook` |
+| Google OAuth redirect | `https://YOUR-URL/api/auth/callback/google` |
 
 ---
 
-## Part D — Paystack webhook (if you use paid courses)
+## Checklist
 
-1. [Paystack Dashboard](https://dashboard.paystack.com) → **Settings** → **Webhooks**.
-2. URL: `https://YOUR-VERCEL-URL.vercel.app/api/paystack/webhook`
-3. Save.
-
----
-
-## Part E — Google OAuth (optional)
-
-1. [Google Cloud Console](https://console.cloud.google.com) → APIs & Services → Credentials.
-2. Edit your OAuth client → **Authorized redirect URIs** add:
-   `https://YOUR-VERCEL-URL.vercel.app/api/auth/callback/google`
-3. Save.
+- [ ] MongoDB Atlas cluster + user + network access (`0.0.0.0/0` for Vercel)
+- [ ] `npx prisma db push` + `npm run db:seed` against Atlas
+- [ ] `DATABASE_URL` set on Vercel
+- [ ] `AUTH_SECRET` set on Vercel
+- [ ] `NEXTAUTH_URL` matches your real Vercel URL, redeployed
 
 ---
 
-## Checklist before you share the site
-
-- [ ] `DATABASE_URL` uses Supabase **pooler** (port 6543), not direct `5432`
-- [ ] `npx prisma db push` + `db:seed` ran against production DB
-- [ ] `NEXTAUTH_URL` matches your real Vercel URL
-- [ ] Vercel Blob connected (for instructor registration selfies)
-- [ ] Paystack webhook points to production URL (if using payments)
-
----
-
-## If something fails
+## Troubleshooting
 
 | Problem | Fix |
 |---------|-----|
-| Build fails on Vercel | Open deployment → **Building** logs; often missing env var |
-| `DATABASE_URL is not set` | Add `DATABASE_URL` in Vercel env, redeploy |
-| Login redirects broken | Set `NEXTAUTH_URL` to exact Vercel URL, redeploy |
-| Instructor selfie fails | Connect Vercel Blob storage to the project |
-| Paystack payments not completing | Check webhook URL and `PAYSTACK_SECRET_KEY` |
+| `DATABASE_URL` errors on build | Use `mongodb+srv://` Atlas URI; check password encoding |
+| Auth / login broken | Set `NEXTAUTH_URL` to exact production URL, redeploy |
+| `db push` fails | Confirm IP allowlist includes your PC; URI has database name |
+| DNS error `10051` / unreachable network | Replace `mongodb+srv://` with Atlas **Standard connection string** (`mongodb://` with shard hosts) |
+| Search feels case-sensitive | MongoDB text search is case-sensitive (PostgreSQL `insensitive` mode removed) |
+| Old Postgres data | Export/import manually or re-seed; schemas are not auto-migrated |
 
 ---
 
-## Custom domain (later)
+## Rename Vercel project / domain
 
-Vercel → **Settings** → **Domains** → add your domain, then update `NEXTAUTH_URL` and Paystack/Google URLs to match.
+1. **Settings** → **General** → change project name.
+2. **Settings** → **Domains** → add `bravio-edu.vercel.app` (or custom domain).
+3. Update `NEXTAUTH_URL`, Paystack, and Google URLs to match.
+4. Ensure **Production** deployment is **Ready** (not `DEPLOYMENT_NOT_FOUND`).
