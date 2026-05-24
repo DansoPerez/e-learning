@@ -1,11 +1,11 @@
 import { cn } from "@/lib/utils";
 
 const styles = {
-  default: "bg-slate-100 text-slate-800 border border-slate-200",
-  success: "bg-emerald-50 text-emerald-800 border border-emerald-200",
-  warning: "bg-amber-50 text-amber-900 border border-amber-200",
-  danger: "bg-red-50 text-red-800 border border-red-200",
-  info: "bg-indigo-50 text-indigo-800 border border-indigo-200",
+  default: "bg-[var(--background-subtle)] text-[var(--foreground-secondary)] border border-[var(--border)]",
+  success: "bg-[var(--success-bg)] text-[var(--success)] border border-emerald-200",
+  warning: "bg-[var(--warning-bg)] text-[#7a5c00] border border-amber-200",
+  danger: "bg-[var(--danger-bg)] text-[var(--danger)] border border-red-200",
+  info: "bg-[var(--primary-light)] text-[var(--primary)] border border-blue-200",
 } as const;
 
 export function Badge({
@@ -20,7 +20,7 @@ export function Badge({
   return (
     <span
       className={cn(
-        "inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold",
+        "inline-flex items-center rounded-sm px-2 py-0.5 text-xs font-bold uppercase tracking-wide",
         styles[variant],
         className,
       )}

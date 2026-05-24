@@ -35,13 +35,9 @@ export async function requireRole(...roles: Role[]): Promise<SessionUser> {
   return user;
 }
 
-export function dashboardPathForRole(role: Role): string {
-  switch (role) {
-    case "ADMIN":
-      return DASHBOARD_ROUTES.ADMIN;
-    case "INSTRUCTOR":
-      return DASHBOARD_ROUTES.INSTRUCTOR;
-    default:
-      return DASHBOARD_ROUTES.STUDENT;
-  }
-}
+export {
+  courseAccessCtaForRole,
+  dashboardCtaLabelForRole,
+  dashboardNavLabelForRole,
+  dashboardPathForRole,
+} from "@/lib/dashboard-nav";

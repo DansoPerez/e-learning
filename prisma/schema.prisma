@@ -1,10 +1,11 @@
 generator client {
-  provider = "prisma-client"
+  provider = "prisma-client-js"
   output   = "../app/generated/prisma"
 }
 
 datasource db {
-  provider = "postgresql"
+  provider = "mongodb"
+  url      = env("DATABASE_URL")
 }
 
 enum Role {
@@ -65,7 +66,7 @@ enum ConversationType {
 }
 
 model EmailVerification {
-  id        String   @id @default(cuid())
+  id        String   @id @default(cuid()) @map("_id")
   email     String
   codeHash  String
   purpose   String   @default("REGISTER")
@@ -78,13 +79,13 @@ model EmailVerification {
 }
 
 model User {
-  id            String     @id @default(cuid())
-  userCode      String?    @unique
-  name          String?
-  email         String     @unique
-  emailVerified DateTime?
-  image         String?
-  passwordHash  String?
+  id                      String     @id @default(cuid()) @map("_id")
+  userCode                  String?    @unique
+  name                      String?
+  email                     String     @unique
+  emailVerified             DateTime?
+  image                     String?
+  passwordHash              String?
   role                      Role       @default(STUDENT)
   status                    UserStatus @default(ACTIVE)
   allCoursesAccess          Boolean    @default(false)
@@ -95,39 +96,39 @@ model User {
   createdAt                 DateTime   @default(now())
   updatedAt                 DateTime   @updatedAt
 
-  accounts           Account[]
-  sessions           Session[]
-  instructorProfile  InstructorProfile?
-  courses            Course[]             @relation("CourseInstructor")
-  enrollments        Enrollment[]
-  payments           Payment[]
-  withdrawals        Withdrawal[]
-  reviews            Review[]
-  quizAttempts       QuizAttempt[]
-  lessonProgress     LessonProgress[]
-  announcements      Announcement[]       @relation("AnnouncementAuthor")
-  announcementReads  AnnouncementRead[]
-  reviewReplies      ReviewReply[]
-  auditLogs          AuditLog[]           @relation("AuditLogActor")
-  notifications      Notification[]
-  earningsLedger     EarningsLedger[]
-  conversationsAsStudent Conversation[] @relation("ConversationStudent")
-  conversationsAsOther   Conversation[] @relation("ConversationOther")
-  sentMessages           Message[]
+  accounts                 Account[]
+  sessions                 Session[]
+  instructorProfile        InstructorProfile?
+  courses                  Course[]             @relation("CourseInstructor")
+  enrollments              Enrollment[]
+  payments                 Payment[]
+  withdrawals              Withdrawal[]
+  reviews                  Review[]
+  quizAttempts             QuizAttempt[]
+  lessonProgress           LessonProgress[]
+  announcements            Announcement[]       @relation("AnnouncementAuthor")
+  announcementReads        AnnouncementRead[]
+  reviewReplies            ReviewReply[]
+  auditLogs                AuditLog[]           @relation("AuditLogActor")
+  notifications            Notification[]
+  earningsLedger           EarningsLedger[]
+  conversationsAsStudent   Conversation[]       @relation("ConversationStudent")
+  conversationsAsOther     Conversation[]       @relation("ConversationOther")
+  sentMessages             Message[]
 }
 
 model Account {
-  id                String  @id @default(cuid())
+  id                String  @id @default(cuid()) @map("_id")
   userId            String
   type              String
   provider          String
   providerAccountId String
-  refresh_token     String? @db.Text
-  access_token      String? @db.Text
+  refresh_token     String?
+  access_token      String?
   expires_at        Int?
   token_type        String?
   scope             String?
-  id_token          String? @db.Text
+  id_token          String?
   session_state     String?
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
@@ -136,7 +137,7 @@ model Account {
 }
 
 model Session {
-  id           String   @id @default(cuid())
+  id           String   @id @default(cuid()) @map("_id")
   sessionToken String   @unique
   userId       String
   expires      DateTime
@@ -144,6 +145,7 @@ model Session {
 }
 
 model VerificationToken {
+  id         String   @id @default(cuid()) @map("_id")
   identifier String
   token      String   @unique
   expires    DateTime
@@ -152,25 +154,25 @@ model VerificationToken {
 }
 
 model InstructorProfile {
-  id               String           @id @default(cuid())
-  userId           String           @unique
-  bio              String           @db.Text
-  expertise        String
-  experienceYears  Int
-  qualification    String
-  selfieUrl        String?
-  status           InstructorStatus @default(PENDING)
-  rejectionReason  String?
-  earningsFrozen   Boolean          @default(false)
-  balance          Decimal          @default(0) @db.Decimal(12, 2)
-  createdAt        DateTime         @default(now())
-  updatedAt        DateTime         @updatedAt
+  id              String           @id @default(cuid()) @map("_id")
+  userId          String           @unique
+  bio             String
+  expertise       String
+  experienceYears Int
+  qualification   String
+  selfieUrl       String?
+  status          InstructorStatus @default(PENDING)
+  rejectionReason String?
+  earningsFrozen  Boolean          @default(false)
+  balance         Float            @default(0)
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
 model Category {
-  id        String   @id @default(cuid())
+  id        String   @id @default(cuid()) @map("_id")
   name      String   @unique
   slug      String   @unique
   createdAt DateTime @default(now())
@@ -179,14 +181,14 @@ model Category {
 }
 
 model Course {
-  id              String       @id @default(cuid())
+  id              String       @id @default(cuid()) @map("_id")
   instructorId    String
   categoryId      String?
   title           String
   slug            String       @unique
-  description     String       @db.Text
+  description     String
   thumbnailUrl    String?
-  price           Decimal      @default(0) @db.Decimal(10, 2)
+  price           Float        @default(0)
   status          CourseStatus @default(DRAFT)
   rejectionReason String?
   featured        Boolean      @default(false)
@@ -208,7 +210,7 @@ model Course {
 }
 
 model Module {
-  id         String   @id @default(cuid())
+  id         String   @id @default(cuid()) @map("_id")
   courseId   String
   title      String
   orderIndex Int
@@ -222,30 +224,30 @@ model Module {
 }
 
 model Lesson {
-  id          String   @id @default(cuid())
+  id          String   @id @default(cuid()) @map("_id")
   moduleId    String
   title       String
-  content     String?  @db.Text
+  content     String?
   videoUrl    String?
   orderIndex  Int
   durationMin Int?
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
-  module     Module           @relation(fields: [moduleId], references: [id], onDelete: Cascade)
-  progress   LessonProgress[]
+  module   Module           @relation(fields: [moduleId], references: [id], onDelete: Cascade)
+  progress LessonProgress[]
 
   @@index([moduleId])
 }
 
 model Enrollment {
-  id               String   @id @default(cuid())
-  userId           String
-  courseId         String
-  progressPercent  Int      @default(0)
-  completedAt      DateTime?
-  createdAt        DateTime @default(now())
-  updatedAt        DateTime @updatedAt
+  id              String    @id @default(cuid()) @map("_id")
+  userId          String
+  courseId        String
+  progressPercent Int       @default(0)
+  completedAt     DateTime?
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
 
   user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
   course Course @relation(fields: [courseId], references: [id], onDelete: Cascade)
@@ -254,13 +256,13 @@ model Enrollment {
 }
 
 model LessonProgress {
-  id          String   @id @default(cuid())
+  id          String    @id @default(cuid()) @map("_id")
   userId      String
   lessonId    String
-  completed   Boolean  @default(false)
+  completed   Boolean   @default(false)
   completedAt DateTime?
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
 
   user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
   lesson Lesson @relation(fields: [lessonId], references: [id], onDelete: Cascade)
@@ -269,12 +271,12 @@ model LessonProgress {
 }
 
 model Payment {
-  id              String        @id @default(cuid())
+  id              String        @id @default(cuid()) @map("_id")
   userId          String
   courseId        String
-  amount          Decimal       @db.Decimal(10, 2)
-  instructorShare Decimal       @db.Decimal(10, 2)
-  platformShare   Decimal       @db.Decimal(10, 2)
+  amount          Float
+  instructorShare Float
+  platformShare   Float
   reference       String        @unique
   status          PaymentStatus @default(PENDING)
   createdAt       DateTime      @default(now())
@@ -288,14 +290,14 @@ model Payment {
 }
 
 model Withdrawal {
-  id          String           @id @default(cuid())
+  id           String           @id @default(cuid()) @map("_id")
   instructorId String
-  amount      Decimal          @db.Decimal(10, 2)
-  status      WithdrawalStatus @default(PENDING)
-  note        String?
-  adminNote   String?
-  createdAt   DateTime         @default(now())
-  updatedAt   DateTime         @updatedAt
+  amount       Float
+  status       WithdrawalStatus @default(PENDING)
+  note         String?
+  adminNote    String?
+  createdAt    DateTime         @default(now())
+  updatedAt    DateTime         @updatedAt
 
   instructor User @relation(fields: [instructorId], references: [id])
 
@@ -303,9 +305,9 @@ model Withdrawal {
 }
 
 model EarningsLedger {
-  id          String   @id @default(cuid())
+  id          String   @id @default(cuid()) @map("_id")
   userId      String
-  amount      Decimal  @db.Decimal(10, 2)
+  amount      Float
   type        String
   description String?
   referenceId String?
@@ -317,7 +319,7 @@ model EarningsLedger {
 }
 
 model Quiz {
-  id           String   @id @default(cuid())
+  id           String   @id @default(cuid()) @map("_id")
   courseId     String
   title        String
   durationMin  Int?
@@ -331,9 +333,9 @@ model Quiz {
 }
 
 model Question {
-  id            String       @id @default(cuid())
+  id            String       @id @default(cuid()) @map("_id")
   quizId        String
-  question      String       @db.Text
+  question      String
   options       Json?
   correctAnswer String
   type          QuestionType
@@ -346,13 +348,13 @@ model Question {
 }
 
 model QuizAttempt {
-  id        String   @id @default(cuid())
+  id        String    @id @default(cuid()) @map("_id")
   userId    String
   quizId    String
   score     Int
   passed    Boolean
   answers   Json
-  startedAt DateTime @default(now())
+  startedAt DateTime  @default(now())
   endedAt   DateTime?
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
@@ -362,11 +364,11 @@ model QuizAttempt {
 }
 
 model Review {
-  id        String    @id @default(cuid())
+  id        String    @id @default(cuid()) @map("_id")
   userId    String
   courseId  String
   rating    Int
-  comment   String    @db.Text
+  comment   String
   deletedAt DateTime?
   createdAt DateTime  @default(now())
   updatedAt DateTime  @updatedAt
@@ -380,10 +382,10 @@ model Review {
 }
 
 model ReviewReply {
-  id        String    @id @default(cuid())
+  id        String    @id @default(cuid()) @map("_id")
   reviewId  String
   authorId  String
-  body      String    @db.Text
+  body      String
   deletedAt DateTime?
   createdAt DateTime  @default(now())
   updatedAt DateTime  @updatedAt
@@ -395,10 +397,10 @@ model ReviewReply {
 }
 
 model Announcement {
-  id        String            @id @default(cuid())
+  id        String            @id @default(cuid()) @map("_id")
   authorId  String
   courseId  String?
-  message   String            @db.Text
+  message   String
   scope     AnnouncementScope
   createdAt DateTime          @default(now())
 
@@ -408,7 +410,7 @@ model Announcement {
 }
 
 model AnnouncementRead {
-  id             String   @id @default(cuid())
+  id             String   @id @default(cuid()) @map("_id")
   userId         String
   announcementId String
   readAt         DateTime @default(now())
@@ -421,12 +423,12 @@ model AnnouncementRead {
 }
 
 model AuditLog {
-  id          String   @id @default(cuid())
+  id          String   @id @default(cuid()) @map("_id")
   actorId     String
   action      String
   targetType  String
   targetId    String?
-  description String   @db.Text
+  description String
   createdAt   DateTime @default(now())
 
   actor User @relation("AuditLogActor", fields: [actorId], references: [id])
@@ -445,7 +447,7 @@ enum NotificationType {
 }
 
 model Notification {
-  id        String           @id @default(cuid())
+  id        String           @id @default(cuid()) @map("_id")
   userId    String
   type      NotificationType
   title     String
@@ -462,14 +464,14 @@ model Notification {
 }
 
 model SystemSetting {
-  id        String   @id @default(cuid())
+  id        String   @id @default(cuid()) @map("_id")
   key       String   @unique
   value     String
   updatedAt DateTime @updatedAt
 }
 
 model Conversation {
-  id        String           @id @default(cuid())
+  id        String           @id @default(cuid()) @map("_id")
   type      ConversationType
   studentId String
   otherId   String
@@ -479,7 +481,7 @@ model Conversation {
 
   student  User      @relation("ConversationStudent", fields: [studentId], references: [id], onDelete: Cascade)
   other    User      @relation("ConversationOther", fields: [otherId], references: [id], onDelete: Cascade)
-  course   Course?   @relation(fields: [courseId], references: [id], onDelete: SetNull)
+  course   Course?   @relation(fields: [courseId], references: [id], onDelete: NoAction, onUpdate: NoAction)
   messages Message[]
 
   @@unique([studentId, otherId, type])
@@ -489,10 +491,10 @@ model Conversation {
 }
 
 model Message {
-  id             String    @id @default(cuid())
+  id             String    @id @default(cuid()) @map("_id")
   conversationId String
   senderId       String
-  body           String    @db.Text
+  body           String
   deletedAt      DateTime?
   createdAt      DateTime  @default(now())
 

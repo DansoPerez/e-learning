@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
+import { auth } from "@/auth";
 import { Header } from "@/components/layout/header";
 import { ConditionalFooter } from "@/components/layout/conditional-footer";
 import { AuthProvider } from "@/components/providers/auth-provider";
@@ -27,18 +28,20 @@ export const metadata: Metadata = {
     "A secure e-learning marketplace connecting students and instructors.",
 };
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const session = await auth();
+
   return (
     <html lang="en" className={`${geistSans.variable} ${geistMono.variable} h-full light`} style={{ colorScheme: "light" }}>
       <body className="flex min-h-full flex-col antialiased">
-        <AuthProvider>
-          <Header />
+        <AuthProvider session={session}>
+          <Header initialSession={session} />
           <main className="flex-1">{children}</main>
-          <ConditionalFooter />
+          <ConditionalFooter initialSession={session} />
         </AuthProvider>
       </body>
     </html>

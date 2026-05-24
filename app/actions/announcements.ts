@@ -44,7 +44,6 @@ export async function markAllAnnouncementsReadAction(): Promise<void> {
 
   await prisma.announcementRead.createMany({
     data: unread.map((a) => ({ userId: user.id, announcementId: a.id })),
-    skipDuplicates: true,
   });
 
   revalidateDashboards(user.role);

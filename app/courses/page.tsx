@@ -1,8 +1,10 @@
+import Link from "next/link";
 import { prisma } from "@/lib/prisma";
+import { containsFilter } from "@/lib/prisma-search";
 import { CourseCard } from "@/components/courses/course-card";
 import { Button } from "@/components/ui/button";
 
-export const metadata = { title: "Courses" };
+export const metadata = { title: "Explore courses" };
 
 export default async function CoursesPage({
   searchParams,
@@ -10,11 +12,12 @@ export default async function CoursesPage({
   searchParams: Promise<{ q?: string; category?: string }>;
 }) {
   const { q, category } = await searchParams;
+  const titleFilter = q ? containsFilter(q) : undefined;
 
   const courses = await prisma.course.findMany({
     where: {
       status: "PUBLISHED",
-      ...(q ? { title: { contains: q, mode: "insensitive" } } : {}),
+      ...(titleFilter ? { title: titleFilter } : {}),
       ...(category ? { category: { slug: category } } : {}),
     },
     include: {
@@ -27,53 +30,125 @@ export default async function CoursesPage({
   const categories = await prisma.category.findMany({ orderBy: { name: "asc" } });
 
   return (
-    <div className="page-container py-10 sm:py-14">
-      <div className="mb-10">
-        <h1 className="text-4xl font-extrabold tracking-tight text-[var(--foreground)]">
-          Explore courses
-        </h1>
-        <p className="mt-2 text-lg text-[var(--foreground-muted)]">
-          Find your next skill on Bravio
-        </p>
+    <div className="min-h-screen bg-[var(--background)]">
+      <div className="border-b border-[var(--border)] bg-white py-8 sm:py-10">
+        <div className="page-container">
+          <h1 className="text-2xl font-bold tracking-tight text-[var(--foreground)] sm:text-3xl">
+            Explore courses
+          </h1>
+          <p className="mt-2 max-w-2xl text-[var(--foreground-muted)]">
+            Browse professional courses across categories. Filter by topic or search by title.
+          </p>
+        </div>
       </div>
 
-      <form className="surface-card mb-10 flex flex-wrap gap-3 p-4">
-        <input
-          name="q"
-          defaultValue={q}
-          placeholder="Search courses..."
-          className="input-field min-w-[200px] flex-1"
-        />
-        <select name="category" defaultValue={category ?? ""} className="input-field w-auto min-w-[160px]">
-          <option value="">All categories</option>
-          {categories.map((c) => (
-            <option key={c.id} value={c.slug}>
-              {c.name}
-            </option>
-          ))}
-        </select>
-        <Button type="submit">Search</Button>
-      </form>
+      <div className="page-container py-8 sm:py-10">
+        <div className="flex flex-col gap-8 lg:flex-row lg:gap-10">
+          <aside className="lg:w-64 lg:shrink-0">
+            <div className="surface-card-elevated sticky top-20 p-4 sm:p-5">
+              <h2 className="text-sm font-bold uppercase tracking-wide text-[var(--foreground)]">
+                Filter
+              </h2>
+              <form className="mt-4 space-y-4">
+                <div>
+                  <label htmlFor="q" className="mb-1.5 block text-xs font-semibold text-[var(--foreground-secondary)]">
+                    Search
+                  </label>
+                  <input
+                    id="q"
+                    name="q"
+                    defaultValue={q}
+                    placeholder="Course title..."
+                    className="input-field"
+                  />
+                </div>
+                <div>
+                  <label
+                    htmlFor="category"
+                    className="mb-1.5 block text-xs font-semibold text-[var(--foreground-secondary)]"
+                  >
+                    Category
+                  </label>
+                  <select
+                    id="category"
+                    name="category"
+                    defaultValue={category ?? ""}
+                    className="input-field"
+                  >
+                    <option value="">All categories</option>
+                    {categories.map((c) => (
+                      <option key={c.id} value={c.slug}>
+                        {c.name}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                <Button type="submit" className="w-full">
+                  Apply filters
+                </Button>
+                {(q || category) ?
+                  <Link
+                    href="/courses"
+                    className="block text-center text-sm font-semibold text-[var(--primary)] hover:underline"
+                  >
+                    Clear filters
+                  </Link>
+                : null}
+              </form>
 
-      {courses.length === 0 ?
-        <div className="surface-card py-16 text-center">
-          <p className="text-[var(--foreground-muted)]">No courses found. Try a different search.</p>
+              <div className="mt-6 hidden border-t border-[var(--border)] pt-4 lg:block">
+                <p className="text-xs font-semibold text-[var(--foreground-muted)]">Topics</p>
+                <ul className="mt-2 space-y-1">
+                  {categories.map((c) => (
+                    <li key={c.id}>
+                      <Link
+                        href={`/courses?category=${c.slug}`}
+                        className={`block rounded-md px-2 py-1.5 text-sm ${
+                          category === c.slug ?
+                            "bg-[var(--primary-light)] font-semibold text-[var(--primary)]"
+                          : "text-[var(--foreground-secondary)] hover:bg-[var(--background-subtle)]"
+                        }`}
+                      >
+                        {c.name}
+                      </Link>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            </div>
+          </aside>
+
+          <main className="min-w-0 flex-1">
+            <p className="mb-4 text-sm text-[var(--foreground-muted)]">
+              {courses.length} course{courses.length === 1 ? "" : "s"} found
+            </p>
+            {courses.length === 0 ?
+              <div className="surface-card py-16 text-center">
+                <p className="text-[var(--foreground-muted)]">
+                  No courses match your filters. Try another search or category.
+                </p>
+                <Link href="/courses" className="mt-4 inline-block">
+                  <Button variant="outline">View all courses</Button>
+                </Link>
+              </div>
+            : <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 sm:gap-5 xl:grid-cols-3">
+                {courses.map((c) => (
+                  <CourseCard
+                    key={c.id}
+                    slug={c.slug}
+                    title={c.title}
+                    description={c.description}
+                    price={Number(c.price)}
+                    category={c.category?.name}
+                    instructor={c.instructor.name}
+                    featured={c.featured}
+                  />
+                ))}
+              </div>
+            }
+          </main>
         </div>
-      : <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-          {courses.map((c) => (
-            <CourseCard
-              key={c.id}
-              slug={c.slug}
-              title={c.title}
-              description={c.description}
-              price={Number(c.price)}
-              category={c.category?.name}
-              instructor={c.instructor.name}
-              featured={c.featured}
-            />
-          ))}
-        </div>
-      }
+      </div>
     </div>
   );
 }
