@@ -67,19 +67,15 @@ export async function getEnrolledStudentsPresence(instructorId: string) {
 }
 
 export async function touchPresence(userId: string) {
-  try {
-    await prisma.user.update({
-      where: { id: userId },
-      data: { lastSeenAt: new Date() },
-    });
-  } catch (err) {
-    console.error("[presence] touchPresence failed:", err);
-  }
+  await prisma.user.updateMany({
+    where: { id: userId },
+    data: { lastSeenAt: new Date() },
+  });
 }
 
 /** Marks user offline immediately (e.g. sign-out or tab close) */
 export async function markOffline(userId: string) {
-  await prisma.user.update({
+  await prisma.user.updateMany({
     where: { id: userId },
     data: { lastSeenAt: new Date(Date.now() - ONLINE_WITHIN_MS - 1) },
   });

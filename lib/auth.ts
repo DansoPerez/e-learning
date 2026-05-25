@@ -1,4 +1,5 @@
-import { auth } from "@/auth";
+import { auth, signOut } from "@/auth";
+import { prisma } from "@/lib/prisma";
 import { Role, UserStatus } from "@/app/generated/prisma/client";
 import { redirect } from "next/navigation";
 import { DASHBOARD_ROUTES } from "@/lib/constants";
@@ -23,8 +24,34 @@ export async function getSessionUser(): Promise<SessionUser | null> {
 export async function requireAuth(): Promise<SessionUser> {
   const user = await getSessionUser();
   if (!user) redirect("/login");
-  if (user.status !== "ACTIVE") redirect("/login?error=suspended");
-  return user;
+
+  const dbUser = await prisma.user.findUnique({
+    where: { id: user.id },
+    select: {
+      id: true,
+      email: true,
+      name: true,
+      image: true,
+      role: true,
+      status: true,
+      userCode: true,
+      isSuperAdmin: true,
+      adminSensitiveApproved: true,
+    },
+  });
+
+  if (!dbUser) {
+    await signOut({ redirectTo: "/login?error=stale_session" });
+    redirect("/login?error=stale_session");
+  }
+
+  if (dbUser.status !== "ACTIVE") redirect("/login?error=suspended");
+
+  return {
+    ...user,
+    ...dbUser,
+    email: dbUser.email,
+  };
 }
 
 export async function requireRole(...roles: Role[]): Promise<SessionUser> {

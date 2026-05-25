@@ -25,6 +25,9 @@ export default function Error({
           message.includes("Invalid URL") ||
           message.includes("postgresql://") ?
           "Database URL is missing or wrong on Vercel. Set DATABASE_URL to your MongoDB Atlas connection string (mongodb://… with /bravio in the path), redeploy Production, and ensure the latest code is deployed (Prisma 6 + MongoDB)."
+        : message.includes("P2025") ||
+            message.includes("No record was found for an update") ?
+          "Your sign-in session is outdated after the database migration. Sign out, then sign in again with admin@bravio.app (or run npm run db:seed on production MongoDB first)."
         : message.includes("does not exist") ||
             message.includes("P2021") ||
             message.includes("Course") ||
