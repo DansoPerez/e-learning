@@ -120,7 +120,11 @@ In Vercel → **Settings** → **Environment Variables**, add:
 
 | Name | Value |
 |------|--------|
-| `DATABASE_URL` | Your `mongodb+srv://...` Atlas URI |
+| `DATABASE_URL` | Your Atlas **standard** `mongodb://…` URI (same as local `.env`; include `/bravio` before `?`) |
+
+**Important:** Do not paste a PostgreSQL/Supabase URL. If logs show `clientVersion: 7.8.0` or `ERR_INVALID_URL`, redeploy after pushing the latest GitHub code and update `DATABASE_URL`.
+
+Copy the value **without** wrapping it in extra quotes in the Vercel UI.
 | `AUTH_SECRET` | `openssl rand -base64 32` (generate locally) |
 | `NEXTAUTH_URL` | Set after first deploy (see step 10) |
 | `PAYSTACK_SECRET_KEY` | From Paystack dashboard |

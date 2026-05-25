@@ -20,8 +20,11 @@ export default function Error({
     <div className="page-container flex min-h-[50vh] flex-col items-center justify-center py-16 text-center">
       <h1 className="text-2xl font-bold text-[var(--foreground)]">Something went wrong</h1>
       <p className="mt-3 max-w-lg text-sm text-[var(--foreground-muted)]">
-        {message.includes("DATABASE_URL") ?
-          "Database is not configured. Add DATABASE_URL in Vercel → Settings → Environment Variables, then redeploy."
+        {message.includes("DATABASE_URL") ||
+          message.includes("ERR_INVALID_URL") ||
+          message.includes("Invalid URL") ||
+          message.includes("postgresql://") ?
+          "Database URL is missing or wrong on Vercel. Set DATABASE_URL to your MongoDB Atlas connection string (mongodb://… with /bravio in the path), redeploy Production, and ensure the latest code is deployed (Prisma 6 + MongoDB)."
         : message.includes("does not exist") ||
             message.includes("P2021") ||
             message.includes("Course") ||
