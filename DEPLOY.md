@@ -168,6 +168,7 @@ Also update:
 | Auth / login broken | Set `NEXTAUTH_URL` to exact production URL, redeploy |
 | `db push` fails | Confirm IP allowlist includes your PC; URI has database name |
 | DNS error `10051` / unreachable network | Replace `mongodb+srv://` with Atlas **Standard connection string** (`mongodb://` with shard hosts) |
+| `P2025` / no record for update on sign-in | Production DB empty or stale session cookie — run `db:seed` against Atlas, sign out, sign in again |
 | Search feels case-sensitive | MongoDB text search is case-sensitive (PostgreSQL `insensitive` mode removed) |
 | Old Postgres data | Export/import manually or re-seed; schemas are not auto-migrated |
 

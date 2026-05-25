@@ -38,8 +38,22 @@ function AuthShell({
   );
 }
 
-export function LoginForm() {
+const SESSION_ERRORS: Record<string, string> = {
+  stale_session:
+    "Your session was from the old database. Sign in again with your Bravio account (e.g. admin@bravio.app after seeding).",
+  suspended: "Your account is suspended. Contact support.",
+};
+
+export function LoginForm({
+  sessionError,
+  registered,
+}: {
+  sessionError?: string;
+  registered?: boolean;
+}) {
   const [state, action, pending] = useActionState(loginAction, initial);
+  const bannerError =
+    state?.error ?? (sessionError ? SESSION_ERRORS[sessionError] : undefined);
 
   return (
     <AuthShell title="Welcome back" subtitle="Pick up where you left off and keep learning.">
@@ -48,9 +62,14 @@ export function LoginForm() {
         <CardDescription>Access your Bravio account</CardDescription>
       </CardHeader>
       <form action={action} className="space-y-5">
-        {state?.error ?
+        {registered ?
+          <p className="rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-medium text-emerald-900">
+            Account created. Sign in to continue.
+          </p>
+        : null}
+        {bannerError ?
           <p className="rounded-xl border border-red-200 bg-[var(--danger-bg)] px-4 py-3 text-sm font-medium text-red-800">
-            {state.error}
+            {bannerError}
           </p>
         : null}
         <div className="space-y-2">
