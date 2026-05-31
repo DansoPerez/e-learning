@@ -21,9 +21,8 @@ export default async function AdminDashboardPage() {
   await requireRole("ADMIN");
   const session = await getSessionUser();
 
-  // Single connection via $transaction — avoids pool drops with Prisma Dev locally
   const [users, courses, revenue, pendingInstructors, pendingCourses, allAccessUsers] =
-    await prisma.$transaction([
+    await Promise.all([
       prisma.user.count(),
       prisma.course.count({ where: { status: "PUBLISHED" } }),
       prisma.payment.aggregate({

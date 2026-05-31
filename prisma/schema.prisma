@@ -63,6 +63,7 @@ enum AnnouncementScope {
 enum ConversationType {
   STUDENT_INSTRUCTOR
   STUDENT_ADMIN
+  INSTRUCTOR_ADMIN
 }
 
 model EmailVerification {
@@ -227,9 +228,10 @@ model Lesson {
   id          String   @id @default(cuid()) @map("_id")
   moduleId    String
   title       String
-  content     String?
-  videoUrl    String?
-  orderIndex  Int
+  content         String?
+  videoUrl        String?
+  pdfStorageKey   String?
+  orderIndex      Int
   durationMin Int?
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt

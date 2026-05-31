@@ -12,6 +12,7 @@ import { uniqueSlug } from "@/lib/utils";
 import { chargesForCourse } from "@/lib/course-pricing";
 import { enrollInFreeCourse } from "@/lib/services/enrollment";
 import { initiateCoursePayment } from "@/lib/services/payment";
+import { saveLessonPdf } from "@/lib/lesson-pdf-storage";
 import { redirect } from "next/navigation";
 import { requireApprovedInstructor } from "@/lib/instructor";
 
@@ -156,6 +157,19 @@ export async function addLessonAction(
   });
   if (!parsed.success) return;
 
+  let pdfStorageKey: string | null = null;
+  const pdfFile = formData.get("pdf");
+  if (pdfFile instanceof File && pdfFile.size > 0) {
+    if (pdfFile.type === "application/pdf") {
+      try {
+        const buffer = Buffer.from(await pdfFile.arrayBuffer());
+        pdfStorageKey = await saveLessonPdf(buffer);
+      } catch {
+        return;
+      }
+    }
+  }
+
   await prisma.lesson.create({
     data: {
       ...parsed.data,
@@ -163,6 +177,7 @@ export async function addLessonAction(
       videoUrl: parsed.data.videoUrl || null,
       content: parsed.data.content || null,
       durationMin: parsed.data.durationMin ?? null,
+      pdfStorageKey,
     },
   });
 

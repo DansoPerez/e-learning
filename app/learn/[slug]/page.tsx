@@ -4,6 +4,7 @@ import { prisma } from "@/lib/prisma";
 import { requireAuth } from "@/lib/auth";
 import { hasCourseAccess } from "@/lib/services/enrollment";
 import { markLessonCompleteAction } from "@/app/actions/learning";
+import { LessonPdfViewer, LessonVideo } from "@/components/lessons/lesson-media";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 
@@ -101,14 +102,10 @@ export default async function LearnPage({
           <>
             <h1 className="text-2xl font-extrabold text-[var(--foreground)]">{activeLesson.title}</h1>
             {activeLesson.videoUrl ?
-              <div className="mt-6 aspect-video overflow-hidden rounded-xl bg-slate-900 shadow-lg">
-                <video
-                  src={activeLesson.videoUrl}
-                  controls
-                  controlsList="nodownload"
-                  className="h-full w-full"
-                />
-              </div>
+              <LessonVideo url={activeLesson.videoUrl} />
+            : null}
+            {activeLesson.pdfStorageKey ?
+              <LessonPdfViewer lessonId={activeLesson.id} title={activeLesson.title} />
             : null}
             {activeLesson.content ?
               <div className="mt-6 whitespace-pre-wrap text-base leading-relaxed text-[var(--foreground-secondary)]">

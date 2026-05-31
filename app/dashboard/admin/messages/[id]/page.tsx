@@ -35,7 +35,15 @@ export default async function AdminConversationPage({
 
   if (!conversation) notFound();
 
-  const canReply = conversation.type === "STUDENT_ADMIN";
+  const canReply =
+    conversation.type === "STUDENT_ADMIN" || conversation.type === "INSTRUCTOR_ADMIN";
+
+  const badgeLabel =
+    conversation.type === "STUDENT_ADMIN" ?
+      "Student ↔ Admin"
+    : conversation.type === "INSTRUCTOR_ADMIN" ?
+      "Instructor ↔ Admin"
+    : "Student ↔ Instructor";
 
   return (
     <DashboardWrapper role="ADMIN" title={canReply ? "Support conversation" : "Conversation"}>
@@ -49,12 +57,22 @@ export default async function AdminConversationPage({
 
       <div className="surface-card mb-4 p-4">
         <p className="font-bold">
-          {conversation.student.name ?? conversation.student.email}
+          {conversation.type === "INSTRUCTOR_ADMIN" ?
+            `${conversation.student.name ?? conversation.student.email} (instructor)`
+          : conversation.student.name ?? conversation.student.email}
           <span className="font-normal text-[var(--foreground-muted)]"> ↔ </span>
-          {conversation.other.name ?? "User"}
+          {conversation.type === "INSTRUCTOR_ADMIN" ?
+            conversation.other.name ?? "Admin"
+          : conversation.other.name ?? "User"}
         </p>
-        <Badge variant={conversation.type === "STUDENT_ADMIN" ? "info" : "warning"}>
-          {conversation.type === "STUDENT_ADMIN" ? "Student ↔ Admin" : "Student ↔ Instructor"}
+        <Badge
+          variant={
+            conversation.type === "STUDENT_ADMIN" ? "info"
+            : conversation.type === "INSTRUCTOR_ADMIN" ? "success"
+            : "warning"
+          }
+        >
+          {badgeLabel}
         </Badge>
         {conversation.course ?
           <p className="mt-1 text-sm text-[var(--foreground-muted)]">

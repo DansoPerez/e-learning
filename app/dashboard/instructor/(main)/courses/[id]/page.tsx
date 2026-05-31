@@ -1,7 +1,7 @@
+import Link from "next/link";
 import { notFound } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { requireRole } from "@/lib/auth";
-import Link from "next/link";
 import { InstructorDashboardWrapper } from "@/components/layout/instructor-dashboard-wrapper";
 import {
   addLessonAction,
@@ -61,9 +61,23 @@ export default async function InstructorCourseEditPage({
 
       <section className="mb-10 rounded-xl border bg-white p-6">
         <h2 className="mb-4 font-semibold">Add module</h2>
-        <form action={addModuleAction.bind(null, course.id)} className="flex flex-wrap gap-3">
-          <Input name="title" placeholder="Module title" required className="max-w-xs" />
-          <Input name="orderIndex" type="number" defaultValue={course.modules.length} className="w-24" />
+        <form action={addModuleAction.bind(null, course.id)} className="flex flex-wrap items-end gap-3">
+          <div className="space-y-1.5">
+            <Label htmlFor="module-title">Module title</Label>
+            <Input id="module-title" name="title" placeholder="Module title" required className="max-w-xs" />
+          </div>
+          <div className="space-y-1.5">
+            <Label htmlFor="module-order">Order</Label>
+            <Input
+              id="module-order"
+              name="orderIndex"
+              type="number"
+              min={0}
+              step={1}
+              defaultValue={course.modules.length}
+              className="w-24"
+            />
+          </div>
           <Button type="submit">Add module</Button>
         </form>
       </section>
@@ -75,18 +89,69 @@ export default async function InstructorCourseEditPage({
             {mod.lessons.map((l) => (
               <li key={l.id}>
                 {l.title}
-                {l.videoUrl ? " (video)" : ""}
+                {l.videoUrl ? " · video" : ""}
+                {l.pdfStorageKey ? " · PDF" : ""}
               </li>
             ))}
           </ul>
           <form
             action={addLessonAction.bind(null, course.id, mod.id)}
+            encType="multipart/form-data"
             className="mt-4 grid gap-3 sm:grid-cols-2"
           >
-            <Input name="title" placeholder="Lesson title" required />
-            <Input name="orderIndex" type="number" defaultValue={mod.lessons.length} />
-            <Input name="videoUrl" placeholder="Cloudinary video URL" className="sm:col-span-2" />
-            <Textarea name="content" placeholder="Text content" className="sm:col-span-2" rows={3} />
+            <div className="space-y-1.5 sm:col-span-2">
+              <Label htmlFor={`lesson-title-${mod.id}`}>Lesson title</Label>
+              <Input id={`lesson-title-${mod.id}`} name="title" placeholder="Lesson title" required />
+            </div>
+            <div className="space-y-1.5">
+              <Label htmlFor={`lesson-order-${mod.id}`}>Order</Label>
+              <Input
+                id={`lesson-order-${mod.id}`}
+                name="orderIndex"
+                type="number"
+                min={0}
+                step={1}
+                defaultValue={mod.lessons.length}
+              />
+            </div>
+            <div className="space-y-1.5">
+              <Label htmlFor={`lesson-duration-${mod.id}`}>Duration (min)</Label>
+              <Input
+                id={`lesson-duration-${mod.id}`}
+                name="durationMin"
+                type="number"
+                min={0}
+                step={1}
+                placeholder="Optional"
+              />
+            </div>
+            <div className="space-y-1.5 sm:col-span-2">
+              <Label htmlFor={`lesson-video-${mod.id}`}>Video link</Label>
+              <Input
+                id={`lesson-video-${mod.id}`}
+                name="videoUrl"
+                placeholder="YouTube, Vimeo, Cloudinary, or direct .mp4 URL"
+              />
+            </div>
+            <div className="space-y-1.5 sm:col-span-2">
+              <Label htmlFor={`lesson-pdf-${mod.id}`}>PDF material (view-only for students)</Label>
+              <Input
+                id={`lesson-pdf-${mod.id}`}
+                name="pdf"
+                type="file"
+                accept="application/pdf"
+              />
+              <p className="text-xs text-[var(--foreground-muted)]">Max 20MB. Students can read in-browser but not download.</p>
+            </div>
+            <div className="space-y-1.5 sm:col-span-2">
+              <Label htmlFor={`lesson-content-${mod.id}`}>Text content</Label>
+              <Textarea
+                id={`lesson-content-${mod.id}`}
+                name="content"
+                placeholder="Optional written content"
+                rows={3}
+              />
+            </div>
             <Button type="submit" className="sm:col-span-2 w-fit">
               Add lesson
             </Button>
@@ -122,9 +187,23 @@ export default async function InstructorCourseEditPage({
             </div>
           </div>
         ))}
-        <form action={createQuizAction.bind(null, course.id)} className="mt-4 flex flex-wrap gap-3">
-          <Input name="title" placeholder="Quiz title" required />
-          <Input name="durationMin" type="number" placeholder="Minutes" className="w-28" />
+        <form action={createQuizAction.bind(null, course.id)} className="mt-4 flex flex-wrap items-end gap-3">
+          <div className="space-y-1.5">
+            <Label htmlFor="quiz-title">Quiz title</Label>
+            <Input id="quiz-title" name="title" placeholder="Quiz title" required />
+          </div>
+          <div className="space-y-1.5">
+            <Label htmlFor="quiz-duration">Time limit (min)</Label>
+            <Input
+              id="quiz-duration"
+              name="durationMin"
+              type="number"
+              min={0}
+              step={1}
+              placeholder="Optional"
+              className="w-28"
+            />
+          </div>
           <Button type="submit">Add quiz</Button>
         </form>
         {course.quizzes.length === 0 ?

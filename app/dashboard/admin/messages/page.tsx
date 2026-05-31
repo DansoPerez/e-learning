@@ -22,7 +22,7 @@ export default async function AdminMessagesPage() {
   return (
     <DashboardWrapper role="ADMIN" title="All conversations">
       <p className="mb-6 text-sm text-[var(--foreground-muted)]">
-        View private chats between students and instructors, and student support requests.
+        Student–instructor chats, student support requests, and instructor support or reports.
       </p>
 
       {conversations.length === 0 ?
@@ -33,7 +33,19 @@ export default async function AdminMessagesPage() {
             const peerLabel =
               c.type === "STUDENT_ADMIN" ?
                 `${c.other.name ?? "Admin"} (support)`
+              : c.type === "INSTRUCTOR_ADMIN" ?
+                `${c.other.name ?? "Admin"}`
               : `${c.other.name ?? "Instructor"} (instructor)`;
+            const titleLine =
+              c.type === "INSTRUCTOR_ADMIN" ?
+                `${c.student.name ?? "Instructor"} ↔ ${c.other.name ?? "Admin"}`
+              : `${c.student.name ?? c.student.email} ↔ ${peerLabel}`;
+            const badgeLabel =
+              c.type === "STUDENT_ADMIN" ?
+                "Student ↔ Admin"
+              : c.type === "INSTRUCTOR_ADMIN" ?
+                "Instructor ↔ Admin"
+              : "Student ↔ Instructor";
             return (
               <li key={c.id}>
                 <Link
@@ -41,16 +53,16 @@ export default async function AdminMessagesPage() {
                   className="surface-card flex flex-wrap items-center justify-between gap-3 p-4 transition-colors hover:border-indigo-200"
                 >
                   <div>
-                    <p className="font-semibold">
-                      {c.student.name ?? c.student.email}
-                      <span className="font-normal text-[var(--foreground-muted)]"> ↔ </span>
-                      {peerLabel}
-                    </p>
+                    <p className="font-semibold">{titleLine}</p>
                     <Badge
-                      variant={c.type === "STUDENT_ADMIN" ? "info" : "warning"}
+                      variant={
+                        c.type === "STUDENT_ADMIN" ? "info"
+                        : c.type === "INSTRUCTOR_ADMIN" ? "success"
+                        : "warning"
+                      }
                       className="mt-1"
                     >
-                      {c.type === "STUDENT_ADMIN" ? "Student ↔ Admin" : "Student ↔ Instructor"}
+                      {badgeLabel}
                     </Badge>
                     {c.course ?
                       <p className="mt-1 text-xs text-[var(--foreground-muted)]">

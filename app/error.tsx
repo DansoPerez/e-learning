@@ -28,11 +28,13 @@ export default function Error({
         : message.includes("P2025") ||
             message.includes("No record was found for an update") ?
           "Your sign-in session is outdated after the database migration. Sign out, then sign in again with admin@bravio.app (or run npm run db:seed on production MongoDB first)."
+        : message.includes("Transactions are not supported") ?
+          "Local MongoDB must be running and the schema must be pushed. Run: npm run db:push && npm run db:seed"
         : message.includes("does not exist") ||
             message.includes("P2021") ||
             message.includes("Course") ||
             message.includes("findMany") ?
-          "Your MongoDB database has no collections yet. Run npx prisma db push (see DEPLOY.md), then redeploy Vercel."
+          "Your MongoDB database has no collections yet. Run npm run db:push, then npm run db:seed."
         : message.includes("Connection terminated") ||
             message.includes("Can't reach database") ||
             message.includes("P1001") ?

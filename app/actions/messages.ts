@@ -47,19 +47,17 @@ export async function sendMessageAction(
 
   const body = parsed.data.body.trim();
 
-  await prisma.$transaction([
-    prisma.message.create({
-      data: {
-        conversationId,
-        senderId: user.id,
-        body,
-      },
-    }),
-    prisma.conversation.update({
-      where: { id: conversationId },
-      data: { updatedAt: new Date() },
-    }),
-  ]);
+  await prisma.message.create({
+    data: {
+      conversationId,
+      senderId: user.id,
+      body,
+    },
+  });
+  await prisma.conversation.update({
+    where: { id: conversationId },
+    data: { updatedAt: new Date() },
+  });
 
   await notifyConversationParticipants(conversationId, user.id, body);
   await logAudit({
@@ -132,6 +130,32 @@ export async function startSupportChatAction(): Promise<void> {
   });
 
   redirect(`/dashboard/student/messages/${conversation.id}`);
+}
+
+export async function startInstructorSupportChatAction(): Promise<void> {
+  const user = await requireRole("INSTRUCTOR");
+  const adminId = await getSupportAdminId();
+  if (!adminId) {
+    redirect("/dashboard/instructor/messages?error=no-admin");
+  }
+
+  const conversation = await prisma.conversation.upsert({
+    where: {
+      studentId_otherId_type: {
+        studentId: user.id,
+        otherId: adminId,
+        type: "INSTRUCTOR_ADMIN",
+      },
+    },
+    create: {
+      type: "INSTRUCTOR_ADMIN",
+      studentId: user.id,
+      otherId: adminId,
+    },
+    update: { updatedAt: new Date() },
+  });
+
+  redirect(`/dashboard/instructor/messages/${conversation.id}`);
 }
 
 export async function deleteMessageAction(messageId: string): Promise<{ error?: string }> {

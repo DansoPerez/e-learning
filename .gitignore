@@ -44,3 +44,6 @@ next-env.d.ts
 
 # instructor verification uploads
 /public/uploads/selfies/
+
+# private lesson PDFs (served via authenticated API)
+/storage/lesson-pdfs/
