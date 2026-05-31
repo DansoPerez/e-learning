@@ -7,7 +7,7 @@ import { enrollCourseAction } from "@/app/actions/courses";
 import { CourseReviews } from "@/components/courses/course-reviews";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { formatCurrency } from "@/lib/utils";
+import { studentEnrollLabel, studentPriceLabel } from "@/lib/course-pricing";
 import { BookOpen, CheckCircle2 } from "lucide-react";
 
 export default async function CourseDetailPage({
@@ -51,7 +51,7 @@ export default async function CourseDetailPage({
   }
 
   const enrolled = user ? await hasCourseAccess(user.id, course.id) : false;
-  const price = Number(course.price);
+  const storedPrice = Number(course.price);
   const isInstructorOwner = user?.id === course.instructorId;
   const isAdmin = user?.role === "ADMIN";
   const canReview = !!user && enrolled && user.role === "STUDENT";
@@ -65,7 +65,7 @@ export default async function CourseDetailPage({
   const enrollBox = (
     <div className="surface-card-elevated p-5 sm:p-6">
       <p className="text-2xl font-bold text-[var(--foreground)]">
-        {price > 0 ? formatCurrency(price) : "Free"}
+        {studentPriceLabel(storedPrice)}
       </p>
       <ul className="mt-4 space-y-2 text-sm text-[var(--foreground-secondary)]">
         <li className="flex items-center gap-2">
@@ -91,7 +91,7 @@ export default async function CourseDetailPage({
         : user && user.role === "STUDENT" ?
           <form action={enrollCourseAction.bind(null, course.id)}>
             <Button type="submit" className="w-full" size="lg">
-              {price > 0 ? "Enroll now" : "Enroll for free"}
+              {studentEnrollLabel(storedPrice)}
             </Button>
           </form>
         : user ?

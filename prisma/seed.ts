@@ -8,7 +8,6 @@ import { COURSE_CATEGORIES } from "../lib/constants";
 type SeedCourse = {
   title: string;
   description: string;
-  price: number;
   featured?: boolean;
 };
 
@@ -18,20 +17,17 @@ const COURSE_CATALOG: Record<(typeof COURSE_CATEGORIES)[number], SeedCourse[]> =
       title: "Intro to Web Development",
       description:
         "Learn HTML, CSS, JavaScript, and modern full-stack fundamentals. Perfect for university students and IT beginners.",
-      price: 0,
       featured: true,
     },
     {
       title: "Python Programming Fundamentals",
       description:
         "Write clean Python from scratch — variables, functions, OOP, file I/O, and practical scripts for automation.",
-      price: 49,
     },
     {
       title: "React & Next.js for Production",
       description:
         "Build fast, SEO-friendly apps with React 19 and Next.js — routing, server components, forms, and deployment.",
-      price: 79,
       featured: true,
     },
   ],
@@ -40,20 +36,17 @@ const COURSE_CATALOG: Record<(typeof COURSE_CATEGORIES)[number], SeedCourse[]> =
       title: "UI/UX Design Essentials",
       description:
         "Research, wireframes, prototypes, and usability testing — design interfaces users actually enjoy.",
-      price: 59,
       featured: true,
     },
     {
       title: "Figma for Product Teams",
       description:
         "Master components, auto-layout, design systems, and handoff workflows for real product work.",
-      price: 39,
     },
     {
       title: "Visual Design with Typography & Color",
       description:
         "Hierarchy, grids, contrast, and brand-consistent palettes for web and mobile interfaces.",
-      price: 45,
     },
   ],
   Business: [
@@ -61,20 +54,17 @@ const COURSE_CATALOG: Record<(typeof COURSE_CATEGORIES)[number], SeedCourse[]> =
       title: "Entrepreneurship Basics",
       description:
         "Validate ideas, model revenue, pitch investors, and launch a lean startup with measurable milestones.",
-      price: 0,
       featured: true,
     },
     {
       title: "Business Strategy & Planning",
       description:
         "SWOT, competitive analysis, OKRs, and execution plans for small teams and growing companies.",
-      price: 69,
     },
     {
       title: "Finance for Non-Finance Founders",
       description:
         "Read financial statements, manage cash flow, price products, and make data-informed decisions.",
-      price: 55,
     },
   ],
   Marketing: [
@@ -82,20 +72,17 @@ const COURSE_CATALOG: Record<(typeof COURSE_CATEGORIES)[number], SeedCourse[]> =
       title: "Digital Marketing Fundamentals",
       description:
         "SEO basics, content marketing, email funnels, and analytics — grow an audience without wasted spend.",
-      price: 49,
       featured: true,
     },
     {
       title: "Social Media Marketing",
       description:
         "Platform strategy, content calendars, community management, and paid social campaign basics.",
-      price: 42,
     },
     {
       title: "Copywriting That Converts",
       description:
         "Headlines, landing pages, CTAs, and email sequences that turn visitors into customers.",
-      price: 38,
     },
   ],
   "Data Science": [
@@ -103,20 +90,17 @@ const COURSE_CATALOG: Record<(typeof COURSE_CATEGORIES)[number], SeedCourse[]> =
       title: "Data Analysis with Python & Pandas",
       description:
         "Clean datasets, explore trends, and visualize insights with pandas, NumPy, and matplotlib.",
-      price: 59,
       featured: true,
     },
     {
       title: "SQL for Analytics",
       description:
         "Query relational databases, joins, aggregations, and reporting queries for business intelligence.",
-      price: 45,
     },
     {
       title: "Introduction to Machine Learning",
       description:
         "Supervised learning, train/test splits, regression, classification, and model evaluation basics.",
-      price: 89,
     },
   ],
   "Personal Development": [
@@ -124,20 +108,17 @@ const COURSE_CATALOG: Record<(typeof COURSE_CATEGORIES)[number], SeedCourse[]> =
       title: "Productivity & Time Management",
       description:
         "Prioritization frameworks, deep work habits, and tools to finish projects without burnout.",
-      price: 0,
     },
     {
       title: "Public Speaking & Presentation Skills",
       description:
         "Structure talks, manage nerves, use slides effectively, and engage live or virtual audiences.",
-      price: 35,
       featured: true,
     },
     {
       title: "Career Planning & Interview Prep",
       description:
         "Résumés, portfolios, behavioral interviews, and negotiation for your next role.",
-      price: 29,
     },
   ],
   Academics: [
@@ -145,20 +126,17 @@ const COURSE_CATALOG: Record<(typeof COURSE_CATEGORIES)[number], SeedCourse[]> =
       title: "Academic Writing & Research Methods",
       description:
         "Thesis structure, citations, literature reviews, and ethical research practices for students.",
-      price: 39,
     },
     {
       title: "Statistics for University Students",
       description:
         "Probability, distributions, hypothesis testing, and interpreting results in coursework and labs.",
-      price: 49,
       featured: true,
     },
     {
       title: "Critical Thinking & Study Skills",
       description:
         "Note-taking, exam preparation, argument analysis, and learning strategies that stick.",
-      price: 0,
     },
   ],
   Other: [
@@ -166,19 +144,16 @@ const COURSE_CATALOG: Record<(typeof COURSE_CATEGORIES)[number], SeedCourse[]> =
       title: "Introduction to Cybersecurity",
       description:
         "Threat models, passwords, phishing awareness, and safe browsing for everyday digital life.",
-      price: 0,
     },
     {
       title: "Project Management Essentials",
       description:
         "Scopes, timelines, risk registers, and agile vs waterfall — deliver projects on time.",
-      price: 52,
     },
     {
       title: "Freelancing & Remote Work",
       description:
         "Find clients, write proposals, manage contracts, and build a sustainable solo practice.",
-      price: 44,
       featured: true,
     },
   ],
@@ -452,7 +427,6 @@ async function main() {
         update: {
           title: item.title,
           description: item.description,
-          price: item.price,
           status: "PUBLISHED",
           featured: item.featured ?? false,
           categoryId,
@@ -463,7 +437,7 @@ async function main() {
           title: item.title,
           slug,
           description: item.description,
-          price: item.price,
+          price: 0,
           status: "PUBLISHED",
           featured: item.featured ?? false,
         },
