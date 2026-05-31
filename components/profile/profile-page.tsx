@@ -2,19 +2,19 @@ import { prisma } from "@/lib/prisma";
 import { requireAuth } from "@/lib/auth";
 import { DashboardWrapper } from "@/components/layout/dashboard-wrapper";
 import { UserProfilePanel } from "@/components/profile/user-profile-panel";
-import { getInstructorNavItems } from "@/lib/instructor-nav";
+import { getInstructorNavSections } from "@/lib/instructor-nav";
 import type { Role } from "@/app/generated/prisma/client";
 
 export async function ProfilePage({ role }: { role: Role }) {
   const session = await requireAuth();
 
-  let navItems;
+  let navSections;
   if (role === "INSTRUCTOR") {
     const profile = await prisma.instructorProfile.findUnique({
       where: { userId: session.id },
       select: { status: true },
     });
-    navItems = getInstructorNavItems(
+    navSections = getInstructorNavSections(
       profile?.status,
       session.role === "ADMIN",
     );
@@ -39,7 +39,7 @@ export async function ProfilePage({ role }: { role: Role }) {
   if (!user) return null;
 
   return (
-    <DashboardWrapper role={role} title="Profile" navItems={navItems}>
+    <DashboardWrapper role={role} title="Profile" navSections={navSections}>
       <UserProfilePanel
         user={{
           name: user.name,

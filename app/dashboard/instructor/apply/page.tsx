@@ -2,7 +2,7 @@
 
 import { useActionState, useState } from "react";
 import { applyInstructorAction } from "@/app/actions/instructor";
-import { getInstructorNavItems } from "@/lib/instructor-nav";
+import { getInstructorNavSections } from "@/lib/instructor-nav";
 import { DashboardWrapper } from "@/components/layout/dashboard-wrapper";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -18,7 +18,7 @@ export default function InstructorApplyPage() {
     <DashboardWrapper
       role="INSTRUCTOR"
       title="Instructor application"
-      navItems={getInstructorNavItems("PENDING", false)}
+      navSections={getInstructorNavSections("PENDING", false)}
     >
       <form action={action} className="max-w-xl space-y-4 surface-card p-6">
         {state.error ?
