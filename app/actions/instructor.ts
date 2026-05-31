@@ -80,19 +80,17 @@ export async function requestWithdrawalAction(
     return { error: "Insufficient balance" };
   }
 
-  await prisma.$transaction([
-    prisma.withdrawal.create({
-      data: {
-        instructorId: user.id,
-        amount: parsed.data.amount,
-        note: parsed.data.note,
-      },
-    }),
-    prisma.instructorProfile.update({
-      where: { userId: user.id },
-      data: { balance: { decrement: parsed.data.amount } },
-    }),
-  ]);
+  await prisma.withdrawal.create({
+    data: {
+      instructorId: user.id,
+      amount: parsed.data.amount,
+      note: parsed.data.note,
+    },
+  });
+  await prisma.instructorProfile.update({
+    where: { userId: user.id },
+    data: { balance: { decrement: parsed.data.amount } },
+  });
 
   revalidatePath("/dashboard/instructor/withdrawals");
   return { success: true };

@@ -37,7 +37,7 @@ export default async function HomePage() {
   const session = await auth();
   const isAuthenticated = !!session?.user?.id;
   const [featured, latest, publishedCount, categoryCount, enrollmentCount] =
-    await prisma.$transaction([
+    await Promise.all([
     prisma.course.findMany({
       where: { status: "PUBLISHED", featured: true },
       take: 4,

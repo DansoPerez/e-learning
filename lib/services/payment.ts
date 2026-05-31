@@ -67,46 +67,44 @@ export async function completePayment(reference: string) {
 
   if (!payment || payment.status === "SUCCESS") return payment;
 
-  await prisma.$transaction(async (tx) => {
-    await tx.payment.update({
-      where: { id: payment.id },
-      data: { status: "SUCCESS" },
-    });
+  await prisma.payment.update({
+    where: { id: payment.id },
+    data: { status: "SUCCESS" },
+  });
 
-    await tx.enrollment.upsert({
-      where: {
-        userId_courseId: {
-          userId: payment.userId,
-          courseId: payment.courseId,
-        },
-      },
-      create: {
+  await prisma.enrollment.upsert({
+    where: {
+      userId_courseId: {
         userId: payment.userId,
         courseId: payment.courseId,
       },
-      update: {},
-    });
+    },
+    create: {
+      userId: payment.userId,
+      courseId: payment.courseId,
+    },
+    update: {},
+  });
 
-    const instructorShare = Number(payment.instructorShare);
-    const profile = await tx.instructorProfile.findUnique({
+  const instructorShare = Number(payment.instructorShare);
+  const profile = await prisma.instructorProfile.findUnique({
+    where: { userId: payment.course.instructorId },
+  });
+  if (profile) {
+    await prisma.instructorProfile.update({
       where: { userId: payment.course.instructorId },
+      data: { balance: { increment: instructorShare } },
     });
-    if (profile) {
-      await tx.instructorProfile.update({
-        where: { userId: payment.course.instructorId },
-        data: { balance: { increment: instructorShare } },
-      });
-    }
+  }
 
-    await tx.earningsLedger.create({
-      data: {
-        userId: payment.course.instructorId,
-        amount: instructorShare,
-        type: "SALE",
-        description: `Sale for course: ${payment.course.title}`,
-        referenceId: payment.id,
-      },
-    });
+  await prisma.earningsLedger.create({
+    data: {
+      userId: payment.course.instructorId,
+      amount: instructorShare,
+      type: "SALE",
+      description: `Sale for course: ${payment.course.title}`,
+      referenceId: payment.id,
+    },
   });
 
   return prisma.payment.findUnique({ where: { reference } });

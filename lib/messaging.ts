@@ -25,7 +25,12 @@ export function canSendInConversation(
   role: Role,
   conversation: { studentId: string; otherId: string; type: string },
 ): boolean {
-  if (role === "ADMIN" && conversation.type === "STUDENT_ADMIN") return true;
+  if (
+    role === "ADMIN" &&
+    (conversation.type === "STUDENT_ADMIN" || conversation.type === "INSTRUCTOR_ADMIN")
+  ) {
+    return true;
+  }
   if (conversation.studentId === userId || conversation.otherId === userId) return true;
   return false;
 }

@@ -103,6 +103,10 @@ const INSTRUCTOR_PENDING_SECTIONS: NavSection[] = [
       { href: "/dashboard/instructor/apply", label: "Submit application" },
     ],
   },
+  {
+    label: "Support",
+    items: [{ href: "/dashboard/instructor/messages", label: "Contact admin" }],
+  },
 ];
 
 const ADMIN_SECTIONS: NavSection[] = [

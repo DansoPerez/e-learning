@@ -486,16 +486,14 @@ async function processWithdrawalAction(
   if (!withdrawal) return;
 
   if (action === "REJECT" && withdrawal.status === "PENDING") {
-    await prisma.$transaction([
-      prisma.withdrawal.update({
-        where: { id: withdrawalId },
-        data: { status: "REJECTED", adminNote },
-      }),
-      prisma.instructorProfile.update({
-        where: { userId: withdrawal.instructorId },
-        data: { balance: { increment: withdrawal.amount } },
-      }),
-    ]);
+    await prisma.withdrawal.update({
+      where: { id: withdrawalId },
+      data: { status: "REJECTED", adminNote },
+    });
+    await prisma.instructorProfile.update({
+      where: { userId: withdrawal.instructorId },
+      data: { balance: { increment: withdrawal.amount } },
+    });
   } else if (action === "APPROVE") {
     await prisma.withdrawal.update({
       where: { id: withdrawalId },
@@ -598,15 +596,13 @@ export async function deleteUserAction(userId: string): Promise<void> {
     }
   }
 
-  await prisma.$transaction(async (tx) => {
-    await tx.course.deleteMany({ where: { instructorId: userId } });
-    await tx.payment.deleteMany({ where: { userId } });
-    await tx.withdrawal.deleteMany({ where: { instructorId: userId } });
-    await tx.earningsLedger.deleteMany({ where: { userId } });
-    await tx.announcement.deleteMany({ where: { authorId: userId } });
-    await tx.auditLog.deleteMany({ where: { actorId: userId } });
-    await tx.user.delete({ where: { id: userId } });
-  });
+  await prisma.course.deleteMany({ where: { instructorId: userId } });
+  await prisma.payment.deleteMany({ where: { userId } });
+  await prisma.withdrawal.deleteMany({ where: { instructorId: userId } });
+  await prisma.earningsLedger.deleteMany({ where: { userId } });
+  await prisma.announcement.deleteMany({ where: { authorId: userId } });
+  await prisma.auditLog.deleteMany({ where: { actorId: userId } });
+  await prisma.user.delete({ where: { id: userId } });
 
   await logAudit({
     actorId: admin.id,

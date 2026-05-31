@@ -1,4 +1,6 @@
 import { z } from "zod";
+import { isValidVideoUrl } from "@/lib/video-embed";
+import { optionalNonNegativeInt, requiredNonNegativeInt } from "@/lib/validations/numbers";
 
 export const courseSchema = z.object({
   title: z.string().min(3, "Title must be at least 3 characters"),
@@ -10,15 +12,21 @@ export const courseSchema = z.object({
 
 export const moduleSchema = z.object({
   title: z.string().min(2, "Module title is required"),
-  orderIndex: z.coerce.number().int().min(0),
+  orderIndex: requiredNonNegativeInt,
 });
 
 export const lessonSchema = z.object({
   title: z.string().min(2, "Lesson title is required"),
   content: z.string().optional(),
-  videoUrl: z.string().url().optional().or(z.literal("")),
-  orderIndex: z.coerce.number().int().min(0),
-  durationMin: z.coerce.number().int().min(0).optional(),
+  videoUrl: z
+    .string()
+    .optional()
+    .or(z.literal(""))
+    .refine((val) => !val || isValidVideoUrl(val), {
+      message: "Enter a valid YouTube, Vimeo, Cloudinary, or direct video (.mp4) URL",
+    }),
+  orderIndex: requiredNonNegativeInt,
+  durationMin: optionalNonNegativeInt,
 });
 
 export const instructorApplicationSchema = z.object({

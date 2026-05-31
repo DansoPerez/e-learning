@@ -43,20 +43,18 @@ export async function createRegistrationOtp(
   const codeHash = await hashOtp(code);
   const expiresAt = new Date(Date.now() + OTP_EXPIRY_MINUTES * 60_000);
 
-  await prisma.$transaction([
-    prisma.emailVerification.deleteMany({
-      where: { email: normalized, purpose: "REGISTER" },
-    }),
-    prisma.emailVerification.create({
-      data: {
-        email: normalized,
-        codeHash,
-        purpose: "REGISTER",
-        metadata,
-        expiresAt,
-      },
-    }),
-  ]);
+  await prisma.emailVerification.deleteMany({
+    where: { email: normalized, purpose: "REGISTER" },
+  });
+  await prisma.emailVerification.create({
+    data: {
+      email: normalized,
+      codeHash,
+      purpose: "REGISTER",
+      metadata,
+      expiresAt,
+    },
+  });
 
   await sendVerificationOtpEmail({
     to: normalized,

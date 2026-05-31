@@ -61,9 +61,11 @@ export default async function InstructorQuizEditPage({
                 id="durationMin"
                 name="durationMin"
                 type="number"
-                min={1}
+                min={0}
+                step={1}
                 defaultValue={quiz.durationMin ?? ""}
                 className="w-32"
+                placeholder="Optional"
               />
             </div>
             <div className="space-y-2">
@@ -146,6 +148,8 @@ export default async function InstructorQuizEditPage({
           <Input
             name="orderIndex"
             type="number"
+            min={0}
+            step={1}
             defaultValue={quiz.questions.length}
             className="w-24"
           />
