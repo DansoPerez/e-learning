@@ -7,10 +7,13 @@ import {
   publishCourseAction,
   rejectCourseAction,
   unhideCourseAction,
+  updateCoursePriceAction,
 } from "@/app/actions/admin";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Input } from "@/components/ui/input";
 import { formatCurrency } from "@/lib/utils";
+import { PAYMENTS_ENABLED } from "@/lib/constants";
 
 export default async function AdminCoursesPage() {
   await requireRole("ADMIN");
@@ -23,6 +26,11 @@ export default async function AdminCoursesPage() {
 
   return (
     <DashboardWrapper role="ADMIN" title="Course management">
+      {!PAYMENTS_ENABLED ?
+        <p className="mb-4 rounded-lg border border-[var(--border)] bg-[var(--background-subtle)] px-4 py-3 text-sm text-[var(--foreground-muted)]">
+          Payments are disabled — all courses enroll for free. Set prices below so they apply when Paystack is enabled.
+        </p>
+      : null}
       <div className="space-y-4">
         {courses.map((c) => (
           <div
@@ -45,7 +53,24 @@ export default async function AdminCoursesPage() {
             >
               {c.status}
             </Badge>
-            <div className="flex flex-wrap gap-2">
+            <div className="flex flex-wrap items-center gap-2">
+              <form
+                action={updateCoursePriceAction.bind(null, c.id)}
+                className="flex items-center gap-2"
+              >
+                <Input
+                  name="price"
+                  type="number"
+                  min={0}
+                  step="0.01"
+                  defaultValue={Number(c.price)}
+                  className="h-8 w-24"
+                  aria-label={`Price for ${c.title}`}
+                />
+                <Button type="submit" variant="outline" size="sm">
+                  Save price
+                </Button>
+              </form>
               {c.status === "PENDING" ?
                 <>
                   <form action={approveCourseAction.bind(null, c.id)}>

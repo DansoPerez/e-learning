@@ -1,3 +1,4 @@
+import { chargesForCourse } from "@/lib/course-pricing";
 import { prisma } from "@/lib/prisma";
 import { initializePaystackPayment } from "@/lib/paystack";
 import { getPlatformCommission } from "@/lib/settings";
@@ -18,7 +19,7 @@ export async function initiateCoursePayment(userId: string, courseId: string) {
   }
 
   const amount = Number(course.price);
-  if (amount <= 0) {
+  if (!chargesForCourse(amount)) {
     await enrollInFreeCourse(userId, courseId);
     return { type: "free" as const };
   }

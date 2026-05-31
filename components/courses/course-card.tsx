@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { Badge } from "@/components/ui/badge";
-import { formatCurrency } from "@/lib/utils";
+import { studentPriceLabel } from "@/lib/course-pricing";
 import { BookOpen, Star } from "lucide-react";
 
 type CourseCardProps = {
@@ -52,7 +52,7 @@ export function CourseCard({
           </p>
           <div className="mt-3 flex items-center justify-between gap-2 border-t border-[var(--border)] pt-3">
             <span className="text-base font-bold text-[var(--foreground)]">
-              {price > 0 ? formatCurrency(price) : "Free"}
+              {studentPriceLabel(price)}
             </span>
             <span className="flex items-center gap-0.5 text-xs font-medium text-[var(--foreground-muted)]">
               <Star className="h-3.5 w-3.5 fill-[var(--accent)] text-[var(--accent)]" />

@@ -264,6 +264,37 @@ export async function unhideCourseAction(courseId: string): Promise<void> {
   revalidatePath(`/courses/${course.slug}`);
 }
 
+export async function updateCoursePriceAction(
+  courseId: string,
+  formData: FormData,
+): Promise<void> {
+  const admin = await adminOnly();
+
+  const raw = formData.get("price");
+  const price = Number(raw);
+  if (raw === null || raw === "" || Number.isNaN(price) || price < 0) return;
+
+  const course = await prisma.course.findUnique({ where: { id: courseId } });
+  if (!course) return;
+
+  await prisma.course.update({
+    where: { id: courseId },
+    data: { price },
+  });
+
+  await logAudit({
+    actorId: admin.id,
+    action: "UPDATE_COURSE_PRICE",
+    targetType: "Course",
+    targetId: courseId,
+    description: `Set course price to ${price}`,
+  });
+
+  revalidatePath("/dashboard/admin/courses");
+  revalidatePath("/courses");
+  revalidatePath(`/courses/${course.slug}`);
+}
+
 export async function suspendUserAction(userId: string): Promise<void> {
   const admin = await adminOnly();
   await assertCanManageUser(admin.id, userId);

@@ -9,6 +9,7 @@ import {
   moduleSchema,
 } from "@/lib/validations/course";
 import { uniqueSlug } from "@/lib/utils";
+import { chargesForCourse } from "@/lib/course-pricing";
 import { enrollInFreeCourse } from "@/lib/services/enrollment";
 import { initiateCoursePayment } from "@/lib/services/payment";
 import { redirect } from "next/navigation";
@@ -175,8 +176,7 @@ export async function enrollCourseAction(courseId: string): Promise<void> {
     redirect(`/courses/${course?.slug ?? ""}?error=unavailable`);
   }
 
-  const price = Number(course.price);
-  if (price > 0) {
+  if (chargesForCourse(Number(course.price))) {
     const result = await initiateCoursePayment(user.id, courseId);
     if (result.type === "paid") {
       redirect(result.authorizationUrl);

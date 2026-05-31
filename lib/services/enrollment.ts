@@ -1,4 +1,5 @@
 import { prisma } from "@/lib/prisma";
+import { chargesForCourse } from "@/lib/course-pricing";
 
 async function getUserAccessFlags(userId: string) {
   return prisma.user.findUnique({
@@ -29,8 +30,7 @@ export async function hasCourseAccess(userId: string, courseId: string) {
     return true;
   }
 
-  const price = Number(course.price);
-  if (price === 0) {
+  if (!chargesForCourse(Number(course.price))) {
     const enrollment = await prisma.enrollment.findUnique({
       where: { userId_courseId: { userId, courseId } },
     });
@@ -72,7 +72,7 @@ export async function enrollInFreeCourse(userId: string, courseId: string) {
     return ensureEnrollment(userId, courseId);
   }
 
-  if (Number(course.price) > 0) {
+  if (chargesForCourse(Number(course.price))) {
     throw new Error("This course requires payment");
   }
 
