@@ -1,6 +1,6 @@
 export const PLATFORM_NAME = "Bravio";
 
-/** Set true to require Resend OTP before registration (see app/actions/registration.ts) */
+/** Require Brevo OTP before registration (see app/actions/registration.ts). Set true when Brevo is configured. */
 export const EMAIL_VERIFICATION_ENABLED = false;
 
 export const INSTRUCTOR_SHARE = 0.6;

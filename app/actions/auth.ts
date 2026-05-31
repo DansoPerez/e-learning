@@ -12,6 +12,7 @@ import { generateUserCode, findUserByLoginIdentifier } from "@/lib/user-code";
 import { logAudit } from "@/lib/audit-log";
 import { createNotification } from "@/lib/notifications";
 import { markOffline, touchPresence } from "@/lib/presence";
+import { EMAIL_VERIFICATION_ENABLED } from "@/lib/constants";
 import { normalizeEmail } from "@/lib/normalize-email";
 
 export type ActionState = {
@@ -103,7 +104,7 @@ export async function registerAction(
         role: "INSTRUCTOR",
         userCode,
         // emailVerified: set when EMAIL_VERIFICATION_ENABLED is true
-        emailVerified: new Date(),
+        emailVerified: EMAIL_VERIFICATION_ENABLED ? undefined : new Date(),
         instructorProfile: {
           create: {
             bio: parsed.data.bio,
@@ -171,7 +172,7 @@ export async function registerAction(
       passwordHash,
       role: "STUDENT",
       userCode,
-      emailVerified: new Date(),
+      emailVerified: EMAIL_VERIFICATION_ENABLED ? undefined : new Date(),
     },
   });
 
@@ -213,13 +214,12 @@ export async function loginAction(
     return { error: "Your account has been banned." };
   }
 
-  // Email OTP verification (disabled — see EMAIL_VERIFICATION_ENABLED in lib/constants.ts)
-  // if (!userWithProfile.emailVerified) {
-  //   return {
-  //     error:
-  //       "Please verify your email before signing in. Complete registration with the code we sent you, or register again.",
-  //   };
-  // }
+  if (EMAIL_VERIFICATION_ENABLED && !userWithProfile.emailVerified) {
+    return {
+      error:
+        "Please verify your email before signing in. Complete registration with the code we sent you, or register again.",
+    };
+  }
 
   const redirectTo = authRedirectPath(
     userWithProfile.role,

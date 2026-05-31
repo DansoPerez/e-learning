@@ -129,6 +129,8 @@ Copy the value **without** wrapping it in extra quotes in the Vercel UI.
 | `NEXTAUTH_URL` | Set after first deploy (see step 10) |
 | `PAYSTACK_SECRET_KEY` | From Paystack dashboard |
 | `PAYSTACK_CURRENCY` | `GHS` |
+| `BREVO_API_KEY` | From [Brevo → SMTP & API → API keys](https://app.brevo.com/settings/keys/api) |
+| `BREVO_FROM_EMAIL` | Verified sender in Brevo (Senders & IP → Senders) |
 | `GOOGLE_CLIENT_ID` / `GOOGLE_CLIENT_SECRET` | Optional OAuth |
 
 ### 9. Deploy
@@ -157,6 +159,7 @@ Also update:
 - [ ] `DATABASE_URL` set on Vercel
 - [ ] `AUTH_SECRET` set on Vercel
 - [ ] `NEXTAUTH_URL` matches your real Vercel URL, redeployed
+- [ ] `BREVO_API_KEY` + verified `BREVO_FROM_EMAIL` for registration OTP emails
 
 ---
 

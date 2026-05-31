@@ -1,7 +1,6 @@
 /**
- * Resend OTP email verification — DISABLED for now.
- * Re-enable: set EMAIL_VERIFICATION_ENABLED = true in lib/constants.ts
- * and wire RegisterForm to these actions instead of registerAction in auth.ts.
+ * Brevo OTP email verification for registration.
+ * Disabled when EMAIL_VERIFICATION_ENABLED is false — use registerAction in auth.ts instead.
  */
 "use server";
 
@@ -144,15 +143,15 @@ export async function sendRegistrationOtpAction(
     await createRegistrationOtp(email, metadata);
   } catch (err) {
     const message = err instanceof Error ? err.message : "Could not send verification email";
-    if (message.includes("RESEND_API_KEY") || message.includes("RESEND_FROM_EMAIL")) {
+    if (message.includes("BREVO_API_KEY") || message.includes("BREVO_FROM_EMAIL")) {
       return {
-        error: "Email service is not configured. Add RESEND_API_KEY and RESEND_FROM_EMAIL to your environment.",
+        error: "Email service is not configured. Add BREVO_API_KEY and BREVO_FROM_EMAIL to your environment.",
       };
     }
-    if (message.includes("only send testing emails")) {
+    if (message.toLowerCase().includes("sender") && message.toLowerCase().includes("valid")) {
       return {
         error:
-          "With Resend’s test sender, verification codes can only be sent to the email on your Resend account. Register using that address, or verify a domain at resend.com/domains and update RESEND_FROM_EMAIL.",
+          "The sender email is not verified in Brevo. Add and verify it under Brevo → Senders & IP → Senders, then set BREVO_FROM_EMAIL.",
       };
     }
     return { error: message };
