@@ -1,6 +1,6 @@
 import { requireRole } from "@/lib/auth";
 import { getInstructorProfile } from "@/lib/instructor";
-import { getInstructorNavItems } from "@/lib/instructor-nav";
+import { getInstructorNavSections } from "@/lib/instructor-nav";
 import { DashboardWrapper } from "@/components/layout/dashboard-wrapper";
 
 export async function InstructorDashboardWrapper({
@@ -15,10 +15,10 @@ export async function InstructorDashboardWrapper({
     user.role === "INSTRUCTOR" ?
       await getInstructorProfile(user.id)
     : null;
-  const navItems = getInstructorNavItems(profile?.status, user.role === "ADMIN");
+  const navSections = getInstructorNavSections(profile?.status, user.role === "ADMIN");
 
   return (
-    <DashboardWrapper role="INSTRUCTOR" title={title} navItems={navItems}>
+    <DashboardWrapper role="INSTRUCTOR" title={title} navSections={navSections}>
       {children}
     </DashboardWrapper>
   );

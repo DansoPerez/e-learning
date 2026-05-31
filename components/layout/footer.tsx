@@ -4,7 +4,13 @@ import Link from "next/link";
 import { useSession } from "next-auth/react";
 import type { Session } from "next-auth";
 import { PLATFORM_NAME } from "@/lib/constants";
-import { dashboardNavLabelForRole, dashboardPathForRole } from "@/lib/dashboard-nav";
+import {
+  EXPLORE_COURSES_LINK,
+  TEACH_LINK,
+  dashboardNavLabelForRole,
+  dashboardPathForRole,
+} from "@/lib/site-nav";
+import type { DashboardRole } from "@/lib/dashboard-nav";
 import { BookOpen } from "lucide-react";
 
 export function Footer({ initialSession }: { initialSession: Session | null }) {
@@ -12,15 +18,16 @@ export function Footer({ initialSession }: { initialSession: Session | null }) {
   const session = clientSession ?? initialSession;
   const year = new Date().getFullYear();
   const isAuthenticated = !!session?.user?.id;
-  const role = session?.user?.role ?? "STUDENT";
+  const role = (session?.user?.role ?? "STUDENT") as DashboardRole;
+  const isInstructor = role === "INSTRUCTOR";
 
   return (
     <footer className="mt-auto border-t border-[var(--border)] bg-[#1c1d1f] text-slate-300">
       <div className="page-container py-10 sm:py-12">
         <div className="grid gap-8 sm:grid-cols-2 lg:grid-cols-4">
           <div className="sm:col-span-2 lg:col-span-1">
-            <Link href="/" className="inline-flex items-center gap-2 text-white">
-              <span className="flex h-9 w-9 items-center justify-center rounded-md bg-[var(--primary)]">
+            <Link href="/" className="inline-flex items-center gap-2.5 text-white">
+              <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-[var(--primary)]">
                 <BookOpen className="h-5 w-5" />
               </span>
               <span className="text-lg font-bold">{PLATFORM_NAME}</span>
@@ -31,13 +38,13 @@ export function Footer({ initialSession }: { initialSession: Session | null }) {
           </div>
 
           <div>
-            <p className="text-xs font-bold uppercase tracking-wider text-slate-500">
-              Platform
+            <p className="text-xs font-semibold uppercase tracking-wider text-slate-500">
+              Learn
             </p>
             <ul className="mt-4 space-y-2.5 text-sm">
               <li>
-                <Link href="/courses" className="hover:text-white">
-                  Browse courses
+                <Link href={EXPLORE_COURSES_LINK.href} className="hover:text-white">
+                  {EXPLORE_COURSES_LINK.label}
                 </Link>
               </li>
               {isAuthenticated ?
@@ -49,7 +56,7 @@ export function Footer({ initialSession }: { initialSession: Session | null }) {
               : <>
                   <li>
                     <Link href="/login" className="hover:text-white">
-                      Sign in
+                      Log in
                     </Link>
                   </li>
                   <li>
@@ -63,15 +70,17 @@ export function Footer({ initialSession }: { initialSession: Session | null }) {
           </div>
 
           <div>
-            <p className="text-xs font-bold uppercase tracking-wider text-slate-500">
+            <p className="text-xs font-semibold uppercase tracking-wider text-slate-500">
               Teach
             </p>
             <ul className="mt-4 space-y-2.5 text-sm">
-              <li>
-                <Link href="/register?role=instructor" className="hover:text-white">
-                  Become an instructor
-                </Link>
-              </li>
+              {!isInstructor ?
+                <li>
+                  <Link href={TEACH_LINK.href} className="hover:text-white">
+                    {TEACH_LINK.label}
+                  </Link>
+                </li>
+              : null}
               <li>
                 <a href="mailto:support@bravio.app" className="hover:text-white">
                   Contact support
@@ -81,12 +90,12 @@ export function Footer({ initialSession }: { initialSession: Session | null }) {
           </div>
 
           <div>
-            <p className="text-xs font-bold uppercase tracking-wider text-slate-500">
-              Legal
+            <p className="text-xs font-semibold uppercase tracking-wider text-slate-500">
+              Trust & safety
             </p>
             <ul className="mt-4 space-y-2.5 text-sm text-slate-400">
-              <li>Secure payments via Paystack</li>
               <li>Admin-verified instructors</li>
+              <li>Secure platform infrastructure</li>
             </ul>
           </div>
         </div>

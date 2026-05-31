@@ -3,7 +3,7 @@ import { redirect } from "next/navigation";
 import { requireRole } from "@/lib/auth";
 import { getInstructorProfile, instructorStatusMessage } from "@/lib/instructor";
 import { DashboardWrapper } from "@/components/layout/dashboard-wrapper";
-import { getInstructorNavItems } from "@/lib/instructor-nav";
+import { getInstructorNavSections } from "@/lib/instructor-nav";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Clock, ShieldAlert } from "lucide-react";
@@ -24,7 +24,7 @@ export default async function InstructorPendingPage() {
     <DashboardWrapper
       role="INSTRUCTOR"
       title="Application status"
-      navItems={getInstructorNavItems(profile.status, false)}
+      navSections={getInstructorNavSections(profile.status, false)}
     >
       <div className="mx-auto max-w-2xl">
         <div className="surface-card p-8 text-center">
