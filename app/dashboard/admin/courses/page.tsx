@@ -3,12 +3,12 @@ import { requireRole } from "@/lib/auth";
 import { DashboardWrapper } from "@/components/layout/dashboard-wrapper";
 import {
   approveCourseAction,
-  hideCourseAction,
   publishCourseAction,
   rejectCourseAction,
-  unhideCourseAction,
   updateCoursePriceAction,
 } from "@/app/actions/admin";
+import { CourseAdminActions } from "@/components/admin/course-admin-actions";
+import { ActionRow } from "@/components/ui/action-row";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
@@ -35,28 +35,29 @@ export default async function AdminCoursesPage() {
         {courses.map((c) => (
           <div
             key={c.id}
-            className="surface-card flex flex-wrap items-center justify-between gap-4 p-5"
+            className="surface-card flex flex-col gap-4 p-5 lg:flex-row lg:flex-wrap lg:items-start lg:justify-between"
           >
-            <div>
+            <div className="min-w-0 flex-1">
               <p className="font-bold text-[var(--foreground)]">{c.title}</p>
               <p className="text-sm text-[var(--foreground-muted)]">
                 by {c.instructor.name} · {formatCurrency(Number(c.price))}
               </p>
+              <Badge
+                variant={
+                  c.status === "PUBLISHED" ? "success"
+                  : c.status === "PENDING" ? "warning"
+                  : c.status === "HIDDEN" ? "default"
+                  : "danger"
+                }
+                className="mt-2"
+              >
+                {c.status}
+              </Badge>
             </div>
-            <Badge
-              variant={
-                c.status === "PUBLISHED" ? "success"
-                : c.status === "PENDING" ? "warning"
-                : c.status === "HIDDEN" ? "default"
-                : "danger"
-              }
-            >
-              {c.status}
-            </Badge>
-            <div className="flex flex-wrap items-center gap-2">
+            <div className="flex w-full flex-col gap-3">
               <form
                 action={updateCoursePriceAction.bind(null, c.id)}
-                className="flex items-center gap-2"
+                className="flex flex-col gap-2 sm:flex-row sm:items-center"
               >
                 <Input
                   name="price"
@@ -64,48 +65,37 @@ export default async function AdminCoursesPage() {
                   min={0}
                   step="0.01"
                   defaultValue={Number(c.price)}
-                  className="h-8 w-24"
+                  className="min-h-[44px] w-full sm:h-8 sm:w-24"
                   aria-label={`Price for ${c.title}`}
                 />
-                <Button type="submit" variant="outline" size="sm">
+                <Button type="submit" variant="outline" size="sm" className="w-full sm:w-auto">
                   Save price
                 </Button>
               </form>
-              {c.status === "PENDING" ?
-                <>
-                  <form action={approveCourseAction.bind(null, c.id)}>
+              <ActionRow>
+                {c.status === "PENDING" ?
+                  <>
+                    <form action={approveCourseAction.bind(null, c.id)}>
+                      <Button type="submit" size="sm">
+                        Approve
+                      </Button>
+                    </form>
+                    <form action={rejectCourseAction.bind(null, c.id, "Needs improvement")}>
+                      <Button type="submit" variant="outline" size="sm">
+                        Reject
+                      </Button>
+                    </form>
+                  </>
+                : null}
+                {c.status === "APPROVED" ?
+                  <form action={publishCourseAction.bind(null, c.id)}>
                     <Button type="submit" size="sm">
-                      Approve
+                      Publish
                     </Button>
                   </form>
-                  <form action={rejectCourseAction.bind(null, c.id, "Needs improvement")}>
-                    <Button type="submit" variant="outline" size="sm">
-                      Reject
-                    </Button>
-                  </form>
-                </>
-              : null}
-              {c.status === "APPROVED" ?
-                <form action={publishCourseAction.bind(null, c.id)}>
-                  <Button type="submit" size="sm">
-                    Publish
-                  </Button>
-                </form>
-              : null}
-              {c.status === "PUBLISHED" ?
-                <form action={hideCourseAction.bind(null, c.id)}>
-                  <Button type="submit" variant="outline" size="sm">
-                    Hide
-                  </Button>
-                </form>
-              : null}
-              {c.status === "HIDDEN" ?
-                <form action={unhideCourseAction.bind(null, c.id)}>
-                  <Button type="submit" size="sm">
-                    Unhide / Publish
-                  </Button>
-                </form>
-              : null}
+                : null}
+              </ActionRow>
+              <CourseAdminActions courseId={c.id} status={c.status} title={c.title} />
             </div>
           </div>
         ))}

@@ -34,30 +34,33 @@ export function UserFilters({
   }
 
   return (
-    <form onSubmit={onSubmit} className="surface-card mb-6 flex flex-wrap gap-3 p-4">
+    <form onSubmit={onSubmit} className="surface-card mb-6 flex flex-col gap-3 p-4 sm:flex-row sm:flex-wrap">
       <input
         name="q"
         defaultValue={q ?? ""}
         placeholder="Search name or email..."
-        className="input-field min-w-[200px] flex-1"
+        className="input-field min-h-[44px] w-full flex-1 sm:min-w-[200px]"
       />
-      <select name="status" defaultValue={status ?? ""} className="input-field w-36">
+      <select name="status" defaultValue={status ?? ""} className="input-field min-h-[44px] w-full sm:w-36">
         <option value="">All statuses</option>
         <option value="ACTIVE">Active</option>
         <option value="SUSPENDED">Suspended</option>
         <option value="BANNED">Banned</option>
       </select>
-      <select name="role" defaultValue={role ?? ""} className="input-field w-36">
+      <select name="role" defaultValue={role ?? ""} className="input-field min-h-[44px] w-full sm:w-36">
         <option value="">All roles</option>
         <option value="STUDENT">Student</option>
         <option value="INSTRUCTOR">Instructor</option>
         <option value="ADMIN">Admin</option>
       </select>
-      <Button type="submit">Filter</Button>
+      <Button type="submit" className="w-full sm:w-auto">
+        Filter
+      </Button>
       {(q || status || role) ?
         <Button
           type="button"
           variant="outline"
+          className="w-full sm:w-auto"
           onClick={() => router.push("/dashboard/admin/users")}
         >
           Clear

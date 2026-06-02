@@ -18,7 +18,7 @@ export default async function AdminSettingsPage() {
           const rate = Number(formData.get("commission")) / 100;
           await updateCommissionAction(rate);
         }}
-        className="max-w-md space-y-4 rounded-xl border bg-white p-6"
+        className="w-full max-w-md space-y-4 rounded-xl border bg-white p-6"
       >
         <div className="space-y-2">
           <Label htmlFor="commission">Platform commission (%)</Label>
@@ -28,13 +28,16 @@ export default async function AdminSettingsPage() {
             type="number"
             min={0}
             max={100}
+            className="min-h-[44px]"
             defaultValue={Math.round(commission * 100)}
           />
           <p className="text-xs text-zinc-500">
             Instructor receives the remainder (currently {100 - Math.round(commission * 100)}%)
           </p>
         </div>
-        <Button type="submit">Save</Button>
+        <Button type="submit" className="min-h-[44px] w-full sm:w-auto">
+          Save
+        </Button>
       </form>
     </DashboardWrapper>
   );

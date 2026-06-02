@@ -34,14 +34,14 @@ export function AuditLogFilters({
   }
 
   return (
-    <form onSubmit={onSubmit} className="surface-card mb-6 flex flex-wrap gap-3 p-4">
+    <form onSubmit={onSubmit} className="surface-card mb-6 flex flex-col gap-3 p-4 sm:flex-row sm:flex-wrap">
       <input
         name="q"
         defaultValue={q ?? ""}
         placeholder="Search user ID, name, action, description..."
-        className="input-field min-w-[220px] flex-1"
+        className="input-field min-h-[44px] w-full flex-1 sm:min-w-[220px]"
       />
-      <select name="role" defaultValue={role ?? ""} className="input-field w-36">
+      <select name="role" defaultValue={role ?? ""} className="input-field min-h-[44px] w-full sm:w-36">
         <option value="">All roles</option>
         <option value="STUDENT">Student</option>
         <option value="INSTRUCTOR">Instructor</option>
@@ -51,13 +51,16 @@ export function AuditLogFilters({
         name="action"
         defaultValue={action ?? ""}
         placeholder="Action (e.g. LOGIN)"
-        className="input-field w-44"
+        className="input-field min-h-[44px] w-full sm:w-44"
       />
-      <Button type="submit">Search</Button>
+      <Button type="submit" className="w-full sm:w-auto">
+        Search
+      </Button>
       {(q || role || action) ?
         <Button
           type="button"
           variant="outline"
+          className="w-full sm:w-auto"
           onClick={() => router.push("/dashboard/admin/logs")}
         >
           Clear

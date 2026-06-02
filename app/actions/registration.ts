@@ -34,7 +34,28 @@ export type RegistrationState = {
   step?: "verify";
   email?: string;
   message?: string;
+  values?: {
+    name: string;
+    email: string;
+    role: string;
+    bio: string;
+    expertise: string;
+    qualification: string;
+    experienceYears: string;
+  };
 };
+
+function registrationFormValues(formData: FormData) {
+  return {
+    name: String(formData.get("name") ?? ""),
+    email: String(formData.get("email") ?? ""),
+    role: String(formData.get("role") ?? "STUDENT"),
+    bio: String(formData.get("bio") ?? ""),
+    expertise: String(formData.get("expertise") ?? ""),
+    qualification: String(formData.get("qualification") ?? ""),
+    experienceYears: String(formData.get("experienceYears") ?? ""),
+  };
+}
 
 function authRedirectPath(
   role: "STUDENT" | "INSTRUCTOR" | "ADMIN",
@@ -83,6 +104,7 @@ function parseRegistrationForm(formData: FormData) {
       name: formData.get("name"),
       email: formData.get("email"),
       password: formData.get("password"),
+      confirmPassword: formData.get("confirmPassword"),
       role: "INSTRUCTOR",
       bio: formData.get("bio"),
       expertise: formData.get("expertise"),
@@ -96,6 +118,7 @@ function parseRegistrationForm(formData: FormData) {
     name: formData.get("name"),
     email: formData.get("email"),
     password: formData.get("password"),
+    confirmPassword: formData.get("confirmPassword"),
     role: "STUDENT",
   });
 }
@@ -110,6 +133,7 @@ export async function sendRegistrationOtpAction(
     return {
       fieldErrors: parsed.error.flatten().fieldErrors as Record<string, string[]>,
       error: parsed.error.issues[0]?.message,
+      values: registrationFormValues(formData),
     };
   }
 
@@ -117,7 +141,10 @@ export async function sendRegistrationOtpAction(
 
   const existing = await prisma.user.findUnique({ where: { email } });
   if (existing) {
-    return { error: "An account with this email already exists" };
+    return {
+      error: "An account with this email already exists",
+      values: registrationFormValues(formData),
+    };
   }
 
   const passwordHash = await bcrypt.hash(parsed.data.password, 12);
@@ -146,15 +173,17 @@ export async function sendRegistrationOtpAction(
     if (message.includes("BREVO_API_KEY") || message.includes("BREVO_FROM_EMAIL")) {
       return {
         error: "Email service is not configured. Add BREVO_API_KEY and BREVO_FROM_EMAIL to your environment.",
+        values: registrationFormValues(formData),
       };
     }
     if (message.toLowerCase().includes("sender") && message.toLowerCase().includes("valid")) {
       return {
         error:
           "The sender email is not verified in Brevo. Add and verify it under Brevo → Senders & IP → Senders, then set BREVO_FROM_EMAIL.",
+        values: registrationFormValues(formData),
       };
     }
-    return { error: message };
+    return { error: message, values: registrationFormValues(formData) };
   }
 
   return {

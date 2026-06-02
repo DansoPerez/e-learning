@@ -19,7 +19,30 @@ export type ActionState = {
   success?: boolean;
   error?: string;
   fieldErrors?: Record<string, string[]>;
+  values?: RegisterFormValues;
 };
+
+export type RegisterFormValues = {
+  name: string;
+  email: string;
+  role: string;
+  bio: string;
+  expertise: string;
+  qualification: string;
+  experienceYears: string;
+};
+
+function registerFormValues(formData: FormData): RegisterFormValues {
+  return {
+    name: String(formData.get("name") ?? ""),
+    email: String(formData.get("email") ?? ""),
+    role: String(formData.get("role") ?? "STUDENT"),
+    bio: String(formData.get("bio") ?? ""),
+    expertise: String(formData.get("expertise") ?? ""),
+    qualification: String(formData.get("qualification") ?? ""),
+    experienceYears: String(formData.get("experienceYears") ?? ""),
+  };
+}
 
 function authRedirectPath(
   role: "STUDENT" | "INSTRUCTOR" | "ADMIN",
@@ -72,6 +95,7 @@ export async function registerAction(
       name: formData.get("name"),
       email: formData.get("email"),
       password: formData.get("password"),
+      confirmPassword: formData.get("confirmPassword"),
       role: "INSTRUCTOR",
       bio: formData.get("bio"),
       expertise: formData.get("expertise"),
@@ -84,13 +108,17 @@ export async function registerAction(
       return {
         fieldErrors: parsed.error.flatten().fieldErrors as Record<string, string[]>,
         error: parsed.error.issues[0]?.message,
+        values: registerFormValues(formData),
       };
     }
 
     const email = parsed.data.email;
     const existing = await prisma.user.findUnique({ where: { email } });
     if (existing) {
-      return { error: "An account with this email already exists" };
+      return {
+        error: "An account with this email already exists",
+        values: registerFormValues(formData),
+      };
     }
 
     const passwordHash = await bcrypt.hash(parsed.data.password, 12);
@@ -147,19 +175,24 @@ export async function registerAction(
     name: formData.get("name"),
     email: formData.get("email"),
     password: formData.get("password"),
+    confirmPassword: formData.get("confirmPassword"),
     role: "STUDENT",
   });
 
   if (!parsed.success) {
     return {
       fieldErrors: parsed.error.flatten().fieldErrors as Record<string, string[]>,
+      values: registerFormValues(formData),
     };
   }
 
   const email = parsed.data.email;
   const existing = await prisma.user.findUnique({ where: { email } });
   if (existing) {
-    return { error: "An account with this email already exists" };
+    return {
+      error: "An account with this email already exists",
+      values: registerFormValues(formData),
+    };
   }
 
   const passwordHash = await bcrypt.hash(parsed.data.password, 12);

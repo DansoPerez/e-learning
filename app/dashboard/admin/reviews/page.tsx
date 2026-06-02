@@ -102,7 +102,7 @@ export default async function AdminReviewsPage() {
                   rows={2}
                   placeholder="Reply as platform admin..."
                 />
-                <Button type="submit" size="sm">
+                <Button type="submit" size="sm" className="min-h-[44px] w-full sm:w-auto">
                   Post admin comment
                 </Button>
               </form>

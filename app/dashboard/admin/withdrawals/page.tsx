@@ -6,6 +6,7 @@ import {
   completeWithdrawalFormAction,
   rejectWithdrawalFormAction,
 } from "@/app/actions/admin";
+import { ActionRow } from "@/components/ui/action-row";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { formatCurrency } from "@/lib/utils";
@@ -24,16 +25,16 @@ export default async function AdminWithdrawalsPage() {
         {withdrawals.map((w) => (
           <div
             key={w.id}
-            className="flex flex-wrap items-center justify-between gap-4 rounded-xl border bg-white p-4"
+            className="surface-card flex flex-col gap-4 p-4 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between"
           >
             <div>
               <p className="font-medium">{w.instructor.name}</p>
               <p className="text-sm text-zinc-500">{w.instructor.email}</p>
               <p className="mt-1 font-semibold">{formatCurrency(Number(w.amount))}</p>
             </div>
-            <Badge>{w.status}</Badge>
+            <Badge className="w-fit">{w.status}</Badge>
             {w.status === "PENDING" || w.status === "APPROVED" ?
-              <div className="flex gap-2">
+              <ActionRow className="w-full sm:w-auto sm:justify-end">
                 <form action={approveWithdrawalFormAction.bind(null, w.id)}>
                   <Button type="submit" size="sm" variant="outline">
                     Approve
@@ -49,7 +50,7 @@ export default async function AdminWithdrawalsPage() {
                     Reject
                   </Button>
                 </form>
-              </div>
+              </ActionRow>
             : null}
           </div>
         ))}
