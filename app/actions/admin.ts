@@ -220,6 +220,13 @@ export async function rejectCourseAction(courseId: string, reason: string): Prom
 export async function hideCourseAction(courseId: string): Promise<void> {
   const admin = await adminOnly();
 
+  const course = await prisma.course.findUnique({
+    where: { id: courseId },
+    select: { status: true },
+  });
+  if (!course) return;
+  if (course.status !== "PUBLISHED" && course.status !== "APPROVED") return;
+
   await prisma.course.update({
     where: { id: courseId },
     data: { status: "HIDDEN" },
@@ -257,6 +264,30 @@ export async function unhideCourseAction(courseId: string): Promise<void> {
     targetType: "Course",
     targetId: courseId,
     description: `Restored hidden course ${courseId} to published`,
+  });
+
+  revalidatePath("/dashboard/admin/courses");
+  revalidatePath("/courses");
+  revalidatePath(`/courses/${course.slug}`);
+}
+
+export async function deleteCoursePermanentAction(courseId: string): Promise<void> {
+  const admin = await adminOnly();
+
+  const course = await prisma.course.findUnique({
+    where: { id: courseId },
+    select: { id: true, title: true, slug: true },
+  });
+  if (!course) return;
+
+  await prisma.course.delete({ where: { id: courseId } });
+
+  await logAudit({
+    actorId: admin.id,
+    action: "DELETE_COURSE",
+    targetType: "Course",
+    targetId: courseId,
+    description: `Permanently deleted course: ${course.title}`,
   });
 
   revalidatePath("/dashboard/admin/courses");

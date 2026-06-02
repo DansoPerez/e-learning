@@ -11,6 +11,7 @@ import {
   unfreezeInstructorEarningsAction,
   activateUserAction,
 } from "@/app/actions/admin";
+import { ActionRow } from "@/components/ui/action-row";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 
@@ -87,7 +88,7 @@ export default async function AdminInstructorsPage() {
               </Badge>
             </div>
 
-            <div className="mt-4 flex flex-wrap gap-2 border-t border-[var(--border)] pt-4">
+            <ActionRow className="mt-4 border-t border-[var(--border)] pt-4">
               {p.status === "PENDING" ?
                 <>
                   <form action={approveInstructorAction.bind(null, p.userId)}>
@@ -146,7 +147,7 @@ export default async function AdminInstructorsPage() {
                   Full control
                 </Button>
               </Link>
-            </div>
+            </ActionRow>
           </div>
         ))}
       </div>

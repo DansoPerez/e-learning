@@ -56,8 +56,8 @@ export default async function AdminAnnouncementsPage() {
                       Seen by {a._count.reads} user{a._count.reads === 1 ? "" : "s"}
                     </p>
                   </div>
-                  <form action={deleteAnnouncementAction.bind(null, a.id)}>
-                    <Button type="submit" variant="danger" size="sm" className="gap-1.5">
+                  <form action={deleteAnnouncementAction.bind(null, a.id)} className="w-full sm:w-auto">
+                    <Button type="submit" variant="danger" size="sm" className="min-h-[44px] w-full gap-1.5 sm:w-auto">
                       <Trash2 className="h-3.5 w-3.5" />
                       Delete
                     </Button>

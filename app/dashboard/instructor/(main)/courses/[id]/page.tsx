@@ -15,6 +15,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { CourseReviews } from "@/components/courses/course-reviews";
+import { EditCourseForm } from "@/components/instructor/edit-course-form";
 
 export default async function InstructorCourseEditPage({
   params,
@@ -24,26 +25,29 @@ export default async function InstructorCourseEditPage({
   const user = await requireRole("INSTRUCTOR", "ADMIN");
   const { id } = await params;
 
-  const course = await prisma.course.findUnique({
-    where: { id },
-    include: {
-      modules: {
-        orderBy: { orderIndex: "asc" },
-        include: { lessons: { orderBy: { orderIndex: "asc" } } },
-      },
-      quizzes: { include: { questions: true } },
-      reviews: {
-        include: {
-          user: { select: { id: true, name: true } },
-          replies: {
-            orderBy: { createdAt: "asc" },
-            include: { author: { select: { id: true, name: true, role: true } } },
-          },
+  const [course, categories] = await Promise.all([
+    prisma.course.findUnique({
+      where: { id },
+      include: {
+        modules: {
+          orderBy: { orderIndex: "asc" },
+          include: { lessons: { orderBy: { orderIndex: "asc" } } },
         },
-        orderBy: { createdAt: "desc" },
+        quizzes: { include: { questions: true } },
+        reviews: {
+          include: {
+            user: { select: { id: true, name: true } },
+            replies: {
+              orderBy: { createdAt: "asc" },
+              include: { author: { select: { id: true, name: true, role: true } } },
+            },
+          },
+          orderBy: { createdAt: "desc" },
+        },
       },
-    },
-  });
+    }),
+    prisma.category.findMany({ orderBy: { name: "asc" }, select: { id: true, name: true } }),
+  ]);
 
   if (!course || (course.instructorId !== user.id && user.role !== "ADMIN")) {
     notFound();
@@ -58,6 +62,19 @@ export default async function InstructorCourseEditPage({
           <Button type="submit">Submit for review</Button>
         </form>
       : null}
+
+      <EditCourseForm
+        courseId={course.id}
+        course={{
+          title: course.title,
+          description: course.description,
+          price: Number(course.price),
+          thumbnailUrl: course.thumbnailUrl,
+          categoryId: course.categoryId,
+          status: course.status,
+        }}
+        categories={categories}
+      />
 
       <section className="mb-10 rounded-xl border bg-white p-6">
         <h2 className="mb-4 font-semibold">Add module</h2>

@@ -10,6 +10,7 @@ import {
 import { OnlineBadge } from "@/components/presence/online-badge";
 import { DashboardWrapper } from "@/components/layout/dashboard-wrapper";
 import { AdminSection } from "@/components/admin/admin-section";
+import { ActionRow } from "@/components/ui/action-row";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -172,7 +173,7 @@ export default async function AdminUserDetailPage({
           </div>
         </div>
         {!isSelf && user.role === "ADMIN" && !user.isSuperAdmin && admin.isSuperAdmin ?
-          <div className="mt-4 flex flex-wrap gap-2">
+          <ActionRow className="mt-4">
             {user.adminSensitiveApproved && !user.adminSensitiveSuspended ?
               <form action={suspendAdminSensitivePermissionsAction.bind(null, user.id)}>
                 <Button type="submit" size="sm" variant="outline">
@@ -185,7 +186,7 @@ export default async function AdminUserDetailPage({
                 </Button>
               </form>
             }
-          </div>
+          </ActionRow>
         : null}
         {isSelf ?
           <p className="mt-4 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
@@ -200,7 +201,7 @@ export default async function AdminUserDetailPage({
             title="Account status"
             description="Suspend, activate, or ban this user. Suspended users cannot sign in."
           >
-            <div className="flex flex-wrap gap-2">
+            <ActionRow>
               {user.status !== "ACTIVE" ?
                 <form action={activateUserAction.bind(null, id)}>
                   <Button type="submit" variant="primary" size="sm">
@@ -222,7 +223,7 @@ export default async function AdminUserDetailPage({
                   </Button>
                 </form>
               : null}
-            </div>
+            </ActionRow>
           </AdminSection>
         : null}
 
@@ -241,7 +242,7 @@ export default async function AdminUserDetailPage({
 
         {!isSelf ?
           <AdminSection title="Role" description="Change platform role for this user.">
-            <div className="flex flex-wrap gap-2">
+            <ActionRow>
               {(
                 [
                   "STUDENT",
@@ -260,7 +261,7 @@ export default async function AdminUserDetailPage({
                   </Button>
                 </form>
               ))}
-            </div>
+            </ActionRow>
           </AdminSection>
         : null}
 
@@ -270,7 +271,7 @@ export default async function AdminUserDetailPage({
             description="Grant access to every published course (free and paid) without payment."
             className="lg:col-span-2"
           >
-            <div className="flex flex-wrap gap-2">
+            <ActionRow>
               {!user.allCoursesAccess ?
                 <form action={grantAllCoursesAccessAction.bind(null, id)}>
                   <Button type="submit" variant="primary" size="sm">
@@ -283,7 +284,7 @@ export default async function AdminUserDetailPage({
                   </Button>
                 </form>
               }
-            </div>
+            </ActionRow>
             {user.allCoursesAccess ?
               <p className="mt-3 text-sm font-medium text-emerald-700">
                 ✓ User can access and learn from all published courses without paying.
@@ -321,7 +322,7 @@ export default async function AdminUserDetailPage({
                 <p className="mt-2 line-clamp-4">{user.instructorProfile.bio}</p>
               </div>
             </div>
-            <div className="flex flex-wrap gap-2">
+            <ActionRow>
               {user.instructorProfile.status === "PENDING" || user.instructorProfile.status === "REJECTED" || user.instructorProfile.status === "REVOKED" ?
                 <form action={reinstateInstructorAction.bind(null, id)}>
                   <Button type="submit" size="sm">
@@ -349,7 +350,7 @@ export default async function AdminUserDetailPage({
                   </Button>
                 </form>
               : null}
-            </div>
+            </ActionRow>
           </AdminSection>
         : null}
 
@@ -363,7 +364,7 @@ export default async function AdminUserDetailPage({
               {user.enrollments.map((e) => (
                 <li
                   key={e.id}
-                  className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-[var(--border)] bg-[var(--background)] px-4 py-3"
+                  className="flex flex-col gap-3 rounded-xl border border-[var(--border)] bg-[var(--background)] px-4 py-3 sm:flex-row sm:items-center sm:justify-between"
                 >
                   <div>
                     <p className="font-medium text-[var(--foreground)]">{e.course.title}</p>
@@ -372,8 +373,8 @@ export default async function AdminUserDetailPage({
                     </p>
                   </div>
                   {!isSelf ?
-                    <form action={revokeEnrollmentAction.bind(null, id, e.courseId)}>
-                      <Button type="submit" variant="ghost" size="sm">
+                    <form action={revokeEnrollmentAction.bind(null, id, e.courseId)} className="w-full sm:w-auto">
+                      <Button type="submit" variant="ghost" size="sm" className="w-full sm:w-auto">
                         Revoke
                       </Button>
                     </form>
@@ -388,13 +389,13 @@ export default async function AdminUserDetailPage({
               <p className="mb-2 text-sm font-semibold text-[var(--foreground-secondary)]">
                 Enroll in a course
               </p>
-              <div className="flex flex-wrap gap-2">
+              <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap">
                 {publishedCourses
                   .filter((c) => !enrolledIds.has(c.id))
                   .slice(0, 12)
                   .map((c) => (
-                    <form key={c.id} action={enrollUserInCourseAction.bind(null, id, c.id)}>
-                      <Button type="submit" variant="outline" size="sm">
+                    <form key={c.id} action={enrollUserInCourseAction.bind(null, id, c.id)} className="w-full sm:w-auto">
+                      <Button type="submit" variant="outline" size="sm" className="min-h-[44px] w-full sm:w-auto">
                         + {c.title}
                       </Button>
                     </form>

@@ -109,10 +109,12 @@ export default async function AdminDashboardPage() {
               </select>
             </div>
             <Textarea name="message" placeholder="Your message..." required rows={3} />
-            <div className="flex flex-wrap gap-2">
-              <Button type="submit">Publish</Button>
-              <Link href="/dashboard/admin/announcements">
-                <Button type="button" variant="outline">
+            <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap">
+              <Button type="submit" className="w-full sm:w-auto">
+                Publish
+              </Button>
+              <Link href="/dashboard/admin/announcements" className="w-full sm:w-auto">
+                <Button type="button" variant="outline" className="w-full">
                   View all
                 </Button>
               </Link>

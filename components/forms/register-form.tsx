@@ -3,7 +3,7 @@
 import { useActionState, useEffect, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import Link from "next/link";
-import { registerAction, type ActionState } from "@/app/actions/auth";
+import { registerAction, type ActionState, type RegisterFormValues } from "@/app/actions/auth";
 import {
   resendRegistrationOtpAction,
   sendRegistrationOtpAction,
@@ -11,6 +11,7 @@ import {
   type RegistrationState,
 } from "@/app/actions/registration";
 import { EMAIL_VERIFICATION_ENABLED } from "@/lib/constants";
+import { PasswordRequirements } from "@/components/auth/password-requirements";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -21,6 +22,16 @@ import { BookOpen } from "lucide-react";
 
 const initial: ActionState = {};
 const otpInitial: RegistrationState = {};
+
+const emptyValues: RegisterFormValues = {
+  name: "",
+  email: "",
+  role: "STUDENT",
+  bio: "",
+  expertise: "",
+  qualification: "",
+  experienceYears: "",
+};
 
 function str(value: string | undefined | null): string {
   return value ?? "";
@@ -73,10 +84,180 @@ function FieldErrors({ fieldErrors }: { fieldErrors?: Record<string, string[]> }
   );
 }
 
+function RegisterFields({
+  values,
+  role,
+  onRoleChange,
+  isInstructor,
+  selfieUrl,
+  onSelfie,
+  password,
+  onPasswordChange,
+  showPasswordState,
+}: {
+  values: RegisterFormValues;
+  role: "STUDENT" | "INSTRUCTOR";
+  onRoleChange: (role: "STUDENT" | "INSTRUCTOR") => void;
+  isInstructor: boolean;
+  selfieUrl: string;
+  onSelfie: (url: string) => void;
+  password?: string;
+  onPasswordChange?: (value: string) => void;
+  showPasswordState?: boolean;
+}) {
+  return (
+    <>
+      <div className="space-y-2">
+        <Label htmlFor="name">Full name</Label>
+        <Input
+          id="name"
+          name="name"
+          required
+          placeholder="Your name"
+          defaultValue={values.name}
+          key={`name-${values.name}`}
+        />
+      </div>
+      <div className="space-y-2">
+        <Label htmlFor="email">Email</Label>
+        <Input
+          id="email"
+          name="email"
+          type="email"
+          required
+          placeholder="you@example.com"
+          defaultValue={values.email}
+          key={`email-${values.email}`}
+        />
+      </div>
+      <div className="space-y-2">
+        <Label htmlFor="password">Password</Label>
+        {showPasswordState && onPasswordChange ?
+          <Input
+            id="password"
+            name="password"
+            type="password"
+            required
+            autoComplete="new-password"
+            value={password}
+            onChange={(e) => onPasswordChange(e.target.value)}
+          />
+        : <Input
+            id="password"
+            name="password"
+            type="password"
+            required
+            autoComplete="new-password"
+          />
+        }
+      </div>
+      <div className="space-y-2">
+        <Label htmlFor="confirmPassword">Confirm password</Label>
+        <Input
+          id="confirmPassword"
+          name="confirmPassword"
+          type="password"
+          required
+          autoComplete="new-password"
+        />
+      </div>
+      <PasswordRequirements />
+      <div className="space-y-2">
+        <Label htmlFor="role">I want to</Label>
+        <select
+          id="role"
+          name="role"
+          className="input-field"
+          value={role}
+          onChange={(e) => onRoleChange(e.target.value as "STUDENT" | "INSTRUCTOR")}
+        >
+          <option value="STUDENT">Learn as a student</option>
+          <option value="INSTRUCTOR">Teach as an instructor (requires approval)</option>
+        </select>
+      </div>
+      {isInstructor ?
+        <InstructorFields values={values} selfieUrl={selfieUrl} onSelfie={onSelfie} />
+      : null}
+    </>
+  );
+}
+
+function InstructorFields({
+  values,
+  selfieUrl,
+  onSelfie,
+}: {
+  values: RegisterFormValues;
+  selfieUrl: string;
+  onSelfie: (url: string) => void;
+}) {
+  return (
+    <div className="space-y-4 rounded-[var(--radius)] border border-[var(--border)] bg-[var(--background)] p-4">
+      <p className="text-sm font-semibold text-[var(--foreground)]">Instructor application (required)</p>
+      <p className="text-xs text-[var(--foreground-muted)]">
+        You cannot create or publish courses until an admin approves this application.
+      </p>
+      <div className="space-y-2">
+        <Label htmlFor="expertise">Area of expertise</Label>
+        <Input
+          id="expertise"
+          name="expertise"
+          required
+          placeholder="e.g. Web Development"
+          defaultValue={values.expertise}
+          key={`expertise-${values.expertise}`}
+        />
+      </div>
+      <div className="space-y-2">
+        <Label htmlFor="qualification">Highest qualification</Label>
+        <Input
+          id="qualification"
+          name="qualification"
+          required
+          placeholder="e.g. BSc Computer Science"
+          defaultValue={values.qualification}
+          key={`qualification-${values.qualification}`}
+        />
+      </div>
+      <div className="space-y-2">
+        <Label htmlFor="experienceYears">Years of teaching experience</Label>
+        <Input
+          id="experienceYears"
+          name="experienceYears"
+          type="number"
+          min={0}
+          max={50}
+          required
+          defaultValue={values.experienceYears || "0"}
+          key={`exp-${values.experienceYears}`}
+        />
+      </div>
+      <div className="space-y-2">
+        <Label htmlFor="bio">Professional bio</Label>
+        <Textarea
+          id="bio"
+          name="bio"
+          required
+          rows={4}
+          minLength={50}
+          placeholder="Describe your teaching background (minimum 50 characters)..."
+          defaultValue={values.bio}
+          key={`bio-${values.bio.slice(0, 20)}`}
+        />
+      </div>
+      <SelfieCapture onCaptured={(url) => onSelfie(str(url))} />
+      <input type="hidden" name="selfieUrl" value={str(selfieUrl)} readOnly />
+    </div>
+  );
+}
+
 function RegisterFormDirect() {
   const [state, action, pending] = useActionState(registerAction, initial);
   const searchParams = useSearchParams();
-  const [role, setRole] = useState<"STUDENT" | "INSTRUCTOR">("STUDENT");
+  const values = state.values ?? emptyValues;
+  const [role, setRole] = useState<"STUDENT" | "INSTRUCTOR">(
+    (values.role as "STUDENT" | "INSTRUCTOR") || "STUDENT",
+  );
   const [selfieUrl, setSelfieUrl] = useState("");
 
   useEffect(() => {
@@ -84,6 +265,12 @@ function RegisterFormDirect() {
     if (param === "instructor") setRole("INSTRUCTOR");
     else if (param === "student") setRole("STUDENT");
   }, [searchParams]);
+
+  useEffect(() => {
+    if (state.values?.role) {
+      setRole(state.values.role as "STUDENT" | "INSTRUCTOR");
+    }
+  }, [state.values?.role]);
 
   const isInstructor = role === "INSTRUCTOR";
 
@@ -107,38 +294,17 @@ function RegisterFormDirect() {
         <ErrorBanner error={state?.error} />
         <FieldErrors fieldErrors={state?.fieldErrors} />
 
-        <div className="space-y-2">
-          <Label htmlFor="name">Full name</Label>
-          <Input id="name" name="name" required placeholder="Your name" />
-        </div>
-        <div className="space-y-2">
-          <Label htmlFor="email">Email</Label>
-          <Input id="email" name="email" type="email" required placeholder="you@example.com" />
-        </div>
-        <div className="space-y-2">
-          <Label htmlFor="password">Password</Label>
-          <Input id="password" name="password" type="password" required minLength={8} />
-        </div>
-        <div className="space-y-2">
-          <Label htmlFor="role">I want to</Label>
-          <select
-            id="role"
-            name="role"
-            className="input-field"
-            value={role}
-            onChange={(e) => {
-              setRole(e.target.value as "STUDENT" | "INSTRUCTOR");
-              setSelfieUrl("");
-            }}
-          >
-            <option value="STUDENT">Learn as a student</option>
-            <option value="INSTRUCTOR">Teach as an instructor (requires approval)</option>
-          </select>
-        </div>
-
-        {isInstructor ?
-          <InstructorFields selfieUrl={selfieUrl} onSelfie={setSelfieUrl} />
-        : null}
+        <RegisterFields
+          values={values}
+          role={role}
+          onRoleChange={(r) => {
+            setRole(r);
+            if (r === "STUDENT") setSelfieUrl("");
+          }}
+          isInstructor={isInstructor}
+          selfieUrl={selfieUrl}
+          onSelfie={setSelfieUrl}
+        />
 
         <Button
           type="submit"
@@ -159,56 +325,6 @@ function RegisterFormDirect() {
   );
 }
 
-function InstructorFields({
-  selfieUrl,
-  onSelfie,
-}: {
-  selfieUrl: string;
-  onSelfie: (url: string) => void;
-}) {
-  return (
-    <div className="space-y-4 rounded-[var(--radius)] border border-[var(--border)] bg-[var(--background)] p-4">
-      <p className="text-sm font-semibold text-[var(--foreground)]">Instructor application (required)</p>
-      <p className="text-xs text-[var(--foreground-muted)]">
-        You cannot create or publish courses until an admin approves this application.
-      </p>
-      <div className="space-y-2">
-        <Label htmlFor="expertise">Area of expertise</Label>
-        <Input id="expertise" name="expertise" required placeholder="e.g. Web Development" />
-      </div>
-      <div className="space-y-2">
-        <Label htmlFor="qualification">Highest qualification</Label>
-        <Input id="qualification" name="qualification" required placeholder="e.g. BSc Computer Science" />
-      </div>
-      <div className="space-y-2">
-        <Label htmlFor="experienceYears">Years of teaching experience</Label>
-        <Input
-          id="experienceYears"
-          name="experienceYears"
-          type="number"
-          min={0}
-          max={50}
-          required
-          defaultValue={0}
-        />
-      </div>
-      <div className="space-y-2">
-        <Label htmlFor="bio">Professional bio</Label>
-        <Textarea
-          id="bio"
-          name="bio"
-          required
-          rows={4}
-          minLength={50}
-          placeholder="Describe your teaching background (minimum 50 characters)..."
-        />
-      </div>
-      <SelfieCapture onCaptured={(url) => onSelfie(str(url))} />
-      <input type="hidden" name="selfieUrl" value={str(selfieUrl)} readOnly />
-    </div>
-  );
-}
-
 function RegisterFormWithOtp() {
   const searchParams = useSearchParams();
   const [sendState, sendAction, sendPending] = useActionState(sendRegistrationOtpAction, otpInitial);
@@ -221,7 +337,10 @@ function RegisterFormWithOtp() {
     otpInitial,
   );
 
-  const [role, setRole] = useState<"STUDENT" | "INSTRUCTOR">("STUDENT");
+  const formValues = sendState.values ?? emptyValues;
+  const [role, setRole] = useState<"STUDENT" | "INSTRUCTOR">(
+    (formValues.role as "STUDENT" | "INSTRUCTOR") || "STUDENT",
+  );
   const [selfieUrl, setSelfieUrl] = useState("");
   const [password, setPassword] = useState("");
 
@@ -234,6 +353,12 @@ function RegisterFormWithOtp() {
     if (param === "instructor") setRole("INSTRUCTOR");
     else if (param === "student") setRole("STUDENT");
   }, [searchParams]);
+
+  useEffect(() => {
+    if (sendState.values?.role) {
+      setRole(sendState.values.role as "STUDENT" | "INSTRUCTOR");
+    }
+  }, [sendState.values?.role]);
 
   const isInstructor = role === "INSTRUCTOR";
 
@@ -316,46 +441,20 @@ function RegisterFormWithOtp() {
         <ErrorBanner error={sendState.error} />
         <FieldErrors fieldErrors={sendState.fieldErrors} />
 
-        <div className="space-y-2">
-          <Label htmlFor="name">Full name</Label>
-          <Input id="name" name="name" required placeholder="Your name" />
-        </div>
-        <div className="space-y-2">
-          <Label htmlFor="email">Email</Label>
-          <Input id="email" name="email" type="email" required placeholder="you@example.com" />
-        </div>
-        <div className="space-y-2">
-          <Label htmlFor="password">Password</Label>
-          <Input
-            id="password"
-            name="password"
-            type="password"
-            required
-            minLength={8}
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-          />
-        </div>
-        <div className="space-y-2">
-          <Label htmlFor="role">I want to</Label>
-          <select
-            id="role"
-            name="role"
-            className="input-field"
-            value={role}
-            onChange={(e) => {
-              setRole(e.target.value as "STUDENT" | "INSTRUCTOR");
-              setSelfieUrl("");
-            }}
-          >
-            <option value="STUDENT">Learn as a student</option>
-            <option value="INSTRUCTOR">Teach as an instructor (requires approval)</option>
-          </select>
-        </div>
-
-        {isInstructor ?
-          <InstructorFields selfieUrl={selfieUrl} onSelfie={setSelfieUrl} />
-        : null}
+        <RegisterFields
+          values={formValues}
+          role={role}
+          onRoleChange={(r) => {
+            setRole(r);
+            if (r === "STUDENT") setSelfieUrl("");
+          }}
+          isInstructor={isInstructor}
+          selfieUrl={selfieUrl}
+          onSelfie={setSelfieUrl}
+          password={password}
+          onPasswordChange={setPassword}
+          showPasswordState
+        />
 
         <Button
           type="submit"

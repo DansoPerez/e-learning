@@ -21,7 +21,7 @@ export function DeleteUserButton({
         if (!confirmed) e.preventDefault();
       }}
     >
-      <Button type="submit" variant="danger" size="sm" className="gap-1.5">
+      <Button type="submit" variant="danger" size="sm" className="min-h-[44px] w-full gap-1.5 sm:w-auto">
         <Trash2 className="h-3.5 w-3.5" />
         Delete account
       </Button>
