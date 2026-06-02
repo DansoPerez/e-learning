@@ -30,6 +30,7 @@ import {
   updateUserRoleAction,
 } from "@/app/actions/admin";
 import { DeleteUserButton } from "@/components/admin/delete-user-button";
+import { MessageInstructorButton } from "@/components/admin/message-instructor-button";
 import { formatDate } from "@/lib/utils";
 import { ArrowLeft } from "lucide-react";
 import type { Role } from "@/app/generated/prisma/client";
@@ -323,6 +324,7 @@ export default async function AdminUserDetailPage({
               </div>
             </div>
             <ActionRow>
+              <MessageInstructorButton instructorId={id} label="Message instructor" />
               {user.instructorProfile.status === "PENDING" || user.instructorProfile.status === "REJECTED" || user.instructorProfile.status === "REVOKED" ?
                 <form action={reinstateInstructorAction.bind(null, id)}>
                   <Button type="submit" size="sm">

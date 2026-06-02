@@ -11,6 +11,7 @@ import {
   unfreezeInstructorEarningsAction,
   activateUserAction,
 } from "@/app/actions/admin";
+import { MessageInstructorButton } from "@/components/admin/message-instructor-button";
 import { ActionRow } from "@/components/ui/action-row";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -142,6 +143,7 @@ export default async function AdminInstructorsPage() {
                   </Button>
                 </form>
               : null}
+              <MessageInstructorButton instructorId={p.userId} />
               <Link href={`/dashboard/admin/users/${p.userId}`}>
                 <Button variant="secondary" size="sm">
                   Full control

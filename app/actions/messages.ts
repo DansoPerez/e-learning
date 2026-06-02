@@ -158,6 +158,53 @@ export async function startInstructorSupportChatAction(): Promise<void> {
   redirect(`/dashboard/instructor/messages/${conversation.id}`);
 }
 
+/** Admin opens (or resumes) a support thread with an instructor. */
+export async function startAdminInstructorChatAction(instructorId: string): Promise<void> {
+  const admin = await requireRole("ADMIN");
+
+  const instructor = await prisma.user.findFirst({
+    where: {
+      id: instructorId,
+      role: "INSTRUCTOR",
+      instructorProfile: { isNot: null },
+    },
+    select: { id: true },
+  });
+
+  if (!instructor) {
+    redirect("/dashboard/admin/messages?error=not-instructor");
+  }
+
+  let conversation = await prisma.conversation.findFirst({
+    where: { type: "INSTRUCTOR_ADMIN", studentId: instructorId },
+    orderBy: { updatedAt: "desc" },
+  });
+
+  if (!conversation) {
+    conversation = await prisma.conversation.create({
+      data: {
+        type: "INSTRUCTOR_ADMIN",
+        studentId: instructorId,
+        otherId: admin.id,
+      },
+    });
+    await logAudit({
+      actorId: admin.id,
+      action: "START_CONVERSATION",
+      targetType: "Conversation",
+      targetId: conversation.id,
+      description: `Started instructor support chat with ${instructorId}`,
+    });
+  } else {
+    await prisma.conversation.update({
+      where: { id: conversation.id },
+      data: { updatedAt: new Date() },
+    });
+  }
+
+  redirect(`/dashboard/admin/messages/${conversation.id}`);
+}
+
 export async function deleteMessageAction(messageId: string): Promise<{ error?: string }> {
   const user = await requireAuth();
 
