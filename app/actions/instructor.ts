@@ -14,6 +14,14 @@ export async function applyInstructorAction(
 ): Promise<ActionState> {
   const user = await requireAuth();
 
+  const existingProfile = await prisma.instructorProfile.findUnique({
+    where: { userId: user.id },
+    select: { status: true },
+  });
+  if (existingProfile?.status === "APPROVED") {
+    return { error: "You are already an approved instructor." };
+  }
+
   const parsed = instructorApplicationSchema.safeParse({
     bio: formData.get("bio"),
     expertise: formData.get("expertise"),
@@ -57,17 +65,6 @@ export async function requestWithdrawalAction(
 ): Promise<ActionState> {
   const user = await requireRole("INSTRUCTOR");
 
-  const profile = await prisma.instructorProfile.findUnique({
-    where: { userId: user.id },
-  });
-
-  if (!profile || profile.status !== "APPROVED") {
-    return { error: "Instructor profile not approved" };
-  }
-  if (profile.earningsFrozen) {
-    return { error: "Your earnings are frozen. Contact support." };
-  }
-
   const parsed = withdrawalSchema.safeParse({
     amount: formData.get("amount"),
     note: formData.get("note") || undefined,
@@ -76,21 +73,43 @@ export async function requestWithdrawalAction(
     return { error: parsed.error.issues[0]?.message ?? "Invalid amount" };
   }
 
-  if (parsed.data.amount > Number(profile.balance)) {
-    return { error: "Insufficient balance" };
-  }
+  try {
+    await prisma.$transaction(async (tx) => {
+      const profile = await tx.instructorProfile.findUnique({
+        where: { userId: user.id },
+      });
 
-  await prisma.withdrawal.create({
-    data: {
-      instructorId: user.id,
-      amount: parsed.data.amount,
-      note: parsed.data.note,
-    },
-  });
-  await prisma.instructorProfile.update({
-    where: { userId: user.id },
-    data: { balance: { decrement: parsed.data.amount } },
-  });
+      if (!profile || profile.status !== "APPROVED") {
+        throw new Error("Instructor profile not approved");
+      }
+      if (profile.earningsFrozen) {
+        throw new Error("Your earnings are frozen. Contact support.");
+      }
+      if (parsed.data.amount > Number(profile.balance)) {
+        throw new Error("Insufficient balance");
+      }
+
+      const deducted = await tx.instructorProfile.updateMany({
+        where: { userId: user.id, balance: { gte: parsed.data.amount } },
+        data: { balance: { decrement: parsed.data.amount } },
+      });
+      if (deducted.count === 0) {
+        throw new Error("Insufficient balance");
+      }
+
+      await tx.withdrawal.create({
+        data: {
+          instructorId: user.id,
+          amount: parsed.data.amount,
+          note: parsed.data.note,
+        },
+      });
+    });
+  } catch (error) {
+    return {
+      error: error instanceof Error ? error.message : "Withdrawal request failed",
+    };
+  }
 
   revalidatePath("/dashboard/instructor/withdrawals");
   return { success: true };

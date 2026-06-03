@@ -1,11 +1,24 @@
 import { prisma } from "@/lib/prisma";
 import { chargesForCourse } from "@/lib/course-pricing";
+import { calculateCourseProgress } from "@/lib/course-completion";
+import { ensureCompPayment } from "@/lib/services/payment";
+import type { CourseStatus } from "@/app/generated/prisma/client";
+
+/** Students with enrollment retain access when a course is hidden from the catalog. */
+const ENROLLED_ACCESS_STATUSES: CourseStatus[] = ["PUBLISHED", "HIDDEN"];
 
 async function getUserAccessFlags(userId: string) {
   return prisma.user.findUnique({
     where: { id: userId },
     select: { role: true, status: true, allCoursesAccess: true },
   });
+}
+
+async function hasSuccessfulPayment(userId: string, courseId: string) {
+  const payment = await prisma.payment.findFirst({
+    where: { userId, courseId, status: "SUCCESS" },
+  });
+  return !!payment;
 }
 
 export async function hasCourseAccess(userId: string, courseId: string) {
@@ -23,30 +36,37 @@ export async function hasCourseAccess(userId: string, courseId: string) {
   if (user.role === "ADMIN") return true;
   if (course.instructorId === userId) return true;
 
-  if (course.status !== "PUBLISHED") return false;
+  const enrollment = await prisma.enrollment.findUnique({
+    where: { userId_courseId: { userId, courseId } },
+  });
 
-  if (user.allCoursesAccess) {
+  const paid = chargesForCourse(Number(course.price));
+
+  if (
+    user.allCoursesAccess &&
+    (course.status === "PUBLISHED" || course.status === "HIDDEN")
+  ) {
+    if (!enrollment) await ensureEnrollment(userId, courseId);
+    return true;
+  }
+
+  if (enrollment && ENROLLED_ACCESS_STATUSES.includes(course.status)) {
+    if (!paid) return true;
+    if (await hasSuccessfulPayment(userId, courseId)) return true;
+  }
+
+  if (paid && !enrollment && (await hasSuccessfulPayment(userId, courseId))) {
     await ensureEnrollment(userId, courseId);
     return true;
   }
 
-  if (!chargesForCourse(Number(course.price))) {
-    const enrollment = await prisma.enrollment.findUnique({
-      where: { userId_courseId: { userId, courseId } },
-    });
+  if (course.status !== "PUBLISHED") return false;
+
+  if (!paid) {
     return !!enrollment;
   }
 
-  const [enrollment, payment] = await Promise.all([
-    prisma.enrollment.findUnique({
-      where: { userId_courseId: { userId, courseId } },
-    }),
-    prisma.payment.findFirst({
-      where: { userId, courseId, status: "SUCCESS" },
-    }),
-  ]);
-
-  return !!enrollment && !!payment;
+  return !!enrollment && (await hasSuccessfulPayment(userId, courseId));
 }
 
 export async function ensureEnrollment(userId: string, courseId: string) {
@@ -93,29 +113,58 @@ export async function enrollUserInAllPublishedCourses(userId: string) {
 }
 
 export async function updateCourseProgress(userId: string, courseId: string) {
-  const lessons = await prisma.lesson.findMany({
-    where: { module: { courseId } },
-    select: { id: true },
+  const state = await calculateCourseProgress(userId, courseId);
+
+  if (state.lessonCount === 0 && state.requiredQuizCount === 0) return;
+
+  const existing = await prisma.enrollment.findUnique({
+    where: { userId_courseId: { userId, courseId } },
+    select: { completedAt: true },
   });
-
-  if (lessons.length === 0) return;
-
-  const completed = await prisma.lessonProgress.count({
-    where: {
-      userId,
-      lessonId: { in: lessons.map((l) => l.id) },
-      completed: true,
-    },
-  });
-
-  const progressPercent = Math.round((completed / lessons.length) * 100);
 
   await prisma.enrollment.upsert({
     where: { userId_courseId: { userId, courseId } },
-    create: { userId, courseId, progressPercent },
+    create: {
+      userId,
+      courseId,
+      progressPercent: state.progressPercent,
+      completedAt: state.isComplete ? new Date() : null,
+    },
     update: {
-      progressPercent,
-      completedAt: progressPercent >= 100 ? new Date() : null,
+      progressPercent: state.progressPercent,
+      completedAt:
+        state.isComplete ?
+          (existing?.completedAt ?? new Date())
+        : null,
     },
   });
+}
+
+/** Recalculate stored progress for all enrollments in a course (after curriculum changes). */
+export async function recalculateCourseEnrollments(courseId: string) {
+  const enrollments = await prisma.enrollment.findMany({
+    where: { courseId },
+    select: { userId: true },
+  });
+
+  for (const { userId } of enrollments) {
+    await updateCourseProgress(userId, courseId);
+  }
+}
+
+/** Admin comp enrollment: grant access including paid courses. */
+export async function adminEnrollUserInCourse(userId: string, courseId: string) {
+  await ensureEnrollment(userId, courseId);
+  await ensureCompPayment(userId, courseId);
+}
+
+/** Removes enrollment and voids payments so access cannot be restored automatically. */
+export async function revokeCourseEnrollment(userId: string, courseId: string) {
+  await prisma.$transaction([
+    prisma.enrollment.deleteMany({ where: { userId, courseId } }),
+    prisma.payment.updateMany({
+      where: { userId, courseId, status: { in: ["SUCCESS", "PENDING"] } },
+      data: { status: "FAILED" },
+    }),
+  ]);
 }

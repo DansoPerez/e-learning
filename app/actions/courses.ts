@@ -15,6 +15,8 @@ import { initiateCoursePayment } from "@/lib/services/payment";
 import { saveLessonPdf } from "@/lib/lesson-pdf-storage";
 import { redirect } from "next/navigation";
 import { requireApprovedInstructor } from "@/lib/instructor";
+import { assertCanEditCourse, assertModuleInCourse } from "@/lib/course-owner";
+import { recalculateCourseEnrollments } from "@/lib/services/enrollment";
 
 export type ActionState = { error?: string; success?: boolean };
 
@@ -124,6 +126,7 @@ export async function addModuleAction(
   if (user.role === "INSTRUCTOR") {
     await requireApprovedInstructor(user.id);
   }
+  await assertCanEditCourse(user.id, user.role, courseId);
 
   const parsed = moduleSchema.safeParse({
     title: formData.get("title"),
@@ -135,6 +138,7 @@ export async function addModuleAction(
     data: { ...parsed.data, courseId },
   });
 
+  await recalculateCourseEnrollments(courseId);
   revalidatePath(`/dashboard/instructor/courses/${courseId}`);
 }
 
@@ -147,6 +151,8 @@ export async function addLessonAction(
   if (user.role === "INSTRUCTOR") {
     await requireApprovedInstructor(user.id);
   }
+  await assertCanEditCourse(user.id, user.role, courseId);
+  await assertModuleInCourse(moduleId, courseId);
 
   const parsed = lessonSchema.safeParse({
     title: formData.get("title"),
@@ -181,6 +187,7 @@ export async function addLessonAction(
     },
   });
 
+  await recalculateCourseEnrollments(courseId);
   revalidatePath(`/dashboard/instructor/courses/${courseId}`);
 }
 
@@ -195,6 +202,11 @@ export async function enrollCourseAction(courseId: string): Promise<void> {
     const result = await initiateCoursePayment(user.id, courseId);
     if (result.type === "paid") {
       redirect(result.authorizationUrl);
+    }
+    if (result.type === "already_owned") {
+      revalidatePath(`/courses/${course.slug}`);
+      revalidatePath("/dashboard/student");
+      redirect(`/learn/${course.slug}`);
     }
   }
 

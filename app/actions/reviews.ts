@@ -18,6 +18,10 @@ export async function submitReviewAction(
 ): Promise<ReviewActionState> {
   const user = await requireAuth();
 
+  if (user.role !== "STUDENT") {
+    return { error: "Only students can leave course reviews" };
+  }
+
   const parsed = reviewSchema.safeParse({
     rating: formData.get("rating"),
     comment: formData.get("comment"),

@@ -5,6 +5,7 @@ import {
   approveCourseAction,
   publishCourseAction,
   rejectCourseAction,
+  toggleCourseFeaturedAction,
   updateCoursePriceAction,
 } from "@/app/actions/admin";
 import { CourseAdminActions } from "@/components/admin/course-admin-actions";
@@ -42,17 +43,21 @@ export default async function AdminCoursesPage() {
               <p className="text-sm text-[var(--foreground-muted)]">
                 by {c.instructor.name} · {formatCurrency(Number(c.price))}
               </p>
-              <Badge
-                variant={
-                  c.status === "PUBLISHED" ? "success"
-                  : c.status === "PENDING" ? "warning"
-                  : c.status === "HIDDEN" ? "default"
-                  : "danger"
-                }
-                className="mt-2"
-              >
-                {c.status}
-              </Badge>
+              <div className="mt-2 flex flex-wrap gap-2">
+                <Badge
+                  variant={
+                    c.status === "PUBLISHED" ? "success"
+                    : c.status === "PENDING" ? "warning"
+                    : c.status === "HIDDEN" ? "default"
+                    : "danger"
+                  }
+                >
+                  {c.status}
+                </Badge>
+                {c.featured ?
+                  <Badge variant="info">Featured on homepage</Badge>
+                : null}
+              </div>
             </div>
             <div className="flex w-full flex-col gap-3">
               <form
@@ -73,6 +78,11 @@ export default async function AdminCoursesPage() {
                 </Button>
               </form>
               <ActionRow>
+                <form action={toggleCourseFeaturedAction.bind(null, c.id)}>
+                  <Button type="submit" variant="secondary" size="sm">
+                    {c.featured ? "Unfeature" : "Feature on homepage"}
+                  </Button>
+                </form>
                 {c.status === "PENDING" ?
                   <>
                     <form action={approveCourseAction.bind(null, c.id)}>

@@ -59,10 +59,11 @@ function UserRow({
   );
 }
 
-const PRESENCE_TICK_MS = 15_000;
+const PRESENCE_TICK_MS = 10_000;
+const PRESENCE_POLL_MS = 20_000;
 
 export function OnlineUsersPanel({
-  pollMs = 30_000,
+  pollMs = PRESENCE_POLL_MS,
 }: {
   pollMs?: number;
 }) {
@@ -172,7 +173,7 @@ export function InstructorOnlineStudentsPanel() {
 
   useEffect(() => {
     load();
-    const id = setInterval(load, 30_000);
+    const id = setInterval(load, PRESENCE_POLL_MS);
     return () => clearInterval(id);
   }, [load]);
 

@@ -17,8 +17,11 @@ import { createNotification } from "@/lib/notifications";
 import bcrypt from "bcryptjs";
 import { randomBytes } from "crypto";
 import {
+  adminEnrollUserInCourse,
   enrollUserInAllPublishedCourses,
-  ensureEnrollment,
+  recalculateCourseEnrollments,
+  revokeCourseEnrollment,
+  updateCourseProgress,
 } from "@/lib/services/enrollment";
 import type { Role, UserStatus } from "@/app/generated/prisma/client";
 
@@ -142,6 +145,7 @@ export async function freezeInstructorEarningsAction(userId: string): Promise<vo
 
 export async function unfreezeInstructorEarningsAction(userId: string): Promise<void> {
   const admin = await requireSensitiveAdmin();
+  await assertCanManageUser(admin.id, userId);
 
   await prisma.instructorProfile.update({
     where: { userId },
@@ -162,6 +166,14 @@ export async function unfreezeInstructorEarningsAction(userId: string): Promise<
 export async function approveCourseAction(courseId: string): Promise<void> {
   const admin = await adminOnly();
 
+  const course = await prisma.course.findUnique({
+    where: { id: courseId },
+    select: { status: true },
+  });
+  if (!course || course.status !== "PENDING") {
+    throw new Error("Only pending courses can be approved");
+  }
+
   await prisma.course.update({
     where: { id: courseId },
     data: { status: "APPROVED", rejectionReason: null },
@@ -180,6 +192,14 @@ export async function approveCourseAction(courseId: string): Promise<void> {
 
 export async function publishCourseAction(courseId: string): Promise<void> {
   const admin = await adminOnly();
+
+  const course = await prisma.course.findUnique({
+    where: { id: courseId },
+    select: { status: true },
+  });
+  if (!course || course.status !== "APPROVED") {
+    throw new Error("Only approved courses can be published");
+  }
 
   await prisma.course.update({
     where: { id: courseId },
@@ -393,6 +413,23 @@ export async function updateUserRoleAction(
   const admin = await adminOnly();
   await assertCanManageUser(admin.id, userId);
 
+  if (role === "ADMIN") {
+    await requireSuperAdmin();
+  }
+
+  const target = await prisma.user.findUnique({
+    where: { id: userId },
+    select: { role: true },
+  });
+  if (!target) throw new Error("User not found");
+
+  if (target.role === "ADMIN" && role !== "ADMIN") {
+    const adminCount = await prisma.user.count({ where: { role: "ADMIN" } });
+    if (adminCount <= 1) {
+      throw new Error("Cannot demote the last admin account");
+    }
+  }
+
   await prisma.user.update({
     where: { id: userId },
     data: { role },
@@ -458,7 +495,7 @@ export async function enrollUserInCourseAction(
   const admin = await adminOnly();
   await assertCanManageUser(admin.id, userId);
 
-  await ensureEnrollment(userId, courseId);
+  await adminEnrollUserInCourse(userId, courseId);
 
   await logAudit({
     actorId: admin.id,
@@ -478,9 +515,7 @@ export async function revokeEnrollmentAction(
   const admin = await adminOnly();
   await assertCanManageUser(admin.id, userId);
 
-  await prisma.enrollment.deleteMany({
-    where: { userId, courseId },
-  });
+  await revokeCourseEnrollment(userId, courseId);
 
   await logAudit({
     actorId: admin.id,
@@ -516,21 +551,32 @@ async function processWithdrawalAction(
   });
   if (!withdrawal) return;
 
-  if (action === "REJECT" && withdrawal.status === "PENDING") {
-    await prisma.withdrawal.update({
-      where: { id: withdrawalId },
-      data: { status: "REJECTED", adminNote },
-    });
-    await prisma.instructorProfile.update({
-      where: { userId: withdrawal.instructorId },
-      data: { balance: { increment: withdrawal.amount } },
-    });
+  if (action === "REJECT") {
+    if (withdrawal.status !== "PENDING" && withdrawal.status !== "APPROVED") {
+      throw new Error("This withdrawal cannot be rejected");
+    }
+    await prisma.$transaction([
+      prisma.withdrawal.update({
+        where: { id: withdrawalId },
+        data: { status: "REJECTED", adminNote },
+      }),
+      prisma.instructorProfile.update({
+        where: { userId: withdrawal.instructorId },
+        data: { balance: { increment: withdrawal.amount } },
+      }),
+    ]);
   } else if (action === "APPROVE") {
+    if (withdrawal.status !== "PENDING") {
+      throw new Error("Only pending withdrawals can be approved");
+    }
     await prisma.withdrawal.update({
       where: { id: withdrawalId },
       data: { status: "APPROVED", adminNote },
     });
   } else if (action === "COMPLETE") {
+    if (withdrawal.status !== "APPROVED") {
+      throw new Error("Only approved withdrawals can be marked complete");
+    }
     await prisma.withdrawal.update({
       where: { id: withdrawalId },
       data: { status: "COMPLETED", adminNote },
@@ -550,6 +596,9 @@ async function processWithdrawalAction(
 
 export async function updateCommissionAction(rate: number): Promise<void> {
   const admin = await requireSensitiveAdmin();
+  if (Number.isNaN(rate) || rate < 0 || rate > 1) {
+    throw new Error("Commission must be between 0 and 1");
+  }
   await setPlatformCommission(rate);
 
   await logAudit({
@@ -761,4 +810,127 @@ export async function restoreAdminSensitivePermissionsAction(
   });
 
   revalidateUserPaths(targetAdminId);
+}
+
+export async function toggleCourseFeaturedAction(courseId: string): Promise<void> {
+  const admin = await adminOnly();
+
+  const course = await prisma.course.findUnique({
+    where: { id: courseId },
+    select: { featured: true, title: true },
+  });
+  if (!course) return;
+
+  await prisma.course.update({
+    where: { id: courseId },
+    data: { featured: !course.featured },
+  });
+
+  await logAudit({
+    actorId: admin.id,
+    action: course.featured ? "UNFEATURE_COURSE" : "FEATURE_COURSE",
+    targetType: "Course",
+    targetId: courseId,
+    description: `${course.featured ? "Removed" : "Set"} featured: ${course.title}`,
+  });
+
+  revalidatePath("/dashboard/admin/courses");
+  revalidatePath("/");
+  revalidatePath("/courses");
+}
+
+export async function updateInstructorProfileAction(
+  userId: string,
+  formData: FormData,
+): Promise<{ error?: string }> {
+  const admin = await adminOnly();
+
+  const bio = String(formData.get("bio") ?? "").trim();
+  const expertise = String(formData.get("expertise") ?? "").trim();
+  const qualification = String(formData.get("qualification") ?? "").trim();
+  const experienceYears = Number(formData.get("experienceYears") ?? 0);
+
+  if (!bio || !expertise || !qualification || experienceYears < 0) {
+    return { error: "All profile fields are required." };
+  }
+
+  await prisma.instructorProfile.update({
+    where: { userId },
+    data: { bio, expertise, qualification, experienceYears },
+  });
+
+  await logAudit({
+    actorId: admin.id,
+    action: "UPDATE_INSTRUCTOR_PROFILE",
+    targetType: "InstructorProfile",
+    targetId: userId,
+    description: `Updated instructor profile for ${userId}`,
+  });
+
+  revalidatePath("/dashboard/admin/instructors");
+  revalidateUserPaths(userId);
+  return {};
+}
+
+export async function toggleQuizEnabledAction(
+  quizId: string,
+  enabled: boolean,
+): Promise<void> {
+  const admin = await adminOnly();
+
+  const quiz = await prisma.quiz.update({
+    where: { id: quizId },
+    data: { isEnabled: enabled },
+    select: { courseId: true, course: { select: { slug: true } } },
+  });
+
+  await recalculateCourseEnrollments(quiz.courseId);
+
+  await logAudit({
+    actorId: admin.id,
+    action: enabled ? "ENABLE_QUIZ" : "DISABLE_QUIZ",
+    targetType: "Quiz",
+    targetId: quizId,
+    description: `${enabled ? "Enabled" : "Disabled"} quiz ${quizId}`,
+  });
+
+  revalidatePath("/dashboard/admin/quizzes");
+  revalidatePath(`/learn/${quiz.course.slug}`);
+}
+
+export async function overrideQuizAttemptAction(
+  attemptId: string,
+  formData: FormData,
+): Promise<void> {
+  const admin = await requireSensitiveAdmin();
+
+  const score = Number(formData.get("score"));
+  const passed = formData.get("passed") === "true";
+
+  if (Number.isNaN(score) || score < 0 || score > 100) {
+    throw new Error("Score must be between 0 and 100.");
+  }
+
+  const attempt = await prisma.quizAttempt.findUnique({
+    where: { id: attemptId },
+    include: { quiz: { select: { title: true, courseId: true } } },
+  });
+  if (!attempt) throw new Error("Attempt not found");
+
+  await prisma.quizAttempt.update({
+    where: { id: attemptId },
+    data: { score, passed },
+  });
+
+  await logAudit({
+    actorId: admin.id,
+    action: "OVERRIDE_QUIZ_ATTEMPT",
+    targetType: "QuizAttempt",
+    targetId: attemptId,
+    description: `Override quiz "${attempt.quiz.title}" attempt to ${score}% (${passed ? "pass" : "fail"})`,
+  });
+
+  await updateCourseProgress(attempt.userId, attempt.quiz.courseId);
+
+  revalidatePath("/dashboard/admin/quizzes");
 }

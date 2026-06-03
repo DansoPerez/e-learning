@@ -1,6 +1,7 @@
-/** Heartbeat runs every 45s; user is online if seen within ~2 missed pings */
-export const PRESENCE_HEARTBEAT_MS = 45_000;
-export const ONLINE_WITHIN_MS = PRESENCE_HEARTBEAT_MS * 2 + 5_000; // 95s
+/** Visible-tab heartbeat interval */
+export const PRESENCE_HEARTBEAT_MS = 30_000;
+/** User stays online through missed pings + background tab (2× interval) */
+export const ONLINE_WITHIN_MS = PRESENCE_HEARTBEAT_MS * 4 + 15_000; // 135s
 
 export function onlineSinceDate(): Date {
   return new Date(Date.now() - ONLINE_WITHIN_MS);

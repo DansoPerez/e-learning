@@ -38,7 +38,7 @@ export default async function InstructorMessagesPage({
     orderBy: { updatedAt: "desc" },
     include: {
       student: {
-        select: { name: true, email: true, userCode: true, lastSeenAt: true },
+        select: { id: true, name: true, email: true, userCode: true, lastSeenAt: true },
       },
       other: { select: { name: true, role: true } },
       course: { select: { title: true } },
@@ -130,7 +130,7 @@ export default async function InstructorMessagesPage({
                     <div>
                       <div className="flex flex-wrap items-center gap-2">
                         <p className="font-semibold">{c.student.name ?? c.student.email}</p>
-                        <OnlineBadge lastSeenAt={c.student.lastSeenAt} />
+                        <OnlineBadge lastSeenAt={c.student.lastSeenAt} userId={c.student.id} />
                       </div>
                       <Badge variant="default" className="mt-1">
                         {conversationLabel(c.type)}

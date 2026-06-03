@@ -24,6 +24,20 @@ export default async function QuizPage({
   });
   if (!quiz) notFound();
 
+  if (!quiz.isEnabled) {
+    return (
+      <div className="page-container py-16 text-center">
+        <h1 className="text-xl font-bold">Assessment unavailable</h1>
+        <p className="mt-2 text-[var(--foreground-muted)]">
+          This quiz has been disabled by an administrator.
+        </p>
+        <a href={`/learn/${slug}`} className="mt-4 inline-block text-[var(--primary)] hover:underline">
+          Back to course
+        </a>
+      </div>
+    );
+  }
+
   const questions = quiz.questions.map((q) => ({
     id: q.id,
     question: q.question,

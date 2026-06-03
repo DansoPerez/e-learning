@@ -89,6 +89,7 @@ const INSTRUCTOR_APPROVED_SECTIONS: NavSection[] = [
     items: [
       { href: "/dashboard/instructor", label: "Overview" },
       { href: "/dashboard/instructor/courses", label: "My courses" },
+      { href: "/dashboard/instructor/analytics", label: "Analytics" },
       { href: "/dashboard/instructor/messages", label: "Messages" },
       { href: "/dashboard/instructor/withdrawals", label: "Withdrawals" },
     ],
@@ -112,7 +113,10 @@ const INSTRUCTOR_PENDING_SECTIONS: NavSection[] = [
 const ADMIN_SECTIONS: NavSection[] = [
   {
     label: "Overview",
-    items: [{ href: "/dashboard/admin", label: "Dashboard" }],
+    items: [
+      { href: "/dashboard/admin", label: "Dashboard" },
+      { href: "/dashboard/admin/analytics", label: "Analytics" },
+    ],
   },
   {
     label: "People & content",
@@ -121,6 +125,7 @@ const ADMIN_SECTIONS: NavSection[] = [
       { href: "/dashboard/admin/instructors", label: "Instructors" },
       { href: "/dashboard/admin/courses", label: "Courses" },
       { href: "/dashboard/admin/reviews", label: "Reviews" },
+      { href: "/dashboard/admin/quizzes", label: "Quizzes" },
     ],
   },
   {

@@ -69,11 +69,11 @@ export function DashboardNav({
   ));
 
   return (
-    <>
+    <div className="min-w-0 self-start">
       <div
         className={cn(
-          "mb-4 flex items-center justify-between gap-3 rounded-lg border border-[var(--border)] bg-white p-3 shadow-[var(--shadow-sm)] lg:sticky lg:top-[calc(var(--header-height)+0.75rem)] lg:z-30",
-          isAdmin && "top-[var(--header-height)] z-40 lg:static",
+          "mb-4 flex items-center justify-between gap-3 rounded-lg border border-[var(--border)] bg-white p-3 shadow-[var(--shadow-sm)] lg:hidden",
+          isAdmin && "z-40",
         )}
       >
         <button
@@ -128,7 +128,7 @@ export function DashboardNav({
       {isAdmin ?
         <AdminMobileNav onOpenMenu={() => setOpen(true)} />
       : null}
-    </>
+    </div>
   );
 }
 

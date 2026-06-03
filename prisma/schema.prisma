@@ -4,7 +4,7 @@ generator client {
 }
 
 datasource db {
-  provider = "mongodb"
+  provider = "postgresql"
   url      = env("DATABASE_URL")
 }
 
@@ -67,7 +67,7 @@ enum ConversationType {
 }
 
 model EmailVerification {
-  id        String   @id @default(cuid()) @map("_id")
+  id        String   @id @default(cuid())
   email     String
   codeHash  String
   purpose   String   @default("REGISTER")
@@ -79,8 +79,26 @@ model EmailVerification {
   @@index([email, purpose])
 }
 
+model PasswordResetToken {
+  id        String   @id @default(cuid())
+  email     String
+  tokenHash String   @unique
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+
+  @@index([email])
+}
+
+model RateLimitRecord {
+  id        String   @id @default(cuid())
+  key       String   @unique
+  count     Int      @default(0)
+  resetAt   DateTime
+  createdAt DateTime @default(now())
+}
+
 model User {
-  id                      String     @id @default(cuid()) @map("_id")
+  id                      String     @id @default(cuid())
   userCode                  String?    @unique
   name                      String?
   email                     String     @unique
@@ -119,7 +137,7 @@ model User {
 }
 
 model Account {
-  id                String  @id @default(cuid()) @map("_id")
+  id                String  @id @default(cuid())
   userId            String
   type              String
   provider          String
@@ -138,7 +156,7 @@ model Account {
 }
 
 model Session {
-  id           String   @id @default(cuid()) @map("_id")
+  id           String   @id @default(cuid())
   sessionToken String   @unique
   userId       String
   expires      DateTime
@@ -146,7 +164,7 @@ model Session {
 }
 
 model VerificationToken {
-  id         String   @id @default(cuid()) @map("_id")
+  id         String   @id @default(cuid())
   identifier String
   token      String   @unique
   expires    DateTime
@@ -155,7 +173,7 @@ model VerificationToken {
 }
 
 model InstructorProfile {
-  id              String           @id @default(cuid()) @map("_id")
+  id              String           @id @default(cuid())
   userId          String           @unique
   bio             String
   expertise       String
@@ -173,7 +191,7 @@ model InstructorProfile {
 }
 
 model Category {
-  id        String   @id @default(cuid()) @map("_id")
+  id        String   @id @default(cuid())
   name      String   @unique
   slug      String   @unique
   createdAt DateTime @default(now())
@@ -182,7 +200,7 @@ model Category {
 }
 
 model Course {
-  id              String       @id @default(cuid()) @map("_id")
+  id              String       @id @default(cuid())
   instructorId    String
   categoryId      String?
   title           String
@@ -211,7 +229,7 @@ model Course {
 }
 
 model Module {
-  id         String   @id @default(cuid()) @map("_id")
+  id         String   @id @default(cuid())
   courseId   String
   title      String
   orderIndex Int
@@ -225,7 +243,7 @@ model Module {
 }
 
 model Lesson {
-  id          String   @id @default(cuid()) @map("_id")
+  id          String   @id @default(cuid())
   moduleId    String
   title       String
   content         String?
@@ -243,10 +261,11 @@ model Lesson {
 }
 
 model Enrollment {
-  id              String    @id @default(cuid()) @map("_id")
+  id              String    @id @default(cuid())
   userId          String
   courseId        String
   progressPercent Int       @default(0)
+  lastLessonId    String?
   completedAt     DateTime?
   createdAt       DateTime  @default(now())
   updatedAt       DateTime  @updatedAt
@@ -258,7 +277,7 @@ model Enrollment {
 }
 
 model LessonProgress {
-  id          String    @id @default(cuid()) @map("_id")
+  id          String    @id @default(cuid())
   userId      String
   lessonId    String
   completed   Boolean   @default(false)
@@ -273,7 +292,7 @@ model LessonProgress {
 }
 
 model Payment {
-  id              String        @id @default(cuid()) @map("_id")
+  id              String        @id @default(cuid())
   userId          String
   courseId        String
   amount          Float
@@ -292,7 +311,7 @@ model Payment {
 }
 
 model Withdrawal {
-  id           String           @id @default(cuid()) @map("_id")
+  id           String           @id @default(cuid())
   instructorId String
   amount       Float
   status       WithdrawalStatus @default(PENDING)
@@ -307,7 +326,7 @@ model Withdrawal {
 }
 
 model EarningsLedger {
-  id          String   @id @default(cuid()) @map("_id")
+  id          String   @id @default(cuid())
   userId      String
   amount      Float
   type        String
@@ -321,11 +340,12 @@ model EarningsLedger {
 }
 
 model Quiz {
-  id           String   @id @default(cuid()) @map("_id")
+  id           String   @id @default(cuid())
   courseId     String
   title        String
   durationMin  Int?
   passingScore Int      @default(70)
+  isEnabled    Boolean  @default(true)
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 
@@ -335,7 +355,7 @@ model Quiz {
 }
 
 model Question {
-  id            String       @id @default(cuid()) @map("_id")
+  id            String       @id @default(cuid())
   quizId        String
   question      String
   options       Json?
@@ -350,7 +370,7 @@ model Question {
 }
 
 model QuizAttempt {
-  id        String    @id @default(cuid()) @map("_id")
+  id        String    @id @default(cuid())
   userId    String
   quizId    String
   score     Int
@@ -366,7 +386,7 @@ model QuizAttempt {
 }
 
 model Review {
-  id        String    @id @default(cuid()) @map("_id")
+  id        String    @id @default(cuid())
   userId    String
   courseId  String
   rating    Int
@@ -384,7 +404,7 @@ model Review {
 }
 
 model ReviewReply {
-  id        String    @id @default(cuid()) @map("_id")
+  id        String    @id @default(cuid())
   reviewId  String
   authorId  String
   body      String
@@ -399,7 +419,7 @@ model ReviewReply {
 }
 
 model Announcement {
-  id        String            @id @default(cuid()) @map("_id")
+  id        String            @id @default(cuid())
   authorId  String
   courseId  String?
   message   String
@@ -412,7 +432,7 @@ model Announcement {
 }
 
 model AnnouncementRead {
-  id             String   @id @default(cuid()) @map("_id")
+  id             String   @id @default(cuid())
   userId         String
   announcementId String
   readAt         DateTime @default(now())
@@ -425,7 +445,7 @@ model AnnouncementRead {
 }
 
 model AuditLog {
-  id          String   @id @default(cuid()) @map("_id")
+  id          String   @id @default(cuid())
   actorId     String
   action      String
   targetType  String
@@ -449,7 +469,7 @@ enum NotificationType {
 }
 
 model Notification {
-  id        String           @id @default(cuid()) @map("_id")
+  id        String           @id @default(cuid())
   userId    String
   type      NotificationType
   title     String
@@ -466,14 +486,14 @@ model Notification {
 }
 
 model SystemSetting {
-  id        String   @id @default(cuid()) @map("_id")
+  id        String   @id @default(cuid())
   key       String   @unique
   value     String
   updatedAt DateTime @updatedAt
 }
 
 model Conversation {
-  id        String           @id @default(cuid()) @map("_id")
+  id        String           @id @default(cuid())
   type      ConversationType
   studentId String
   otherId   String
@@ -483,7 +503,7 @@ model Conversation {
 
   student  User      @relation("ConversationStudent", fields: [studentId], references: [id], onDelete: Cascade)
   other    User      @relation("ConversationOther", fields: [otherId], references: [id], onDelete: Cascade)
-  course   Course?   @relation(fields: [courseId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  course   Course?   @relation(fields: [courseId], references: [id], onDelete: SetNull)
   messages Message[]
 
   @@unique([studentId, otherId, type])
@@ -493,7 +513,7 @@ model Conversation {
 }
 
 model Message {
-  id             String    @id @default(cuid()) @map("_id")
+  id             String    @id @default(cuid())
   conversationId String
   senderId       String
   body           String

@@ -31,6 +31,8 @@ import {
 } from "@/app/actions/admin";
 import { DeleteUserButton } from "@/components/admin/delete-user-button";
 import { MessageInstructorButton } from "@/components/admin/message-instructor-button";
+import { InstructorProfileEditForm } from "@/components/admin/instructor-profile-edit-form";
+import { AdminSetPasswordForm } from "@/components/admin/admin-set-password-form";
 import { formatDate } from "@/lib/utils";
 import { ArrowLeft } from "lucide-react";
 import type { Role } from "@/app/generated/prisma/client";
@@ -142,7 +144,7 @@ export default async function AdminUserDetailPage({
               Joined {formatDate(user.createdAt)}
             </p>
             <div className="mt-2">
-              <OnlineBadge lastSeenAt={user.lastSeenAt} />
+              <OnlineBadge lastSeenAt={user.lastSeenAt} userId={user.id} />
             </div>
           </div>
           <div className="flex flex-wrap gap-2">
@@ -229,16 +231,25 @@ export default async function AdminUserDetailPage({
         : null}
 
         {!isSelf && canSensitive ?
-          <AdminSection
-            title="Delete account"
-            description="Permanently remove this user and their courses, enrollments, and related records."
-            className="lg:col-span-2"
-          >
-            <DeleteUserButton
-              userId={id}
-              userLabel={user.name ?? user.email}
-            />
-          </AdminSection>
+          <>
+            <AdminSection
+              title="Set password"
+              description="Reset this user's password without email (sensitive admin)."
+              className="lg:col-span-2"
+            >
+              <AdminSetPasswordForm userId={id} />
+            </AdminSection>
+            <AdminSection
+              title="Delete account"
+              description="Permanently remove this user and their courses, enrollments, and related records."
+              className="lg:col-span-2"
+            >
+              <DeleteUserButton
+                userId={id}
+                userLabel={user.name ?? user.email}
+              />
+            </AdminSection>
+          </>
         : null}
 
         {!isSelf ?
@@ -323,6 +334,15 @@ export default async function AdminUserDetailPage({
                 <p className="mt-2 line-clamp-4">{user.instructorProfile.bio}</p>
               </div>
             </div>
+            <InstructorProfileEditForm
+              userId={id}
+              profile={{
+                bio: user.instructorProfile.bio,
+                expertise: user.instructorProfile.expertise,
+                qualification: user.instructorProfile.qualification,
+                experienceYears: user.instructorProfile.experienceYears,
+              }}
+            />
             <ActionRow>
               <MessageInstructorButton instructorId={id} label="Message instructor" />
               {user.instructorProfile.status === "PENDING" || user.instructorProfile.status === "REJECTED" || user.instructorProfile.status === "REVOKED" ?

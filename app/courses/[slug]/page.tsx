@@ -33,6 +33,7 @@ export default async function CourseDetailPage({
         },
       },
       reviews: {
+        where: { deletedAt: null },
         include: {
           user: { select: { id: true, name: true } },
           replies: {

@@ -41,6 +41,8 @@ export default async function AdminDashboardPage() {
     { href: "/dashboard/admin/withdrawals", label: "Withdrawals", icon: Wallet },
     { href: "/dashboard/admin/settings", label: "Settings", icon: Settings },
     { href: "/dashboard/admin/logs", label: "Audit logs", icon: Shield },
+    { href: "/dashboard/admin/analytics", label: "Analytics", icon: Shield },
+    { href: "/dashboard/admin/quizzes", label: "Quiz control", icon: BookOpen },
   ];
 
   return (

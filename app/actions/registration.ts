@@ -26,6 +26,8 @@ import {
   verifyRegistrationOtp,
   type PendingRegistrationMetadata,
 } from "@/lib/email-verification";
+import { EMAIL_VERIFICATION_ENABLED } from "@/lib/constants";
+import { checkRateLimit, rateLimitKey } from "@/lib/rate-limit";
 
 export type RegistrationState = {
   success?: boolean;
@@ -127,6 +129,10 @@ export async function sendRegistrationOtpAction(
   _prev: RegistrationState,
   formData: FormData,
 ): Promise<RegistrationState> {
+  if (!EMAIL_VERIFICATION_ENABLED) {
+    return { error: "Email verification is not enabled on this site." };
+  }
+
   const parsed = parseRegistrationForm(formData);
 
   if (!parsed.success) {
@@ -138,6 +144,14 @@ export async function sendRegistrationOtpAction(
   }
 
   const email = normalizeEmail(parsed.data.email);
+
+  const limited = await checkRateLimit(rateLimitKey("otp-send", email), 5, 15 * 60_000);
+  if (!limited.ok) {
+    return {
+      error: `Too many verification requests. Try again in ${limited.retryAfterSec}s.`,
+      values: registrationFormValues(formData),
+    };
+  }
 
   const existing = await prisma.user.findUnique({ where: { email } });
   if (existing) {
@@ -197,9 +211,22 @@ export async function resendRegistrationOtpAction(
   _prev: RegistrationState,
   formData: FormData,
 ): Promise<RegistrationState> {
+  if (!EMAIL_VERIFICATION_ENABLED) {
+    return { error: "Email verification is not enabled on this site." };
+  }
+
   const email = normalizeEmail((formData.get("email") as string) ?? "");
   if (!email) {
     return { error: "Email is required" };
+  }
+
+  const limited = await checkRateLimit(rateLimitKey("otp-resend", email), 5, 15 * 60_000);
+  if (!limited.ok) {
+    return {
+      error: `Too many resend attempts. Try again in ${limited.retryAfterSec}s.`,
+      step: "verify",
+      email,
+    };
   }
 
   const result = await resendRegistrationOtp(email);
@@ -222,6 +249,10 @@ export async function verifyRegistrationOtpAction(
   _prev: RegistrationState,
   formData: FormData,
 ): Promise<RegistrationState> {
+  if (!EMAIL_VERIFICATION_ENABLED) {
+    return { error: "Email verification is not enabled on this site." };
+  }
+
   const parsed = verifyOtpSchema.safeParse({
     email: formData.get("email"),
     code: formData.get("code"),
@@ -237,7 +268,24 @@ export async function verifyRegistrationOtpAction(
   }
 
   const email = normalizeEmail(parsed.data.email);
-  const password = formData.get("password") as string;
+
+  const limited = await checkRateLimit(rateLimitKey("otp-verify", email), 10, 15 * 60_000);
+  if (!limited.ok) {
+    return {
+      error: `Too many verification attempts. Try again in ${limited.retryAfterSec}s.`,
+      step: "verify",
+      email,
+    };
+  }
+
+  const password = (formData.get("password") as string)?.trim();
+  if (!password) {
+    return {
+      step: "verify",
+      email,
+      error: "Session expired. Go back and submit your registration details again.",
+    };
+  }
 
   const verified = await verifyRegistrationOtp(email, parsed.data.code);
   if (!verified.ok) {
@@ -249,6 +297,15 @@ export async function verifyRegistrationOtpAction(
   }
 
   const { metadata } = verified;
+  const passwordOk = await bcrypt.compare(password, metadata.passwordHash);
+  if (!passwordOk) {
+    return {
+      step: "verify",
+      email,
+      error: "Password does not match your registration. Go back and try again.",
+    };
+  }
+
   const existing = await prisma.user.findUnique({ where: { email } });
   if (existing) {
     return { error: "An account with this email already exists" };
@@ -315,14 +372,6 @@ export async function verifyRegistrationOtpAction(
       targetId: student.id,
       description: `Student registered (${userCode})`,
     });
-  }
-
-  if (!password) {
-    return {
-      step: "verify",
-      email,
-      error: "Session expired. Go back and submit your registration details again.",
-    };
   }
 
   return signInAfterRegister(email, password);

@@ -4,6 +4,9 @@ import { prisma } from "@/lib/prisma";
 import { requireAuth } from "@/lib/auth";
 import { hasCourseAccess } from "@/lib/services/enrollment";
 import { markLessonCompleteAction } from "@/app/actions/learning";
+import { getFirstUnpassedQuizId, getResumeLessonId } from "@/lib/resume-lesson";
+import { getPassedQuizIds } from "@/lib/course-completion";
+import { LessonViewTracker } from "@/components/learn/lesson-view-tracker";
 import { LessonPdfViewer, LessonVideo } from "@/components/lessons/lesson-media";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -28,7 +31,14 @@ export default async function LearnPage({
           lessons: { orderBy: { orderIndex: "asc" } },
         },
       },
-      quizzes: { include: { _count: { select: { questions: true } } } },
+      quizzes: {
+        select: {
+          id: true,
+          title: true,
+          isEnabled: true,
+          _count: { select: { questions: true } },
+        },
+      },
     },
   });
 
@@ -38,12 +48,32 @@ export default async function LearnPage({
   if (!allowed) redirect(`/courses/${slug}`);
 
   const allLessons = course.modules.flatMap((m) => m.lessons);
-  const activeLesson = allLessons.find((l) => l.id === lessonId) ?? allLessons[0];
+
+  const resumeLessonId = lessonId ?? (await getResumeLessonId(user.id, course.id));
+
+  if (!lessonId && !resumeLessonId) {
+    const nextQuizId = await getFirstUnpassedQuizId(user.id, course.id);
+    if (nextQuizId) {
+      redirect(`/learn/${slug}/quiz/${nextQuizId}`);
+    }
+  }
+
+  const resumeId = resumeLessonId;
+  const activeLesson =
+    allLessons.find((l) => l.id === resumeId) ?? allLessons[0];
 
   const progress = await prisma.lessonProgress.findMany({
     where: { userId: user.id, lessonId: { in: allLessons.map((l) => l.id) } },
   });
   const completedIds = new Set(progress.filter((p) => p.completed).map((p) => p.lessonId));
+
+  const enabledQuizIds = course.quizzes
+    .filter((q) => q.isEnabled && q._count.questions > 0)
+    .map((q) => q.id);
+  const passedQuizIds = await getPassedQuizIds(user.id, enabledQuizIds);
+  const allLessonsDone =
+    allLessons.length > 0 && allLessons.every((l) => completedIds.has(l.id));
+  const quizzesRemaining = enabledQuizIds.filter((id) => !passedQuizIds.has(id)).length;
 
   return (
     <div className="page-container grid gap-6 py-8 lg:grid-cols-[280px_1fr]">
@@ -84,22 +114,41 @@ export default async function LearnPage({
         {course.quizzes.length > 0 ?
           <div className="mt-6 border-t border-[var(--border)] pt-4">
             <p className="px-2 text-xs font-bold uppercase text-[var(--foreground-muted)]">Quizzes</p>
-            {course.quizzes.map((q) => (
+            {course.quizzes.map((q) => {
+              const required = q.isEnabled && q._count.questions > 0;
+              const passed = passedQuizIds.has(q.id);
+              return (
               <Link
                 key={q.id}
-                href={`/learn/${slug}/quiz/${q.id}`}
-                className="mt-2 block px-2 text-sm font-medium text-[var(--primary)] hover:underline"
+                href={q.isEnabled ? `/learn/${slug}/quiz/${q.id}` : "#"}
+                className={`mt-2 block px-2 text-sm font-medium ${
+                  q.isEnabled ?
+                    "text-[var(--primary)] hover:underline"
+                  : "cursor-not-allowed text-[var(--foreground-muted)]"
+                }`}
+                aria-disabled={!q.isEnabled}
               >
+                {passed ? "✓ " : required && !passed ? "○ " : ""}
                 {q.title} ({q._count.questions} questions)
+                {passed ? " — passed" : ""}
+                {!q.isEnabled ? " — disabled" : ""}
               </Link>
-            ))}
+            );
+            })}
           </div>
+        : null}
+        {allLessonsDone && quizzesRemaining > 0 ?
+          <p className="mt-4 rounded-lg bg-amber-50 px-3 py-2 text-xs text-amber-900">
+            All lessons complete. Pass {quizzesRemaining} remaining quiz
+            {quizzesRemaining === 1 ? "" : "zes"} to finish the course.
+          </p>
         : null}
       </aside>
 
       <div className="surface-card p-6 sm:p-8">
         {activeLesson ?
           <>
+            <LessonViewTracker lessonId={activeLesson.id} courseSlug={slug} />
             <h1 className="text-2xl font-extrabold text-[var(--foreground)]">{activeLesson.title}</h1>
             {activeLesson.videoUrl ?
               <LessonVideo url={activeLesson.videoUrl} />

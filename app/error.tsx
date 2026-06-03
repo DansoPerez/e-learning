@@ -23,22 +23,19 @@ export default function Error({
         {message.includes("DATABASE_URL") ||
           message.includes("ERR_INVALID_URL") ||
           message.includes("Invalid URL") ||
-          message.includes("postgresql://") ?
-          "Database URL is missing or wrong on Vercel. Set DATABASE_URL to your MongoDB Atlas connection string (mongodb://… with /bravio in the path), redeploy Production, and ensure the latest code is deployed (Prisma 6 + MongoDB)."
+          message.includes("mongodb") ?
+          "Database URL is wrong. Set DATABASE_URL to your Supabase PostgreSQL URI (postgresql://…) in .env or Vercel, then redeploy."
         : message.includes("P2025") ||
             message.includes("No record was found for an update") ?
-          "Your sign-in session is outdated after the database migration. Sign out, then sign in again with admin@bravio.app (or run npm run db:seed on production MongoDB first)."
-        : message.includes("Transactions are not supported") ?
-          "Local MongoDB must be running and the schema must be pushed. Run: npm run db:push && npm run db:seed"
+          "Your session may be outdated or the database is empty. Run npm run db:seed on Supabase, then sign in again with admin@bravio.app."
         : message.includes("does not exist") ||
             message.includes("P2021") ||
-            message.includes("Course") ||
-            message.includes("findMany") ?
-          "Your MongoDB database has no collections yet. Run npm run db:push, then npm run db:seed."
+            message.includes("relation") ?
+          "Database tables are missing. Run: npm run db:push && npm run db:seed"
         : message.includes("Connection terminated") ||
             message.includes("Can't reach database") ||
             message.includes("P1001") ?
-          "Database is not reachable. Check DATABASE_URL (mongodb:// or mongodb+srv://) and that MongoDB Atlas allows your IP (or 0.0.0.0/0 for Vercel)."
+          "Cannot reach Supabase. Check DATABASE_URL and that the project is not paused."
         : "Check Vercel deployment logs (Functions) for details."}
       </p>
       <Button type="button" className="mt-6" onClick={() => reset()}>

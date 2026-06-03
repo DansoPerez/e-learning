@@ -3,62 +3,56 @@
 import { useEffect } from "react";
 import { PRESENCE_HEARTBEAT_MS } from "@/lib/presence-utils";
 
-function sendOfflineBeacon() {
-  const body = new Blob([], { type: "application/json" });
-  if (navigator.sendBeacon) {
-    navigator.sendBeacon("/api/presence/offline", body);
-  } else {
-    void fetch("/api/presence/offline", { method: "POST", keepalive: true });
-  }
-}
-
+/** Ping server while logged in. Offline is determined by heartbeat timeout, not tab visibility. */
 export function PresenceHeartbeat() {
   useEffect(() => {
     let intervalId: ReturnType<typeof setInterval> | null = null;
+    let hiddenIntervalId: ReturnType<typeof setInterval> | null = null;
 
     async function ping() {
-      if (document.visibilityState !== "visible") return;
       try {
-        await fetch("/api/presence/heartbeat", { method: "POST" });
+        await fetch("/api/presence/heartbeat", {
+          method: "POST",
+          cache: "no-store",
+        });
       } catch {
-        /* ignore */
+        /* ignore transient network errors */
       }
     }
 
-    function startInterval() {
-      if (intervalId) return;
-      void ping();
-      intervalId = setInterval(ping, PRESENCE_HEARTBEAT_MS);
-    }
-
-    function stopInterval() {
+    function clearTimers() {
       if (intervalId) {
         clearInterval(intervalId);
         intervalId = null;
       }
-    }
-
-    function onVisibilityChange() {
-      if (document.visibilityState === "visible") {
-        startInterval();
-      } else {
-        stopInterval();
-        sendOfflineBeacon();
+      if (hiddenIntervalId) {
+        clearInterval(hiddenIntervalId);
+        hiddenIntervalId = null;
       }
     }
 
-    if (document.visibilityState === "visible") {
-      startInterval();
+    function startTimers() {
+      clearTimers();
+      void ping();
+
+      if (document.visibilityState === "visible") {
+        intervalId = setInterval(ping, PRESENCE_HEARTBEAT_MS);
+      } else {
+        // Slower pings in background so mobile tab switches do not show users offline
+        hiddenIntervalId = setInterval(ping, PRESENCE_HEARTBEAT_MS * 2);
+      }
     }
 
+    function onVisibilityChange() {
+      startTimers();
+    }
+
+    startTimers();
     document.addEventListener("visibilitychange", onVisibilityChange);
-    window.addEventListener("pagehide", sendOfflineBeacon);
 
     return () => {
-      stopInterval();
+      clearTimers();
       document.removeEventListener("visibilitychange", onVisibilityChange);
-      window.removeEventListener("pagehide", sendOfflineBeacon);
-      sendOfflineBeacon();
     };
   }, []);
 

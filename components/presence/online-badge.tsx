@@ -8,28 +8,62 @@ import {
 } from "@/lib/presence-utils";
 import { cn } from "@/lib/utils";
 
-const TICK_MS = 15_000;
+const TICK_MS = 10_000;
+const PRESENCE_POLL_MS = 20_000;
 
 export function OnlineBadge({
   lastSeenAt,
+  userId,
   className,
   showLastSeen = true,
 }: {
   lastSeenAt: Date | string | null | undefined;
+  /** When set, polls the server for up-to-date presence instead of relying on SSR data only */
+  userId?: string;
   className?: string;
   showLastSeen?: boolean;
 }) {
-  const seen = parseLastSeenAt(lastSeenAt);
+  const [seenAt, setSeenAt] = useState<Date | null>(() => parseLastSeenAt(lastSeenAt));
   const [now, setNow] = useState(() => Date.now());
+
+  useEffect(() => {
+    setSeenAt(parseLastSeenAt(lastSeenAt));
+  }, [lastSeenAt]);
+
+  useEffect(() => {
+    if (!userId) return;
+    const pollUserId = userId;
+
+    async function poll() {
+      try {
+        const res = await fetch(
+          `/api/presence/status?ids=${encodeURIComponent(pollUserId)}`,
+          { cache: "no-store" },
+        );
+        if (!res.ok) return;
+        const data = (await res.json()) as {
+          users?: Record<string, { lastSeenAt: string | null }>;
+        };
+        const fresh = data.users?.[pollUserId]?.lastSeenAt;
+        if (fresh) setSeenAt(parseLastSeenAt(fresh));
+      } catch {
+        /* ignore */
+      }
+    }
+
+    void poll();
+    const timer = setInterval(poll, PRESENCE_POLL_MS);
+    return () => clearInterval(timer);
+  }, [userId]);
 
   useEffect(() => {
     const id = setInterval(() => setNow(Date.now()), TICK_MS);
     return () => clearInterval(id);
   }, []);
 
-  const online = seen != null && now - seen.getTime() < ONLINE_WITHIN_MS;
+  const online = seenAt != null && now - seenAt.getTime() < ONLINE_WITHIN_MS;
   const label = online ? "Online" : "Offline";
-  const detail = showLastSeen ? formatLastSeen(seen, now) : null;
+  const detail = showLastSeen ? formatLastSeen(seenAt, now) : null;
 
   return (
     <span className={cn("inline-flex flex-col gap-0.5", className)}>
