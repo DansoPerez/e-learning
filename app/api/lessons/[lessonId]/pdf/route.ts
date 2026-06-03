@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { auth } from "@/auth";
+import { getApiUser } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { hasCourseAccess } from "@/lib/services/enrollment";
 import { readLessonPdf } from "@/lib/lesson-pdf-storage";
@@ -8,8 +8,8 @@ export async function GET(
   _request: Request,
   { params }: { params: Promise<{ lessonId: string }> },
 ) {
-  const session = await auth();
-  if (!session?.user?.id) {
+  const user = await getApiUser();
+  if (!user) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
@@ -27,7 +27,7 @@ export async function GET(
     return NextResponse.json({ error: "Document not found" }, { status: 404 });
   }
 
-  const allowed = await hasCourseAccess(session.user.id, lesson.module.courseId);
+  const allowed = await hasCourseAccess(user.id, lesson.module.courseId);
   if (!allowed) {
     return NextResponse.json({ error: "Access denied" }, { status: 403 });
   }

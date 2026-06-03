@@ -46,7 +46,7 @@ export function AdminUsersList({
                   <p className="font-mono text-xs text-[var(--primary)]">{u.userCode ?? "—"}</p>
                   <p className="truncate text-sm text-[var(--foreground-muted)]">{u.email}</p>
                 </div>
-                <OnlineBadge lastSeenAt={u.lastSeenAt} />
+                <OnlineBadge lastSeenAt={u.lastSeenAt} userId={u.id} />
               </div>
               <div className="mt-3 flex flex-wrap gap-2">
                 <Badge variant={u.role === "ADMIN" ? "info" : "default"}>{u.role}</Badge>
@@ -118,7 +118,7 @@ export function AdminUsersList({
                     <Badge variant={u.role === "ADMIN" ? "info" : "default"}>{u.role}</Badge>
                   </td>
                   <td className="p-4">
-                    <OnlineBadge lastSeenAt={u.lastSeenAt} />
+                    <OnlineBadge lastSeenAt={u.lastSeenAt} userId={u.id} />
                   </td>
                   <td className="p-4">
                     <Badge

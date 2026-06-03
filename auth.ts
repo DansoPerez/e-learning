@@ -46,6 +46,17 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         );
         if (!valid) return null;
 
+        const { touchPresence } = await import("@/lib/presence");
+        const { logAudit } = await import("@/lib/audit-log");
+        await touchPresence(user.id);
+        await logAudit({
+          actorId: user.id,
+          action: "LOGIN",
+          targetType: "User",
+          targetId: user.id,
+          description: `User signed in (${user.userCode ?? user.email})`,
+        });
+
         return {
           id: user.id,
           email: user.email,

@@ -16,6 +16,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { CourseReviews } from "@/components/courses/course-reviews";
 import { EditCourseForm } from "@/components/instructor/edit-course-form";
+import { CourseAnnouncementForm } from "@/components/instructor/course-announcement-form";
 
 export default async function InstructorCourseEditPage({
   params,
@@ -62,6 +63,14 @@ export default async function InstructorCourseEditPage({
           <Button type="submit">Submit for review</Button>
         </form>
       : null}
+
+      <section className="mb-10 rounded-xl border bg-white p-6">
+        <h2 className="mb-2 font-semibold">Course announcements</h2>
+        <p className="mb-4 text-sm text-[var(--foreground-muted)]">
+          Notify students enrolled in this course.
+        </p>
+        <CourseAnnouncementForm courseId={course.id} />
+      </section>
 
       <EditCourseForm
         courseId={course.id}

@@ -12,6 +12,7 @@ type AnnouncementItem = {
   id: string;
   message: string;
   scope: AnnouncementScope;
+  courseTitle?: string | null;
   createdAt: Date;
   authorName: string;
   read: boolean;
@@ -63,6 +64,7 @@ export function AnnouncementPanel({
                 : null}
                 <span className="text-xs text-[var(--foreground-muted)]">
                   {formatDate(a.createdAt)} · {a.authorName}
+                  {a.courseTitle ? ` · ${a.courseTitle}` : ""}
                 </span>
               </div>
               {!a.read ?

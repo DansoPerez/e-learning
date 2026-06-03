@@ -62,6 +62,34 @@ export async function requireRole(...roles: Role[]): Promise<SessionUser> {
   return user;
 }
 
+/** Active-user check for API route handlers. Returns null when unauthorized. */
+export async function getApiUser(): Promise<SessionUser | null> {
+  const session = await auth();
+  if (!session?.user?.id) return null;
+
+  const dbUser = await prisma.user.findUnique({
+    where: { id: session.user.id },
+    select: {
+      id: true,
+      email: true,
+      name: true,
+      image: true,
+      role: true,
+      status: true,
+      userCode: true,
+      isSuperAdmin: true,
+    },
+  });
+
+  if (!dbUser || dbUser.status !== "ACTIVE") return null;
+
+  return {
+    ...(session.user as SessionUser),
+    ...dbUser,
+    email: dbUser.email,
+  };
+}
+
 export {
   courseAccessCtaForRole,
   dashboardCtaLabelForRole,

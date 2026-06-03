@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { auth } from "@/auth";
+import { getApiUser } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { canAccessConversation } from "@/lib/messaging";
 
@@ -7,8 +7,8 @@ export async function GET(
   _req: Request,
   { params }: { params: Promise<{ id: string }> },
 ) {
-  const session = await auth();
-  if (!session?.user?.id) {
+  const user = await getApiUser();
+  if (!user) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
@@ -20,16 +20,12 @@ export async function GET(
     return NextResponse.json({ error: "Not found" }, { status: 404 });
   }
 
-  const allowed = await canAccessConversation(
-    session.user.id,
-    session.user.role,
-    conversation,
-  );
+  const allowed = await canAccessConversation(user.id, user.role, conversation);
   if (!allowed) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 
-  const isAdmin = session.user.role === "ADMIN";
+  const isAdmin = user.role === "ADMIN";
 
   const messages = await prisma.message.findMany({
     where: { conversationId: id },

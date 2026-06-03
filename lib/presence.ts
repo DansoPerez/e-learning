@@ -84,7 +84,7 @@ export async function markOffline(userId: string) {
 export async function getOnlineUsersForSuperAdmin() {
   const since = onlineSinceDate();
   return prisma.user.findMany({
-    where: { status: "ACTIVE", lastSeenAt: { gte: since } },
+    where: { status: "ACTIVE", isSuperAdmin: false, lastSeenAt: { gte: since } },
     select: {
       id: true,
       name: true,

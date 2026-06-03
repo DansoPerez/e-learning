@@ -1,10 +1,10 @@
 import { PrismaClient } from "@/app/generated/prisma/client";
-import { getMongoDatabaseUrl } from "@/lib/database-url";
+import { getDatabaseUrl } from "@/lib/database-url";
 
 const globalForPrisma = globalThis as unknown as { prisma: PrismaClient };
 
 function createPrismaClient() {
-  const url = getMongoDatabaseUrl();
+  const url = getDatabaseUrl();
   return new PrismaClient({
     datasources: { db: { url } },
   });

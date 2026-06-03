@@ -5,7 +5,6 @@ import { redirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { requireAuth, requireRole } from "@/lib/auth";
 import {
-  canAccessConversation,
   canSendInConversation,
   getSupportAdminId,
   studentCanMessageInstructor,
@@ -15,6 +14,7 @@ import {
   notifyConversationParticipants,
 } from "@/lib/notifications";
 import { logAudit } from "@/lib/audit-log";
+import { checkRateLimit, rateLimitKey } from "@/lib/rate-limit";
 
 const messageSchema = z.object({
   body: z.string().min(1, "Message cannot be empty").max(5000),
@@ -32,6 +32,16 @@ export async function sendMessageAction(
   formData: FormData,
 ): Promise<{ error?: string }> {
   const user = await requireAuth();
+
+  const limited = await checkRateLimit(
+    rateLimitKey("message", `${user.id}:${conversationId}`),
+    30,
+    60_000,
+  );
+  if (!limited.ok) {
+    return { error: `Too many messages. Try again in ${limited.retryAfterSec}s.` };
+  }
+
   const parsed = messageSchema.safeParse({ body: formData.get("body") });
   if (!parsed.success) {
     return { error: parsed.error.issues[0]?.message ?? "Invalid message" };
@@ -79,10 +89,10 @@ export async function startInstructorChatAction(
   instructorId: string,
   courseId: string,
 ): Promise<void> {
-  const user = await requireRole("STUDENT", "ADMIN");
+  const user = await requireRole("STUDENT");
 
   const canMessage = await studentCanMessageInstructor(user.id, instructorId);
-  if (!canMessage && user.role !== "ADMIN") {
+  if (!canMessage) {
     redirect("/dashboard/student/messages?error=not-enrolled");
   }
 
@@ -175,32 +185,26 @@ export async function startAdminInstructorChatAction(instructorId: string): Prom
     redirect("/dashboard/admin/messages?error=not-instructor");
   }
 
-  let conversation = await prisma.conversation.findFirst({
-    where: { type: "INSTRUCTOR_ADMIN", studentId: instructorId },
-    orderBy: { updatedAt: "desc" },
-  });
-
-  if (!conversation) {
-    conversation = await prisma.conversation.create({
-      data: {
-        type: "INSTRUCTOR_ADMIN",
-        studentId: instructorId,
-        otherId: admin.id,
-      },
-    });
-    await logAudit({
-      actorId: admin.id,
-      action: "START_CONVERSATION",
-      targetType: "Conversation",
-      targetId: conversation.id,
-      description: `Started instructor support chat with ${instructorId}`,
-    });
-  } else {
-    await prisma.conversation.update({
-      where: { id: conversation.id },
-      data: { updatedAt: new Date() },
-    });
+  const adminId = await getSupportAdminId();
+  if (!adminId) {
+    redirect("/dashboard/admin/messages?error=no-admin");
   }
+
+  const conversation = await prisma.conversation.upsert({
+    where: {
+      studentId_otherId_type: {
+        studentId: instructorId,
+        otherId: adminId,
+        type: "INSTRUCTOR_ADMIN",
+      },
+    },
+    create: {
+      type: "INSTRUCTOR_ADMIN",
+      studentId: instructorId,
+      otherId: adminId,
+    },
+    update: { updatedAt: new Date() },
+  });
 
   redirect(`/dashboard/admin/messages/${conversation.id}`);
 }
@@ -216,11 +220,19 @@ export async function deleteMessageAction(messageId: string): Promise<{ error?: 
   if (message.senderId !== user.id && user.role !== "ADMIN") {
     return { error: "You can only delete your own messages" };
   }
+
+  const canSend = canSendInConversation(user.id, user.role, message.conversation);
+  if (!canSend) return { error: "Access denied" };
   if (message.deletedAt) return {};
 
   await prisma.message.update({
     where: { id: messageId },
     data: { deletedAt: new Date() },
+  });
+
+  await prisma.conversation.update({
+    where: { id: message.conversationId },
+    data: { updatedAt: new Date() },
   });
 
   await logAudit({

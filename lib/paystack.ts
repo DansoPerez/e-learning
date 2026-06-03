@@ -44,3 +44,31 @@ export function verifyPaystackSignature(body: string, signature: string | null) 
   const hash = createHmac("sha512", secret).update(body).digest("hex");
   return hash === signature;
 }
+
+export type PaystackVerifyData = {
+  status: string;
+  reference: string;
+  amount: number;
+  currency: string;
+};
+
+/** Server-side verification — required before marking a payment successful. */
+export async function verifyPaystackTransaction(
+  reference: string,
+): Promise<PaystackVerifyData | null> {
+  const secretKey = process.env.PAYSTACK_SECRET_KEY;
+  if (!secretKey) return null;
+
+  const response = await fetch(
+    `${PAYSTACK_BASE}/transaction/verify/${encodeURIComponent(reference)}`,
+    {
+      headers: { Authorization: `Bearer ${secretKey}` },
+      cache: "no-store",
+    },
+  );
+
+  const data = await response.json();
+  if (!response.ok || !data.status || !data.data) return null;
+
+  return data.data as PaystackVerifyData;
+}

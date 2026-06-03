@@ -1,9 +1,8 @@
-/**
- * Substring filter for MongoDB (Prisma `mode: "insensitive"` is PostgreSQL-only).
- * Searches are case-sensitive; use lowercase queries for best results.
- */
-export function containsFilter(value: string) {
+import type { Prisma } from "@/app/generated/prisma/client";
+
+/** Case-insensitive substring filter (PostgreSQL). */
+export function containsFilter(value: string): Prisma.StringFilter | undefined {
   const trimmed = value.trim();
   if (!trimmed) return undefined;
-  return { contains: trimmed };
+  return { contains: trimmed, mode: "insensitive" };
 }

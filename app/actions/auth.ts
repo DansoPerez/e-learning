@@ -11,7 +11,8 @@ import { dashboardPathForRole } from "@/lib/auth";
 import { generateUserCode, findUserByLoginIdentifier } from "@/lib/user-code";
 import { logAudit } from "@/lib/audit-log";
 import { createNotification } from "@/lib/notifications";
-import { markOffline, touchPresence } from "@/lib/presence";
+import { markOffline } from "@/lib/presence";
+import { checkRateLimit, rateLimitKey } from "@/lib/rate-limit";
 import { EMAIL_VERIFICATION_ENABLED } from "@/lib/constants";
 import { normalizeEmail } from "@/lib/normalize-email";
 
@@ -88,6 +89,12 @@ export async function registerAction(
   _prev: ActionState,
   formData: FormData,
 ): Promise<ActionState> {
+  if (EMAIL_VERIFICATION_ENABLED) {
+    return {
+      error: "Email verification is required. Use the registration form to receive a verification code.",
+    };
+  }
+
   const role = (formData.get("role") as string) ?? "STUDENT";
 
   if (role === "INSTRUCTOR") {
@@ -227,6 +234,15 @@ export async function loginAction(
   const identifier = (formData.get("identifier") ?? formData.get("email")) as string;
   const password = formData.get("password") as string;
 
+  const limited = await checkRateLimit(
+    rateLimitKey("login", identifier?.trim().toLowerCase() || "unknown"),
+    10,
+    15 * 60_000,
+  );
+  if (!limited.ok) {
+    return { error: `Too many login attempts. Try again in ${limited.retryAfterSec}s.` };
+  }
+
   const user = await findUserByLoginIdentifier(identifier);
   const userWithProfile =
     user ?
@@ -258,16 +274,6 @@ export async function loginAction(
     userWithProfile.role,
     userWithProfile.instructorProfile,
   );
-
-  await touchPresence(userWithProfile.id);
-
-  await logAudit({
-    actorId: userWithProfile.id,
-    action: "LOGIN",
-    targetType: "User",
-    targetId: userWithProfile.id,
-    description: `User signed in (${userWithProfile.userCode ?? userWithProfile.email})`,
-  });
 
   try {
     await signIn("credentials", {

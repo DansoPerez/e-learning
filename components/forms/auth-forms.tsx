@@ -8,6 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { BookOpen } from "lucide-react";
+import { GoogleSignInButton } from "@/components/auth/google-sign-in-button";
 
 const initial: ActionState = {};
 
@@ -47,9 +48,13 @@ const SESSION_ERRORS: Record<string, string> = {
 export function LoginForm({
   sessionError,
   registered,
+  reset,
+  googleAuthEnabled,
 }: {
   sessionError?: string;
   registered?: boolean;
+  reset?: boolean;
+  googleAuthEnabled?: boolean;
 }) {
   const [state, action, pending] = useActionState(loginAction, initial);
   const bannerError =
@@ -65,6 +70,11 @@ export function LoginForm({
         {registered ?
           <p className="rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-medium text-emerald-900">
             Account created. Sign in to continue.
+          </p>
+        : null}
+        {reset ?
+          <p className="rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-medium text-emerald-900">
+            Password updated. Sign in with your new password.
           </p>
         : null}
         {bannerError ?
@@ -84,12 +94,29 @@ export function LoginForm({
           />
         </div>
         <div className="space-y-2">
-          <Label htmlFor="password">Password</Label>
+          <div className="flex items-center justify-between gap-2">
+            <Label htmlFor="password">Password</Label>
+            <Link
+              href="/forgot-password"
+              className="text-xs font-semibold text-[var(--primary)] hover:underline"
+            >
+              Forgot password?
+            </Link>
+          </div>
           <Input id="password" name="password" type="password" required />
         </div>
         <Button type="submit" className="w-full" size="lg" disabled={pending}>
           {pending ? "Signing in..." : "Sign in"}
         </Button>
+        <div className="relative py-2">
+          <span className="absolute inset-0 flex items-center">
+            <span className="w-full border-t border-[var(--border)]" />
+          </span>
+          <span className="relative flex justify-center text-xs uppercase text-[var(--foreground-muted)]">
+            or
+          </span>
+        </div>
+        <GoogleSignInButton enabled={googleAuthEnabled} />
       </form>
       <p className="mt-6 text-center text-sm text-[var(--foreground-muted)]">
         No account?{" "}

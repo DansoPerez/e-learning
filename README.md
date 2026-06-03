@@ -20,7 +20,7 @@ A secure e-learning marketplace built with Next.js, connecting students, instruc
 | Frontend | Next.js 16, React 19, Tailwind CSS 4 |
 | Backend | Next.js Server Actions & API Routes |
 | Database | PostgreSQL (Supabase) |
-| ORM | Prisma 7 |
+| ORM | Prisma 6 |
 | Auth | Auth.js (next-auth v5) |
 | Payments | Paystack |
 | Hosting | Vercel |
