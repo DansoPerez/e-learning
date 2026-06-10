@@ -144,7 +144,7 @@ Also update:
 | Auth / login broken | Set `NEXTAUTH_URL` to exact production URL, redeploy |
 | `Can't reach database` | Use pooler URL on Vercel; direct URL for local `db:push` |
 | `P2025` / no record on sign-in | Run `db:seed` on Supabase, sign out, sign in again |
-| `prepared statement` errors on Vercel | Add `?pgbouncer=true` and use port `6543` pooler |
+| `prepared statement` errors on Vercel | Use **transaction pooler port `6543`** only (not `5432`). App auto-adds `pgbouncer=true` for `:6543`. Do not add `pgbouncer=true` to session pooler URLs. |
 | Migrating from MongoDB | Re-seed — data is not auto-migrated |
 
 ---

@@ -12,6 +12,5 @@ function createPrismaClient() {
 
 export const prisma = globalForPrisma.prisma ?? createPrismaClient();
 
-if (process.env.NODE_ENV !== "production") {
-  globalForPrisma.prisma = prisma;
-}
+// Reuse one client per serverless instance (warm lambda) to avoid duplicate prepared statements.
+globalForPrisma.prisma = prisma;
