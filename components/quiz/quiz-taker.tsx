@@ -11,18 +11,29 @@ type Question = {
   options: string[] | null;
 };
 
+type AttemptSummary = {
+  id: string;
+  score: number;
+  passed: boolean;
+  endedAt: string | null;
+};
+
 export function QuizTaker({
   quizId,
   slug,
   title,
   durationMin,
   questions,
+  passingScore,
+  previousAttempts = [],
 }: {
   quizId: string;
   slug: string;
   title: string;
   durationMin: number | null;
   questions: Question[];
+  passingScore?: number;
+  previousAttempts?: AttemptSummary[];
 }) {
   const router = useRouter();
   const [answers, setAnswers] = useState<Record<string, string>>({});
@@ -83,7 +94,7 @@ export function QuizTaker({
   }, [quizId, attemptToken]);
 
   useEffect(() => {
-    if (!limitSec) return;
+    if (!limitSec || !attemptToken) return;
     const tick = setInterval(() => {
       setSecondsLeft((s) => {
         if (s === null) return s;
@@ -96,7 +107,7 @@ export function QuizTaker({
       });
     }, 1000);
     return () => clearInterval(tick);
-  }, [limitSec, submit]);
+  }, [limitSec, attemptToken, submit]);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -145,6 +156,38 @@ export function QuizTaker({
         <p className="text-sm text-zinc-500">
           {durationMin} minute limit — quiz auto-submits when time runs out
         </p>
+      : null}
+      {typeof passingScore === "number" ?
+        <p className="text-sm text-zinc-500">Pass mark: {passingScore}%</p>
+      : null}
+      {previousAttempts.length > 0 ?
+        <div className="mt-6 rounded-xl border bg-white p-4">
+          <h2 className="text-sm font-semibold text-zinc-700">Your previous attempts</h2>
+          <ul className="mt-2 space-y-1.5">
+            {previousAttempts.map((a) => (
+              <li
+                key={a.id}
+                className="flex items-center justify-between text-sm"
+              >
+                <span className="text-zinc-500">
+                  {a.endedAt ? new Date(a.endedAt).toLocaleString() : "—"}
+                </span>
+                <span className="flex items-center gap-2">
+                  <span className="font-medium tabular-nums">{a.score}%</span>
+                  <span
+                    className={`rounded-full px-2 py-0.5 text-xs font-semibold ${
+                      a.passed ?
+                        "bg-emerald-100 text-emerald-800"
+                      : "bg-red-100 text-red-800"
+                    }`}
+                  >
+                    {a.passed ? "Passed" : "Failed"}
+                  </span>
+                </span>
+              </li>
+            ))}
+          </ul>
+        </div>
       : null}
       {error ?
         <p className="mt-4 rounded-lg bg-red-50 px-3 py-2 text-sm text-red-800">{error}</p>

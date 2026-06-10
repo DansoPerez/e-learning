@@ -114,11 +114,11 @@ export async function updateQuizAction(
   formData: FormData,
 ): Promise<void> {
   const user = await requireRole("INSTRUCTOR", "ADMIN");
-  const course = await prisma.course.findUnique({
-    where: { id: courseId },
-    select: { instructorId: true, slug: true },
-  });
-  if (!course || (course.instructorId !== user.id && user.role !== "ADMIN")) return;
+  if (user.role === "INSTRUCTOR") {
+    await requireApprovedInstructor(user.id);
+  }
+  const course = await assertCanEditCourse(user.id, user.role, courseId);
+  await assertQuizInCourse(quizId, courseId);
 
   const parsed = quizSchema.safeParse({
     title: formData.get("title"),
@@ -165,19 +165,11 @@ function revalidateQuizPaths(courseId: string, quizId: string, slug: string) {
 
 export async function deleteQuizAction(quizId: string, courseId: string): Promise<void> {
   const user = await requireRole("INSTRUCTOR", "ADMIN");
-
-  const course = await prisma.course.findUnique({
-    where: { id: courseId },
-    select: { instructorId: true, slug: true },
-  });
-  if (!course || (course.instructorId !== user.id && user.role !== "ADMIN")) {
-    return;
+  if (user.role === "INSTRUCTOR") {
+    await requireApprovedInstructor(user.id);
   }
-
-  const quiz = await prisma.quiz.findFirst({
-    where: { id: quizId, courseId },
-  });
-  if (!quiz) return;
+  const course = await assertCanEditCourse(user.id, user.role, courseId);
+  await assertQuizInCourse(quizId, courseId);
 
   await prisma.quiz.delete({ where: { id: quizId } });
 

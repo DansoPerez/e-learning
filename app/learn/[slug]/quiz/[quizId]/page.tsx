@@ -45,6 +45,20 @@ export default async function QuizPage({
     options: Array.isArray(q.options) ? (q.options as string[]) : null,
   }));
 
+  const attempts = await prisma.quizAttempt.findMany({
+    where: { userId: user.id, quizId: quiz.id },
+    orderBy: { startedAt: "desc" },
+    take: 10,
+    select: { id: true, score: true, passed: true, endedAt: true },
+  });
+
+  const previousAttempts = attempts.map((a) => ({
+    id: a.id,
+    score: a.score,
+    passed: a.passed,
+    endedAt: a.endedAt ? a.endedAt.toISOString() : null,
+  }));
+
   return (
     <QuizTaker
       quizId={quiz.id}
@@ -52,6 +66,8 @@ export default async function QuizPage({
       title={quiz.title}
       durationMin={quiz.durationMin}
       questions={questions}
+      passingScore={quiz.passingScore}
+      previousAttempts={previousAttempts}
     />
   );
 }

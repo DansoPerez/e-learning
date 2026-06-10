@@ -33,6 +33,7 @@ export default auth((req) => {
 
   if (
     pathname.startsWith("/dashboard/instructor") &&
+    pathname !== "/dashboard/instructor/apply" &&
     role !== "INSTRUCTOR" &&
     role !== "ADMIN"
   ) {

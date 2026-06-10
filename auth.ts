@@ -123,10 +123,16 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
           where: { email: user.email.toLowerCase() },
         });
         if (existing?.status !== "ACTIVE") return false;
-        await prisma.user.updateMany({
-          where: { email: user.email.toLowerCase() },
+
+        await prisma.user.update({
+          where: { id: existing.id },
           data: { emailVerified: new Date() },
         });
+
+        if (!existing.userCode) {
+          const { assignUserCodeIfMissing } = await import("@/lib/user-code");
+          await assignUserCodeIfMissing(existing.id, existing.role, existing.name);
+        }
       }
       return true;
     },

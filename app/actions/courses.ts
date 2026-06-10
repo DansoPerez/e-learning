@@ -110,6 +110,13 @@ export async function submitCourseForReviewAction(courseId: string): Promise<voi
   const course = await prisma.course.findUnique({ where: { id: courseId } });
   if (!course || (course.instructorId !== user.id && user.role !== "ADMIN")) return;
 
+  const lessonCount = await prisma.lesson.count({
+    where: { module: { courseId } },
+  });
+  if (lessonCount === 0) {
+    redirect(`/dashboard/instructor/courses/${courseId}?error=no-content`);
+  }
+
   await prisma.course.update({
     where: { id: courseId },
     data: { status: "PENDING" },
