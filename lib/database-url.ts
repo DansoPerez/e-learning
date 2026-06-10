@@ -1,9 +1,10 @@
 /**
  * Validates DATABASE_URL for Supabase PostgreSQL + Prisma before the client connects.
  *
- * Supabase transaction pooler (port 6543) requires `pgbouncer=true` so Prisma skips
- * prepared statements. Do NOT add that flag on session pooler (5432) — it causes
- * "prepared statement sN already exists".
+ * Any Supabase pooler host (PgBouncer) breaks Prisma's prepared statements:
+ *   - "prepared statement sN does not exist"  (transaction mode dropped it)
+ *   - "prepared statement sN already exists"  (connection reused with it cached)
+ * Both are fixed by forcing `pgbouncer=true` (statement_cache_size=0) on pooler URLs.
  */
 export function getDatabaseUrl(): string {
   const raw = process.env.DATABASE_URL;
@@ -32,22 +33,19 @@ export function getDatabaseUrl(): string {
 }
 
 /**
- * Transaction pooler (6543) only — required for Vercel/serverless.
- * Session pooler (5432) is for local dev / migrations; leave it without pgbouncer=true.
+ * Disable prepared statements on any Supabase pooler URL (session 5432 or transaction 6543).
+ * Direct connections (db.<ref>.supabase.co) are left untouched.
  */
 function applySupabasePoolerParams(url: string): string {
-  const isTransactionPooler = /:6543(\/|\?|$)/.test(url);
-  if (!isTransactionPooler) return url;
+  const isPooler = url.includes("pooler.supabase.com");
+  if (!isPooler) return url;
 
   const params: string[] = [];
 
   if (!/[?&]pgbouncer=true(?:&|$)/.test(url)) {
     params.push("pgbouncer=true");
   }
-  if (!/[?&]statement_cache_size=/.test(url)) {
-    params.push("statement_cache_size=0");
-  }
-  if (process.env.VERCEL && !/[?&]connection_limit=/.test(url)) {
+  if (!/[?&]connection_limit=/.test(url)) {
     params.push("connection_limit=1");
   }
 
