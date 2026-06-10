@@ -81,6 +81,10 @@ const STUDENT_SECTIONS: NavSection[] = [
       { href: "/dashboard/student/messages", label: "Messages" },
     ],
   },
+  {
+    label: "Teaching",
+    items: [{ href: "/dashboard/instructor/apply", label: "Become an instructor" }],
+  },
 ];
 
 const INSTRUCTOR_APPROVED_SECTIONS: NavSection[] = [

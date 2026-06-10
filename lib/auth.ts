@@ -45,7 +45,9 @@ export async function requireAuth(): Promise<SessionUser> {
     redirect("/login?error=stale_session");
   }
 
-  if (dbUser.status !== "ACTIVE") redirect("/login?error=suspended");
+  if (dbUser.status !== "ACTIVE") {
+    redirect(dbUser.status === "BANNED" ? "/login?error=banned" : "/login?error=suspended");
+  }
 
   return {
     ...user,

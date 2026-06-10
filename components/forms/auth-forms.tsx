@@ -43,6 +43,7 @@ const SESSION_ERRORS: Record<string, string> = {
   stale_session:
     "Your session was from the old database. Sign in again with your Bravio account (e.g. admin@bravio.app after seeding).",
   suspended: "Your account is suspended. Contact support.",
+  banned: "Your account has been banned.",
 };
 
 export function LoginForm({

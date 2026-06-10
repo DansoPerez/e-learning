@@ -16,7 +16,7 @@ export async function getAdminAnalytics() {
     topCoursesRaw,
     quizStats,
   ] = await Promise.all([
-    prisma.user.count({ where: { status: "ACTIVE" } }),
+    prisma.user.count(),
     prisma.user.count({
       where: { status: "ACTIVE", lastSeenAt: { gte: since } },
     }),

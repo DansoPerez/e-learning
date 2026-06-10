@@ -11,7 +11,7 @@ export function GoogleSignInButton({ enabled = true }: { enabled?: boolean }) {
       type="button"
       variant="outline"
       className="w-full gap-2"
-      onClick={() => signIn("google", { callbackUrl: "/dashboard/student" })}
+      onClick={() => signIn("google", { callbackUrl: "/dashboard" })}
     >
       <svg className="h-5 w-5" viewBox="0 0 24 24" aria-hidden>
         <path

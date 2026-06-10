@@ -2,7 +2,22 @@ import { parseVideoEmbed } from "@/lib/video-embed";
 
 export function LessonVideo({ url }: { url: string }) {
   const embed = parseVideoEmbed(url);
-  if (!embed) return null;
+  if (!embed) {
+    return (
+      <div className="mt-6 rounded-xl border border-[var(--border)] bg-[var(--background-subtle)] p-4 text-sm text-[var(--foreground-muted)]">
+        This lesson&apos;s video could not be displayed.{" "}
+        <a
+          href={url}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="font-semibold text-[var(--primary)] hover:underline"
+        >
+          Open the video in a new tab
+        </a>
+        .
+      </div>
+    );
+  }
 
   if (embed.kind === "direct") {
     return (

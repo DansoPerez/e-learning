@@ -35,16 +35,20 @@ export default async function AdminWithdrawalsPage() {
             <Badge className="w-fit">{w.status}</Badge>
             {w.status === "PENDING" || w.status === "APPROVED" ?
               <ActionRow className="w-full sm:w-auto sm:justify-end">
-                <form action={approveWithdrawalFormAction.bind(null, w.id)}>
-                  <Button type="submit" size="sm" variant="outline">
-                    Approve
-                  </Button>
-                </form>
-                <form action={completeWithdrawalFormAction.bind(null, w.id)}>
-                  <Button type="submit" size="sm">
-                    Mark paid
-                  </Button>
-                </form>
+                {w.status === "PENDING" ?
+                  <form action={approveWithdrawalFormAction.bind(null, w.id)}>
+                    <Button type="submit" size="sm" variant="outline">
+                      Approve
+                    </Button>
+                  </form>
+                : null}
+                {w.status === "APPROVED" ?
+                  <form action={completeWithdrawalFormAction.bind(null, w.id)}>
+                    <Button type="submit" size="sm">
+                      Mark paid
+                    </Button>
+                  </form>
+                : null}
                 <form action={rejectWithdrawalFormAction.bind(null, w.id)}>
                   <Button type="submit" size="sm" variant="danger">
                     Reject

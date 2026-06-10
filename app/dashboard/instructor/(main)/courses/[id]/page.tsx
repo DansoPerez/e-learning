@@ -8,7 +8,7 @@ import {
   addModuleAction,
   submitCourseForReviewAction,
 } from "@/app/actions/courses";
-import { addQuestionAction, createQuizAction, deleteQuizAction } from "@/app/actions/quiz";
+import { createQuizAction, deleteQuizAction } from "@/app/actions/quiz";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -20,11 +20,14 @@ import { CourseAnnouncementForm } from "@/components/instructor/course-announcem
 
 export default async function InstructorCourseEditPage({
   params,
+  searchParams,
 }: {
   params: Promise<{ id: string }>;
+  searchParams: Promise<{ error?: string }>;
 }) {
   const user = await requireRole("INSTRUCTOR", "ADMIN");
   const { id } = await params;
+  const { error } = await searchParams;
 
   const [course, categories] = await Promise.all([
     prisma.course.findUnique({
@@ -57,6 +60,12 @@ export default async function InstructorCourseEditPage({
   return (
     <InstructorDashboardWrapper title={course.title}>
       <Badge className="mb-4">{course.status}</Badge>
+
+      {error === "no-content" ?
+        <p className="mb-4 rounded-lg bg-amber-50 px-3 py-2 text-sm text-amber-900">
+          Add at least one module and lesson before submitting this course for review.
+        </p>
+      : null}
 
       {course.status === "DRAFT" || course.status === "REJECTED" ?
         <form action={submitCourseForReviewAction.bind(null, course.id)} className="mb-6">
