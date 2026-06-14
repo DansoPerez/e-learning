@@ -29,6 +29,14 @@ export function getDatabaseUrl(): string {
   }
 
   url = applySupabasePoolerParams(url);
+
+  // Local dev: never serialize all queries through one pool connection.
+  if (process.env.NODE_ENV !== "production" && process.env.VERCEL !== "1") {
+    url = url.replace(/([?&])connection_limit=1(&|$)/, (_, sep, tail) =>
+      tail === "&" ? sep : "",
+    );
+  }
+
   return url;
 }
 
@@ -46,7 +54,10 @@ function applySupabasePoolerParams(url: string): string {
     params.push("pgbouncer=true");
   }
   if (!/[?&]connection_limit=/.test(url)) {
-    params.push("connection_limit=1");
+    // One connection per serverless instance in production; allow pooling locally.
+    if (process.env.VERCEL === "1") {
+      params.push("connection_limit=1");
+    }
   }
 
   if (params.length === 0) return url;

@@ -144,7 +144,7 @@ export default async function AdminUserDetailPage({
               Joined {formatDate(user.createdAt)}
             </p>
             <div className="mt-2">
-              <OnlineBadge lastSeenAt={user.lastSeenAt} userId={user.id} />
+              <OnlineBadge lastSeenAt={user.lastSeenAt} userId={user.id} live />
             </div>
           </div>
           <div className="flex flex-wrap gap-2">
