@@ -6,17 +6,17 @@ type Size = "sm" | "md" | "lg";
 
 const variants: Record<Variant, string> = {
   primary:
-    "bg-[var(--primary)] text-[var(--primary-foreground)] hover:bg-[var(--primary-hover)] border border-transparent",
+    "bg-[var(--primary)] text-[var(--primary-foreground)] hover:bg-[var(--primary-hover)] border border-transparent shadow-[var(--shadow-primary)] hover:shadow-lg active:scale-[0.98]",
   secondary:
-    "bg-[var(--primary-light)] text-[var(--primary)] hover:bg-[#d3e3fc] font-semibold border border-transparent",
+    "bg-[var(--primary-light)] text-[var(--primary)] hover:bg-[var(--primary-muted)]/40 font-semibold border border-[var(--primary-muted)]/30",
   accent:
-    "bg-[var(--accent)] text-[var(--accent-foreground)] hover:brightness-95 font-bold border border-transparent",
+    "bg-[var(--accent)] text-[var(--accent-foreground)] hover:brightness-95 font-bold border border-transparent shadow-sm active:scale-[0.98]",
   outline:
-    "border border-[var(--foreground)] bg-transparent text-[var(--foreground)] hover:bg-[var(--foreground)] hover:text-white",
+    "border border-[var(--border-strong)] bg-white text-[var(--foreground)] hover:border-[var(--primary)] hover:bg-[var(--primary-light)] hover:text-[var(--primary)]",
   ghost:
     "text-[var(--foreground-secondary)] hover:bg-[var(--background-subtle)] hover:text-[var(--foreground)] border border-transparent",
   danger:
-    "bg-[var(--danger)] text-white hover:opacity-90 border border-transparent",
+    "bg-[var(--danger)] text-white hover:opacity-90 border border-transparent shadow-sm active:scale-[0.98]",
 };
 
 const sizes: Record<Size, string> = {
@@ -35,7 +35,7 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
     <button
       ref={ref}
       className={cn(
-        "inline-flex items-center justify-center rounded-[var(--radius)] font-semibold transition-colors duration-150 disabled:pointer-events-none disabled:opacity-50 touch-manipulation",
+        "inline-flex items-center justify-center rounded-[var(--radius)] font-semibold transition-all duration-150 disabled:pointer-events-none disabled:opacity-50 touch-manipulation",
         variants[variant],
         sizes[size],
         className,

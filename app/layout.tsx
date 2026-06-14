@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
+import { Plus_Jakarta_Sans, JetBrains_Mono } from "next/font/google";
 import { auth } from "@/auth";
 import { Header } from "@/components/layout/header";
 import { ConditionalFooter } from "@/components/layout/conditional-footer";
@@ -9,14 +9,16 @@ import "./globals.css";
 
 export const dynamic = "force-dynamic";
 
-const geistSans = Geist({
-  variable: "--font-geist-sans",
+const plusJakarta = Plus_Jakarta_Sans({
+  variable: "--font-sans-app",
   subsets: ["latin"],
+  display: "swap",
 });
 
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
+const jetbrainsMono = JetBrains_Mono({
+  variable: "--font-mono-app",
   subsets: ["latin"],
+  display: "swap",
 });
 
 export const metadata: Metadata = {
@@ -36,7 +38,7 @@ export default async function RootLayout({
   const session = await auth();
 
   return (
-    <html lang="en" className={`${geistSans.variable} ${geistMono.variable} h-full light`} style={{ colorScheme: "light" }}>
+    <html lang="en" className={`${plusJakarta.variable} ${jetbrainsMono.variable} h-full light`} style={{ colorScheme: "light" }}>
       <body className="flex min-h-full flex-col antialiased">
         <AuthProvider session={session}>
           <Header initialSession={session} />

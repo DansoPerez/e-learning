@@ -44,10 +44,10 @@ export function DashboardNav({
 
   const linkClass = (active: boolean) =>
     cn(
-      "flex min-h-[44px] items-center rounded-md px-3 py-2.5 text-sm font-medium transition-colors touch-manipulation",
+      "flex min-h-[44px] items-center rounded-lg px-3 py-2.5 text-sm font-medium transition-all touch-manipulation",
       active ?
-        "bg-[var(--primary)] text-white"
-      : "text-[var(--foreground-secondary)] hover:bg-[var(--primary-light)] hover:text-[var(--primary)] active:bg-[var(--primary-light)]",
+        "bg-[var(--primary)] text-white shadow-[var(--shadow-primary)]"
+      : "text-[var(--foreground-secondary)] hover:bg-[var(--primary-light)] hover:text-[var(--primary)]",
     );
 
   const navContent = sections.map((section) => (
@@ -118,7 +118,7 @@ export function DashboardNav({
         </div>
       : null}
 
-      <aside className="surface-card hidden h-fit p-3 lg:sticky lg:top-[calc(var(--header-height)+1.5rem)] lg:z-30 lg:block">
+      <aside className="surface-card hidden h-fit bg-gradient-to-b from-white to-[var(--primary-light)]/30 p-3 lg:sticky lg:top-[calc(var(--header-height)+1.5rem)] lg:z-30 lg:block">
         <p className="mb-3 px-3 text-xs font-semibold uppercase tracking-wider text-[var(--foreground-muted)]">
           {roleLabel}
         </p>
@@ -140,10 +140,13 @@ export function DashboardHeader({
   children?: React.ReactNode;
 }) {
   return (
-    <div className="mb-6 flex flex-col gap-4 border-b border-[var(--border)] pb-5 sm:flex-row sm:flex-wrap sm:items-start sm:justify-between">
-      <h1 className="min-w-0 text-xl font-bold tracking-tight text-[var(--foreground)] sm:text-3xl">
-        {title}
-      </h1>
+    <div className="mb-6 flex flex-col gap-4 border-b border-[var(--border)] pb-6 sm:flex-row sm:flex-wrap sm:items-start sm:justify-between">
+      <div>
+        <h1 className="min-w-0 text-2xl font-bold tracking-tight text-[var(--foreground)] sm:text-3xl">
+          {title}
+        </h1>
+        <div className="mt-1 h-1 w-12 rounded-full bg-gradient-to-r from-[var(--primary)] to-violet-400" />
+      </div>
       {children ?
         <div className="flex shrink-0 flex-wrap items-center gap-2">{children}</div>
       : null}

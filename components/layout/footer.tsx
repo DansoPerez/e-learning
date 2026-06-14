@@ -22,12 +22,12 @@ export function Footer({ initialSession }: { initialSession: Session | null }) {
   const isInstructor = role === "INSTRUCTOR";
 
   return (
-    <footer className="mt-auto border-t border-[var(--border)] bg-[#1c1d1f] text-slate-300">
+    <footer className="mt-auto border-t border-slate-800 bg-gradient-to-b from-slate-900 to-slate-950 text-slate-300">
       <div className="page-container py-10 sm:py-12">
         <div className="grid gap-8 sm:grid-cols-2 lg:grid-cols-4">
           <div className="sm:col-span-2 lg:col-span-1">
             <Link href="/" className="inline-flex items-center gap-2.5 text-white">
-              <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-[var(--primary)]">
+              <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br from-[var(--primary)] to-violet-600 shadow-[var(--shadow-primary)]">
                 <BookOpen className="h-5 w-5" />
               </span>
               <span className="text-lg font-bold">{PLATFORM_NAME}</span>
