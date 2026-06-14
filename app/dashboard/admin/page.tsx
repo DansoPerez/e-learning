@@ -4,11 +4,13 @@ import { requireRole, getSessionUser } from "@/lib/auth";
 import { OnlineUsersPanel } from "@/components/presence/online-users-panel";
 import { DashboardWrapper } from "@/components/layout/dashboard-wrapper";
 import { StatCard } from "@/components/ui/stat-card";
+import { DashboardHero, DashboardSection, QuickActionGrid } from "@/components/ui/dashboard-section";
 import { formatCurrency } from "@/lib/utils";
 import { createAnnouncementAction } from "@/app/actions/admin";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import {
+  BarChart3,
   BookOpen,
   GraduationCap,
   Settings,
@@ -34,108 +36,93 @@ export default async function AdminDashboardPage() {
       prisma.user.count({ where: { allCoursesAccess: true } }),
     ]);
 
-  const quickLinks = [
-    { href: "/dashboard/admin/users", label: "Manage users", icon: Users },
-    { href: "/dashboard/admin/instructors", label: "Instructors", icon: GraduationCap },
-    { href: "/dashboard/admin/courses", label: "Courses", icon: BookOpen },
-    { href: "/dashboard/admin/withdrawals", label: "Withdrawals", icon: Wallet },
-    { href: "/dashboard/admin/settings", label: "Settings", icon: Settings },
-    { href: "/dashboard/admin/logs", label: "Audit logs", icon: Shield },
-    { href: "/dashboard/admin/analytics", label: "Analytics", icon: Shield },
-    { href: "/dashboard/admin/quizzes", label: "Quiz control", icon: BookOpen },
-  ];
+  const pendingTotal = pendingInstructors + pendingCourses;
 
   return (
-    <DashboardWrapper role="ADMIN" title="Admin command center">
-      <div className="mb-8 rounded-2xl border border-indigo-200 bg-gradient-to-r from-indigo-600 to-violet-700 p-6 text-white shadow-lg">
-        <p className="text-sm font-medium text-indigo-200">
-          {session?.isSuperAdmin ? "Super Admin" : "Admin"}
-        </p>
-        <h2 className="mt-1 text-2xl font-extrabold">Platform control</h2>
-        <p className="mt-2 max-w-2xl text-indigo-100">
-          {session?.isSuperAdmin ?
-            "Manage all users, approve sensitive admin access, and see who is online."
-          : "Approve instructors and courses. Sensitive actions need super admin approval."}
-        </p>
-      </div>
+    <DashboardWrapper role="ADMIN" title="Overview">
+      <DashboardHero
+        eyebrow={session?.isSuperAdmin ? "Super admin" : "Administrator"}
+        title="Platform control"
+        description={
+          session?.isSuperAdmin ?
+            "Manage users, approve sensitive access, and monitor live activity across Bravio."
+          : "Approve instructors and courses. Sensitive actions require super admin approval."
+        }
+      />
 
-      {session?.isSuperAdmin ?
-        <div className="mb-8">
-          <OnlineUsersPanel />
-        </div>
-      : null}
-
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <StatCard label="Total users" value={users} />
-        <StatCard label="Published courses" value={courses} />
+      <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+        <StatCard label="Total users" value={users} icon={Users} />
+        <StatCard label="Published courses" value={courses} icon={BookOpen} tone="success" />
         <StatCard
           label="Platform revenue"
           value={formatCurrency(Number(revenue._sum.platformShare ?? 0))}
+          icon={Wallet}
+          tone="accent"
         />
         <StatCard
           label="Pending reviews"
-          value={pendingInstructors + pendingCourses}
+          value={pendingTotal}
           hint={`${pendingInstructors} instructors · ${pendingCourses} courses`}
+          icon={Shield}
         />
       </div>
 
-      <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-        {quickLinks.map(({ href, label, icon: Icon }) => (
-          <Link
-            key={href}
-            href={href}
-            className="surface-card flex items-center gap-3 p-4 transition-all hover:-translate-y-0.5 hover:border-indigo-200 hover:shadow-md"
-          >
-            <div className="rounded-xl bg-[var(--primary-light)] p-2.5 text-[var(--primary)]">
-              <Icon className="h-5 w-5" />
-            </div>
-            <span className="font-semibold text-[var(--foreground)]">{label}</span>
-          </Link>
-        ))}
-      </div>
+      <DashboardSection title="Quick actions" description="Jump to common admin tasks">
+        <QuickActionGrid
+          items={[
+            { href: "/dashboard/admin/users", label: "Users", icon: <Users className="h-5 w-5" />, description: "Accounts & access" },
+            { href: "/dashboard/admin/instructors", label: "Instructors", icon: <GraduationCap className="h-5 w-5" />, description: "Applications" },
+            { href: "/dashboard/admin/courses", label: "Courses", icon: <BookOpen className="h-5 w-5" />, description: "Review & publish" },
+            { href: "/dashboard/admin/analytics", label: "Analytics", icon: <BarChart3 className="h-5 w-5" />, description: "Platform metrics" },
+            { href: "/dashboard/admin/withdrawals", label: "Withdrawals", icon: <Wallet className="h-5 w-5" />, description: "Payout requests" },
+            { href: "/dashboard/admin/settings", label: "Settings", icon: <Settings className="h-5 w-5" />, description: "Commission & config" },
+            { href: "/dashboard/admin/logs", label: "Audit logs", icon: <Shield className="h-5 w-5" />, description: "Activity history" },
+            { href: "/dashboard/admin/quizzes", label: "Quizzes", icon: <BookOpen className="h-5 w-5" />, description: "Global quiz control" },
+          ]}
+        />
+      </DashboardSection>
 
-      <div className="mt-8 grid gap-6 lg:grid-cols-2">
-        <section className="surface-card p-6">
-          <h2 className="font-bold text-[var(--foreground)]">New announcement</h2>
-          <p className="mt-1 text-sm text-[var(--foreground-muted)]">
-            Send a message to students or instructors
-          </p>
-          <form action={createAnnouncementAction} className="mt-4 space-y-3">
-            <div className="space-y-2">
-              <label htmlFor="scope" className="text-sm font-medium text-[var(--foreground-secondary)]">
-                Audience
-              </label>
+      <div className="grid gap-6 xl:grid-cols-[minmax(0,1.2fr)_minmax(0,1fr)]">
+        {session?.isSuperAdmin ?
+          <OnlineUsersPanel />
+        : null}
+
+        <div className="space-y-6">
+          <section className="surface-card p-5 sm:p-6">
+            <h2 className="font-bold text-[var(--foreground)]">New announcement</h2>
+            <p className="mt-1 text-sm text-[var(--foreground-muted)]">
+              Broadcast to students or instructors
+            </p>
+            <form action={createAnnouncementAction} className="mt-4 space-y-3">
               <select id="scope" name="scope" required className="input-field w-full">
                 <option value="STUDENTS">All students</option>
                 <option value="INSTRUCTORS">All instructors</option>
               </select>
-            </div>
-            <Textarea name="message" placeholder="Your message..." required rows={3} />
-            <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap">
-              <Button type="submit" className="w-full sm:w-auto">
-                Publish
-              </Button>
-              <Link href="/dashboard/admin/announcements" className="w-full sm:w-auto">
-                <Button type="button" variant="outline" className="w-full">
-                  View all
+              <Textarea name="message" placeholder="Your message..." required rows={3} />
+              <div className="flex flex-col gap-2 sm:flex-row">
+                <Button type="submit" className="w-full sm:w-auto">
+                  Publish
                 </Button>
-              </Link>
-            </div>
-          </form>
-        </section>
+                <Link href="/dashboard/admin/announcements" className="w-full sm:w-auto">
+                  <Button type="button" variant="outline" className="w-full">
+                    View all
+                  </Button>
+                </Link>
+              </div>
+            </form>
+          </section>
 
-        <section className="surface-card p-6">
-          <h2 className="font-bold text-[var(--foreground)]">Access overview</h2>
-          <p className="mt-4 text-3xl font-extrabold text-[var(--primary)]">{allAccessUsers}</p>
-          <p className="text-sm text-[var(--foreground-muted)]">
-            users with all-courses access granted by admin
-          </p>
-          <Link href="/dashboard/admin/users" className="mt-4 inline-block">
-            <Button variant="outline" size="sm">
-              Manage users →
-            </Button>
-          </Link>
-        </section>
+          <section className="surface-card p-5 sm:p-6">
+            <h2 className="font-bold text-[var(--foreground)]">All-courses access</h2>
+            <p className="mt-3 text-3xl font-extrabold text-[var(--primary)]">{allAccessUsers}</p>
+            <p className="text-sm text-[var(--foreground-muted)]">users with full catalog access</p>
+            <Link href="/dashboard/admin/users" className="mt-4 inline-block">
+              <Button variant="outline" size="sm">
+                Manage users →
+              </Button>
+            </Link>
+          </section>
+        </div>
       </div>
     </DashboardWrapper>
   );

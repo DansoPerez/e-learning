@@ -80,9 +80,21 @@ body {
 .page-container {
   margin-left: auto;
   margin-right: auto;
-  max-width: 75rem;
+  max-width: 80rem;
   padding-left: 1rem;
   padding-right: 1rem;
+}
+
+.dashboard-shell {
+  min-height: calc(100dvh - var(--header-height));
+  background:
+    linear-gradient(180deg, var(--background-subtle) 0%, var(--background) 12rem),
+    var(--background);
+}
+
+.learn-shell {
+  min-height: calc(100dvh - var(--header-height));
+  background: var(--background-subtle);
 }
 
 @media (min-width: 640px) {

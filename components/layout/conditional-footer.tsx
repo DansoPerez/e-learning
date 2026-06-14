@@ -6,6 +6,6 @@ import { Footer } from "@/components/layout/footer";
 /** Site footer for marketing pages only — hidden inside dashboards */
 export function ConditionalFooter() {
   const pathname = usePathname();
-  if (pathname.startsWith("/dashboard")) return null;
+  if (pathname.startsWith("/dashboard") || pathname.startsWith("/learn")) return null;
   return <Footer />;
 }

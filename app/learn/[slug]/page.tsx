@@ -125,6 +125,17 @@ export default async function LearnPage({
   const allLessonsDone =
     allLessons.length > 0 && allLessons.every((l) => completedIds.has(l.id));
   const quizzesRemaining = enabledQuizIds.filter((id) => !passedQuizIds.has(id)).length;
+  const progressPercent =
+    allLessons.length > 0 ?
+      Math.round((completedIds.size / allLessons.length) * 100)
+    : 0;
+
+  const activeIndex = activeLesson ? allLessons.findIndex((l) => l.id === activeLesson.id) : -1;
+  const prevLesson = activeIndex > 0 ? allLessons[activeIndex - 1] : null;
+  const nextLesson =
+    activeIndex >= 0 && activeIndex < allLessons.length - 1 ?
+      allLessons[activeIndex + 1]
+    : null;
 
   const curriculum = {
     slug,
@@ -149,44 +160,69 @@ export default async function LearnPage({
     completedLessonIds: [...completedIds],
     allLessonsDone,
     quizzesRemaining,
+    progressPercent,
   };
 
   return (
     <LearnPageLayout curriculum={curriculum}>
-      <div className="surface-card p-4 sm:p-6 lg:p-8">
+      <article className="surface-card overflow-hidden">
         {activeLesson ?
           <>
-            <LessonViewTracker lessonId={activeLesson.id} courseSlug={slug} />
-            <h1 className="break-words text-xl font-extrabold text-[var(--foreground)] sm:text-2xl">
-              {activeLesson.title}
-            </h1>
-            {activeLesson.videoUrl ?
-              <LessonVideo url={activeLesson.videoUrl} />
-            : null}
-            {activeLesson.pdfStorageKey ?
-              <LessonPdfViewer lessonId={activeLesson.id} title={activeLesson.title} />
-            : null}
-            {activeLesson.content ?
-              <div className="prose-safe mt-6 whitespace-pre-wrap text-base leading-relaxed text-[var(--foreground-secondary)]">
-                {activeLesson.content}
+            <div className="border-b border-[var(--border)] bg-gradient-to-r from-[var(--primary-light)] to-white px-5 py-4 sm:px-8 sm:py-5">
+              <p className="text-xs font-semibold uppercase tracking-wider text-[var(--primary)]">
+                Lesson {activeIndex + 1} of {allLessons.length}
+              </p>
+              <LessonViewTracker lessonId={activeLesson.id} courseSlug={slug} />
+              <h1 className="mt-1 break-words text-xl font-extrabold tracking-tight text-[var(--foreground)] sm:text-2xl">
+                {activeLesson.title}
+              </h1>
+            </div>
+            <div className="p-5 sm:p-8">
+              {activeLesson.videoUrl ?
+                <LessonVideo url={activeLesson.videoUrl} />
+              : null}
+              {activeLesson.pdfStorageKey ?
+                <LessonPdfViewer lessonId={activeLesson.id} title={activeLesson.title} />
+              : null}
+              {activeLesson.content ?
+                <div className="prose-safe mt-6 whitespace-pre-wrap text-base leading-relaxed text-[var(--foreground-secondary)]">
+                  {activeLesson.content}
+                </div>
+              : null}
+              <div className="mt-8 flex flex-col gap-3 border-t border-[var(--border)] pt-6 sm:flex-row sm:items-center sm:justify-between">
+                <div className="flex flex-wrap gap-2">
+                  {prevLesson ?
+                    <a
+                      href={`/learn/${slug}?lesson=${prevLesson.id}`}
+                      className="inline-flex min-h-[44px] items-center rounded-lg border border-[var(--border)] px-4 py-2 text-sm font-semibold text-[var(--foreground-secondary)] hover:border-[var(--primary)] hover:text-[var(--primary)]"
+                    >
+                      ← Previous
+                    </a>
+                  : null}
+                  {nextLesson ?
+                    <a
+                      href={`/learn/${slug}?lesson=${nextLesson.id}`}
+                      className="inline-flex min-h-[44px] items-center rounded-lg border border-[var(--border)] px-4 py-2 text-sm font-semibold text-[var(--foreground-secondary)] hover:border-[var(--primary)] hover:text-[var(--primary)]"
+                    >
+                      Next →
+                    </a>
+                  : null}
+                </div>
+                {!completedIds.has(activeLesson.id) ?
+                  <form action={markLessonCompleteAction.bind(null, activeLesson.id, slug)}>
+                    <Button type="submit" size="lg" className="w-full sm:w-auto">
+                      Mark as complete
+                    </Button>
+                  </form>
+                : <Badge variant="success" className="w-fit">
+                    ✓ Lesson completed
+                  </Badge>
+                }
               </div>
-            : null}
-            {!completedIds.has(activeLesson.id) ?
-              <form
-                action={markLessonCompleteAction.bind(null, activeLesson.id, slug)}
-                className="mt-8"
-              >
-                <Button type="submit" size="lg" className="w-full sm:w-auto">
-                  Mark as complete
-                </Button>
-              </form>
-            : <Badge variant="success" className="mt-8">
-                ✓ Lesson completed
-              </Badge>
-            }
+            </div>
           </>
-        : <p className="text-[var(--foreground-muted)]">No lessons in this course yet.</p>}
-      </div>
+        : <p className="p-8 text-[var(--foreground-muted)]">No lessons in this course yet.</p>}
+      </article>
     </LearnPageLayout>
   );
 }

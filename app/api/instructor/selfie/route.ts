@@ -3,6 +3,7 @@ import { put } from "@vercel/blob";
 import { writeFile, mkdir } from "fs/promises";
 import path from "path";
 import { randomUUID } from "crypto";
+import { isCloudinaryEnabled, uploadToCloudinary, MEDIA_LIMITS } from "@/lib/cloudinary";
 
 export async function POST(request: Request) {
   try {
@@ -20,8 +21,16 @@ export async function POST(request: Request) {
     const ext = match[1] === "jpeg" ? "jpg" : match[1];
     const buffer = Buffer.from(match[2], "base64");
 
-    if (buffer.length > 5 * 1024 * 1024) {
+    if (buffer.length > MEDIA_LIMITS.selfieBytes) {
       return NextResponse.json({ error: "Image too large (max 5MB)" }, { status: 400 });
+    }
+
+    if (isCloudinaryEnabled()) {
+      const { url } = await uploadToCloudinary(buffer, {
+        folder: "bravio/selfies",
+        resourceType: "image",
+      });
+      return NextResponse.json({ url });
     }
 
     const filename = `selfies/${randomUUID()}.${ext}`;

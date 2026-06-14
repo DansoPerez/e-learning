@@ -5,7 +5,7 @@ import Link from "next/link";
 import { cn } from "@/lib/utils";
 import { flattenNavSections, type NavSection } from "@/lib/site-nav";
 import { AdminMobileNav } from "@/components/layout/admin-mobile-nav";
-import { Menu, X } from "lucide-react";
+import { LayoutDashboard, Menu, X } from "lucide-react";
 
 export function DashboardNav({
   sections,
@@ -44,15 +44,15 @@ export function DashboardNav({
 
   const linkClass = (active: boolean) =>
     cn(
-      "flex min-h-[44px] items-center rounded-lg px-3 py-2.5 text-sm font-medium transition-all touch-manipulation",
+      "flex min-h-[40px] items-center rounded-lg px-3 py-2 text-sm font-medium transition-all touch-manipulation",
       active ?
         "bg-[var(--primary)] text-white shadow-[var(--shadow-primary)]"
-      : "text-[var(--foreground-secondary)] hover:bg-[var(--primary-light)] hover:text-[var(--primary)]",
+      : "text-[var(--foreground-secondary)] hover:bg-white/80 hover:text-[var(--primary)]",
     );
 
   const navContent = sections.map((section) => (
     <div key={section.label} className="space-y-0.5">
-      <p className="mb-1.5 px-3 text-[11px] font-semibold uppercase tracking-wider text-[var(--foreground-muted)]">
+      <p className="mb-1 px-3 text-[10px] font-bold uppercase tracking-widest text-[var(--foreground-muted)]">
         {section.label}
       </p>
       {section.items.map((item) => (
@@ -69,22 +69,22 @@ export function DashboardNav({
   ));
 
   return (
-    <div className="min-w-0 self-start">
+    <div className="min-w-0 lg:self-start">
       <div
         className={cn(
-          "mb-4 flex items-center justify-between gap-3 rounded-lg border border-[var(--border)] bg-white p-3 shadow-[var(--shadow-sm)] lg:hidden",
+          "mb-3 flex items-center justify-between gap-3 rounded-xl border border-[var(--border)] bg-white p-2.5 shadow-[var(--shadow-sm)] lg:hidden",
           isAdmin && "z-40",
         )}
       >
         <button
           type="button"
           onClick={() => setOpen(true)}
-          className="inline-flex min-h-[44px] flex-1 items-center justify-center gap-2 rounded-md bg-[var(--primary-light)] px-4 py-2.5 text-sm font-semibold text-[var(--primary)] touch-manipulation"
+          className="inline-flex min-h-[44px] flex-1 items-center justify-center gap-2 rounded-lg bg-[var(--primary)] px-4 py-2.5 text-sm font-semibold text-white touch-manipulation"
           aria-expanded={open}
           aria-controls="dashboard-mobile-nav"
         >
           <Menu className="h-5 w-5" />
-          Open {roleLabel} menu
+          Menu
         </button>
       </div>
 
@@ -96,11 +96,11 @@ export function DashboardNav({
             aria-label="Close menu"
             onClick={() => setOpen(false)}
           />
-          <aside className="absolute left-0 top-0 flex h-full w-[min(100%,min(320px,100vw))] flex-col bg-white shadow-[var(--shadow-lg)]">
-            <div className="flex items-center justify-between border-b border-[var(--border)] px-4 py-4">
+          <aside className="absolute left-0 top-0 flex h-full w-[min(100%,min(300px,100vw))] flex-col bg-white shadow-[var(--shadow-lg)]">
+            <div className="flex items-center justify-between border-b border-[var(--border)] px-4 py-3">
               <div>
-                <p className="text-sm font-bold text-[var(--foreground)]">Navigation</p>
-                <p className="text-xs text-[var(--foreground-muted)]">{roleLabel} dashboard</p>
+                <p className="text-sm font-bold text-[var(--foreground)]">{roleLabel}</p>
+                <p className="text-xs text-[var(--foreground-muted)]">Dashboard navigation</p>
               </div>
               <button
                 type="button"
@@ -118,11 +118,18 @@ export function DashboardNav({
         </div>
       : null}
 
-      <aside className="surface-card hidden h-fit bg-gradient-to-b from-white to-[var(--primary-light)]/30 p-3 lg:sticky lg:top-[calc(var(--header-height)+1.5rem)] lg:z-30 lg:block">
-        <p className="mb-3 px-3 text-xs font-semibold uppercase tracking-wider text-[var(--foreground-muted)]">
-          {roleLabel}
-        </p>
-        <nav className="space-y-4">{navContent}</nav>
+      <aside className="hidden lg:block">
+        <div className="sticky top-[calc(var(--header-height)+1rem)] rounded-xl border border-[var(--border)] bg-white/90 p-2 shadow-[var(--shadow-sm)] backdrop-blur-sm">
+          <div className="mb-2 flex items-center gap-2 rounded-lg bg-[var(--primary-light)] px-3 py-2.5">
+            <LayoutDashboard className="h-4 w-4 text-[var(--primary)]" />
+            <p className="text-xs font-bold uppercase tracking-wider text-[var(--primary)]">
+              {roleLabel}
+            </p>
+          </div>
+          <nav className="max-h-[calc(100dvh-var(--header-height)-6rem)] space-y-3 overflow-y-auto overscroll-contain p-1">
+            {navContent}
+          </nav>
+        </div>
       </aside>
 
       {isAdmin ?
@@ -139,14 +146,18 @@ export function DashboardHeader({
   title: string;
   children?: React.ReactNode;
 }) {
+  const hideTitle = title === "Overview";
+  if (hideTitle && !children) return null;
+
   return (
-    <div className="mb-6 flex flex-col gap-4 border-b border-[var(--border)] pb-6 sm:flex-row sm:flex-wrap sm:items-start sm:justify-between">
-      <div>
-        <h1 className="min-w-0 text-2xl font-bold tracking-tight text-[var(--foreground)] sm:text-3xl">
-          {title}
-        </h1>
-        <div className="mt-1 h-1 w-12 rounded-full bg-gradient-to-r from-[var(--primary)] to-violet-400" />
-      </div>
+    <div className="mb-2 flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between">
+      {!hideTitle ?
+        <div>
+          <h1 className="min-w-0 text-2xl font-bold tracking-tight text-[var(--foreground)] sm:text-[1.75rem]">
+            {title}
+          </h1>
+        </div>
+      : null}
       {children ?
         <div className="flex shrink-0 flex-wrap items-center gap-2">{children}</div>
       : null}

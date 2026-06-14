@@ -31,12 +31,19 @@ export const getCachedCategories = unstable_cache(
 
 export const getCachedPlatformStats = unstable_cache(
   async () => {
-    const [publishedCount, categoryCount, enrollmentCount] = await Promise.all([
-      prisma.course.count({ where: { status: "PUBLISHED" } }),
-      prisma.category.count(),
-      prisma.enrollment.count(),
-    ]);
-    return { publishedCount, categoryCount, enrollmentCount };
+    const [row] = await prisma.$queryRaw<
+      [{ published_count: bigint; category_count: bigint; enrollment_count: bigint }]
+    >`
+      SELECT
+        (SELECT COUNT(*)::bigint FROM "Course" WHERE status = 'PUBLISHED') AS published_count,
+        (SELECT COUNT(*)::bigint FROM "Category") AS category_count,
+        (SELECT COUNT(*)::bigint FROM "Enrollment") AS enrollment_count
+    `;
+    return {
+      publishedCount: Number(row.published_count),
+      categoryCount: Number(row.category_count),
+      enrollmentCount: Number(row.enrollment_count),
+    };
   },
   ["catalog-platform-stats"],
   { revalidate: 120 },
