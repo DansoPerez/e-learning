@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { auth } from "@/auth";
+import { getServerSession } from "@/lib/session";
 import { prisma } from "@/lib/prisma";
 import { Button } from "@/components/ui/button";
 import { CourseCard } from "@/components/courses/course-card";
@@ -34,7 +34,7 @@ function homepageClosingCopy(role: Role): { heading: string; body: string; cta: 
 }
 
 export default async function HomePage() {
-  const session = await auth();
+  const session = await getServerSession();
   const isAuthenticated = !!session?.user?.id;
   const [featured, latest, publishedCount, categoryCount, enrollmentCount] =
     await Promise.all([

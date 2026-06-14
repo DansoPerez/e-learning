@@ -7,6 +7,8 @@ import {
   markAllNotificationsReadAction,
   markNotificationReadAction,
 } from "@/app/actions/notifications";
+import { DASHBOARD_POLL_MS } from "@/lib/presence-utils";
+import { useVisibleInterval } from "@/lib/use-visible-interval";
 
 type NotificationItem = {
   id: string;
@@ -18,35 +20,40 @@ type NotificationItem = {
   createdAt: string;
 };
 
-export function NotificationBell({ pollIntervalMs = 20_000 }: { pollIntervalMs?: number }) {
+export function NotificationBell({ pollIntervalMs = DASHBOARD_POLL_MS }: { pollIntervalMs?: number }) {
   const [open, setOpen] = useState(false);
   const [items, setItems] = useState<NotificationItem[]>([]);
   const [unread, setUnread] = useState(0);
 
-  const load = useCallback(async () => {
+  const loadUnreadCount = useCallback(async () => {
     try {
-      const [pollRes, listRes] = await Promise.all([
-        fetch("/api/dashboard/poll", { cache: "no-store" }),
-        fetch("/api/notifications", { cache: "no-store" }),
-      ]);
-      if (pollRes.ok) {
-        const poll = await pollRes.json();
-        setUnread(poll.unreadNotifications ?? 0);
-      }
-      if (listRes.ok) {
-        const data = await listRes.json();
-        setItems(data.notifications ?? []);
-      }
+      const res = await fetch("/api/dashboard/poll", { cache: "no-store" });
+      if (!res.ok) return;
+      const poll = await res.json();
+      setUnread(poll.unreadNotifications ?? 0);
     } catch {
       /* ignore network errors during poll */
     }
   }, []);
 
+  const loadFullList = useCallback(async () => {
+    try {
+      const res = await fetch("/api/notifications", { cache: "no-store" });
+      if (!res.ok) return;
+      const data = await res.json();
+      setItems(data.notifications ?? []);
+    } catch {
+      /* ignore */
+    }
+  }, []);
+
+  useVisibleInterval(loadUnreadCount, pollIntervalMs);
+
   useEffect(() => {
-    load();
-    const id = setInterval(load, pollIntervalMs);
-    return () => clearInterval(id);
-  }, [load, pollIntervalMs]);
+    if (open) {
+      void loadFullList();
+    }
+  }, [open, loadFullList]);
 
   async function onMarkRead(id: string, link: string | null) {
     await markNotificationReadAction(id);
@@ -91,7 +98,7 @@ export function NotificationBell({ pollIntervalMs = 20_000 }: { pollIntervalMs?:
               Mark all read
             </button>
           </div>
-          <ul className="max-h-72 overflow-y-auto">
+          <ul className="max-h-72 overflow-y-auto overscroll-contain">
             {items.length === 0 ?
               <li className="px-3 py-6 text-center text-sm text-[var(--foreground-muted)]">
                 No notifications yet
@@ -126,7 +133,7 @@ export function LivePollBadge({
   href,
   label,
   pollKey,
-  pollIntervalMs = 20_000,
+  pollIntervalMs = DASHBOARD_POLL_MS,
 }: {
   href: string;
   label: string;
@@ -135,22 +142,17 @@ export function LivePollBadge({
 }) {
   const [count, setCount] = useState(0);
 
-  useEffect(() => {
-    async function poll() {
-      try {
-        const res = await fetch("/api/dashboard/poll", { cache: "no-store" });
-        if (res.ok) {
-          const data = await res.json();
-          setCount(data[pollKey] ?? 0);
-        }
-      } catch {
-        /* ignore */
+  useVisibleInterval(async () => {
+    try {
+      const res = await fetch("/api/dashboard/poll", { cache: "no-store" });
+      if (res.ok) {
+        const data = await res.json();
+        setCount(data[pollKey] ?? 0);
       }
+    } catch {
+      /* ignore */
     }
-    poll();
-    const id = setInterval(poll, pollIntervalMs);
-    return () => clearInterval(id);
-  }, [pollKey, pollIntervalMs]);
+  }, pollIntervalMs);
 
   return (
     <Link

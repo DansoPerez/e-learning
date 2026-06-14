@@ -3,7 +3,8 @@
 import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import { Badge } from "@/components/ui/badge";
-import { formatLastSeen, isUserOnline } from "@/lib/presence-utils";
+import { formatLastSeen, isUserOnline, PRESENCE_POLL_MS } from "@/lib/presence-utils";
+import { useVisibleInterval } from "@/lib/use-visible-interval";
 
 type PresenceUser = {
   id: string;
@@ -59,8 +60,7 @@ function UserRow({
   );
 }
 
-const PRESENCE_TICK_MS = 10_000;
-const PRESENCE_POLL_MS = 20_000;
+const PRESENCE_TICK_MS = 30_000;
 
 export function OnlineUsersPanel({
   pollMs = PRESENCE_POLL_MS,
@@ -91,11 +91,7 @@ export function OnlineUsersPanel({
     }
   }, []);
 
-  useEffect(() => {
-    load();
-    const id = setInterval(load, pollMs);
-    return () => clearInterval(id);
-  }, [load, pollMs]);
+  useVisibleInterval(load, pollMs);
 
   useEffect(() => {
     const id = setInterval(() => setNowMs(Date.now()), PRESENCE_TICK_MS);
@@ -171,11 +167,7 @@ export function InstructorOnlineStudentsPanel() {
     }
   }, []);
 
-  useEffect(() => {
-    load();
-    const id = setInterval(load, PRESENCE_POLL_MS);
-    return () => clearInterval(id);
-  }, [load]);
+  useVisibleInterval(load, PRESENCE_POLL_MS);
 
   useEffect(() => {
     const id = setInterval(() => setNowMs(Date.now()), PRESENCE_TICK_MS);

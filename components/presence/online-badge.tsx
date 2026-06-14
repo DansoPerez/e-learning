@@ -4,22 +4,25 @@ import { useEffect, useState } from "react";
 import {
   formatLastSeen,
   ONLINE_WITHIN_MS,
+  PRESENCE_POLL_MS,
   parseLastSeenAt,
 } from "@/lib/presence-utils";
+import { useVisibleInterval } from "@/lib/use-visible-interval";
 import { cn } from "@/lib/utils";
 
-const TICK_MS = 10_000;
-const PRESENCE_POLL_MS = 20_000;
+const TICK_MS = 30_000;
 
 export function OnlineBadge({
   lastSeenAt,
   userId,
+  live = false,
   className,
   showLastSeen = true,
 }: {
   lastSeenAt: Date | string | null | undefined;
-  /** When set, polls the server for up-to-date presence instead of relying on SSR data only */
   userId?: string;
+  /** Poll the server for fresh presence (use on a single user profile, not lists) */
+  live?: boolean;
   className?: string;
   showLastSeen?: boolean;
 }) {
@@ -30,31 +33,25 @@ export function OnlineBadge({
     setSeenAt(parseLastSeenAt(lastSeenAt));
   }, [lastSeenAt]);
 
-  useEffect(() => {
-    if (!userId) return;
-    const pollUserId = userId;
+  const shouldPoll = live && !!userId;
 
-    async function poll() {
-      try {
-        const res = await fetch(
-          `/api/presence/status?ids=${encodeURIComponent(pollUserId)}`,
-          { cache: "no-store" },
-        );
-        if (!res.ok) return;
-        const data = (await res.json()) as {
-          users?: Record<string, { lastSeenAt: string | null }>;
-        };
-        const fresh = data.users?.[pollUserId]?.lastSeenAt;
-        if (fresh) setSeenAt(parseLastSeenAt(fresh));
-      } catch {
-        /* ignore */
-      }
+  useVisibleInterval(async () => {
+    if (!shouldPoll || !userId) return;
+    try {
+      const res = await fetch(
+        `/api/presence/status?ids=${encodeURIComponent(userId)}`,
+        { cache: "no-store" },
+      );
+      if (!res.ok) return;
+      const data = (await res.json()) as {
+        users?: Record<string, { lastSeenAt: string | null }>;
+      };
+      const fresh = data.users?.[userId]?.lastSeenAt;
+      if (fresh) setSeenAt(parseLastSeenAt(fresh));
+    } catch {
+      /* ignore */
     }
-
-    void poll();
-    const timer = setInterval(poll, PRESENCE_POLL_MS);
-    return () => clearInterval(timer);
-  }, [userId]);
+  }, PRESENCE_POLL_MS, shouldPoll);
 
   useEffect(() => {
     const id = setInterval(() => setNow(Date.now()), TICK_MS);

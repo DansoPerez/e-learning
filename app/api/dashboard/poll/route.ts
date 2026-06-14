@@ -12,27 +12,24 @@ export async function GET() {
   const userId = user.id;
   const role = user.role;
 
-  const unreadNotifications = await getUnreadNotificationCount(userId);
-
-  const unreadMessages = await prisma.message.count({
-    where: {
-      deletedAt: null,
-      senderId: { not: userId },
-      conversation: {
-        OR: [{ studentId: userId }, { otherId: userId }],
+  const [unreadNotifications, unreadMessages, pendingInstructors] = await Promise.all([
+    getUnreadNotificationCount(userId),
+    prisma.message.count({
+      where: {
+        deletedAt: null,
+        senderId: { not: userId },
+        conversation: {
+          OR: [{ studentId: userId }, { otherId: userId }],
+        },
+        createdAt: {
+          gt: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000),
+        },
       },
-      createdAt: {
-        gt: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000),
-      },
-    },
-  });
-
-  let pendingInstructors = 0;
-  if (role === "ADMIN") {
-    pendingInstructors = await prisma.instructorProfile.count({
-      where: { status: "PENDING" },
-    });
-  }
+    }),
+    role === "ADMIN" ?
+      prisma.instructorProfile.count({ where: { status: "PENDING" } })
+    : Promise.resolve(0),
+  ]);
 
   return NextResponse.json({
     unreadNotifications,

@@ -88,6 +88,10 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       }
 
       if (token.id && trigger !== "signIn") {
+        const refreshedAt = (token.refreshedAt as number | undefined) ?? 0;
+        const stale = Date.now() - refreshedAt > 5 * 60_000;
+        if (!stale) return token;
+
         try {
           const dbUser = await prisma.user.findUnique({
             where: { id: token.id as string },
@@ -96,20 +100,21 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
               status: true,
               name: true,
               image: true,
-            userCode: true,
-            isSuperAdmin: true,
-            adminSensitiveApproved: true,
-          },
-        });
-        if (dbUser) {
-          token.role = dbUser.role;
-          token.status = dbUser.status;
-          token.name = dbUser.name;
-          token.picture = dbUser.image;
-          token.userCode = dbUser.userCode;
-          token.isSuperAdmin = dbUser.isSuperAdmin;
-          token.adminSensitiveApproved = dbUser.adminSensitiveApproved;
-        }
+              userCode: true,
+              isSuperAdmin: true,
+              adminSensitiveApproved: true,
+            },
+          });
+          if (dbUser) {
+            token.role = dbUser.role;
+            token.status = dbUser.status;
+            token.name = dbUser.name;
+            token.picture = dbUser.image;
+            token.userCode = dbUser.userCode;
+            token.isSuperAdmin = dbUser.isSuperAdmin;
+            token.adminSensitiveApproved = dbUser.adminSensitiveApproved;
+          }
+          token.refreshedAt = Date.now();
         } catch {
           // Schema out of sync (run `npx prisma db push`) — keep existing token claims
         }

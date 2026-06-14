@@ -1,13 +1,11 @@
 import type { Metadata, Viewport } from "next";
 import { Plus_Jakarta_Sans, JetBrains_Mono } from "next/font/google";
-import { auth } from "@/auth";
+import { getServerSession } from "@/lib/session";
 import { Header } from "@/components/layout/header";
 import { ConditionalFooter } from "@/components/layout/conditional-footer";
 import { AuthProvider } from "@/components/providers/auth-provider";
 import { PLATFORM_NAME } from "@/lib/constants";
 import "./globals.css";
-
-export const dynamic = "force-dynamic";
 
 const plusJakarta = Plus_Jakarta_Sans({
   variable: "--font-sans-app",
@@ -40,7 +38,7 @@ export default async function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  const session = await auth();
+  const session = await getServerSession();
 
   return (
     <html lang="en" className={`${plusJakarta.variable} ${jetbrainsMono.variable} h-full light`} style={{ colorScheme: "light" }}>

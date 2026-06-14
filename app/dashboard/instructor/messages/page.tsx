@@ -130,7 +130,7 @@ export default async function InstructorMessagesPage({
                     <div>
                       <div className="flex flex-wrap items-center gap-2">
                         <p className="font-semibold">{c.student.name ?? c.student.email}</p>
-                        <OnlineBadge lastSeenAt={c.student.lastSeenAt} userId={c.student.id} />
+                        <OnlineBadge lastSeenAt={c.student.lastSeenAt} />
                       </div>
                       <Badge variant="default" className="mt-1">
                         {conversationLabel(c.type)}

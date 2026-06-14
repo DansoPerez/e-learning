@@ -1,5 +1,9 @@
 /** Visible-tab heartbeat interval */
-export const PRESENCE_HEARTBEAT_MS = 30_000;
+export const PRESENCE_HEARTBEAT_MS = 60_000;
+/** Poll live badges / online panels while the tab is visible */
+export const PRESENCE_POLL_MS = 60_000;
+/** Notification and dashboard badge poll interval */
+export const DASHBOARD_POLL_MS = 60_000;
 /** User stays online through missed pings + background tab (2× interval) */
 export const ONLINE_WITHIN_MS = PRESENCE_HEARTBEAT_MS * 4 + 15_000; // 135s
 
