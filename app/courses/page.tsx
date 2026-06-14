@@ -31,7 +31,7 @@ export default async function CoursesPage({
 
   return (
     <div className="min-h-screen bg-[var(--background)]">
-      <div className="border-b border-[var(--border)] bg-white py-8 sm:py-10">
+      <div className="page-hero py-10 sm:py-12">
         <div className="page-container">
           <h1 className="text-2xl font-bold tracking-tight text-[var(--foreground)] sm:text-3xl">
             Explore courses

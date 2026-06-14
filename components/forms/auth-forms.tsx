@@ -22,17 +22,18 @@ function AuthShell({
   subtitle: string;
 }) {
   return (
-    <div className="mx-auto grid w-full max-w-4xl overflow-hidden rounded-[var(--radius)] border border-[var(--border)] bg-white shadow-[var(--shadow-lg)] lg:grid-cols-2">
-      <div className="hidden flex-col justify-between bg-[var(--primary)] p-10 text-white lg:flex">
-        <div>
+    <div className="mx-auto grid w-full max-w-4xl overflow-hidden rounded-[var(--radius-lg)] border border-[var(--border)] bg-white shadow-[var(--shadow-lg)] lg:grid-cols-2">
+      <div className="relative hidden flex-col justify-between overflow-hidden bg-gradient-to-br from-[var(--primary)] via-indigo-600 to-violet-700 p-10 text-white lg:flex">
+        <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjAiIGhlaWdodD0iNjAiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PGRlZnM+PHBhdHRlcm4gaWQ9ImEiIHdpZHRoPSI2MCIgaGVpZ2h0PSI2MCIgcGF0dGVyblVuaXRzPSJ1c2VyU3BhY2VPblVzZSI+PHBhdGggZD0iTTAgMzBoMzBWMHoiIGZpbGw9IiNmZmYiIGZpbGwtb3BhY2l0eT0uMDUiLz48L3BhdHRlcm4+PC9kZWZzPjxyZWN0IHdpZHRoPSIxMDAlIiBoZWlnaHQ9IjEwMCUiIGZpbGw9InVybCgjYSkiLz48L3N2Zz4=')] opacity-40" />
+        <div className="relative">
           <div className="flex items-center gap-2 text-xl font-bold">
             <BookOpen className="h-7 w-7" />
             Bravio
           </div>
           <p className="mt-8 text-2xl font-bold leading-snug">{title}</p>
-          <p className="mt-3 text-blue-100">{subtitle}</p>
+          <p className="mt-3 text-indigo-100">{subtitle}</p>
         </div>
-        <p className="text-sm text-blue-200">Structured courses · Expert instructors</p>
+        <p className="relative text-sm text-indigo-200/90">Structured courses · Expert instructors</p>
       </div>
       <div className="p-6 sm:p-10">{children}</div>
     </div>

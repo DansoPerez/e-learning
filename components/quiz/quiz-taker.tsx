@@ -123,12 +123,12 @@ export function QuizTaker({
     return (
       <div className="mx-auto max-w-2xl px-4 py-12 text-center">
         <h1 className="text-2xl font-bold">Quiz complete</h1>
-        <p className="mt-4 text-4xl font-bold text-indigo-600">{result.score}%</p>
+        <p className="mt-4 text-4xl font-bold text-[var(--primary)]">{result.score}%</p>
         <p className="mt-2">{result.passed ? "Passed!" : "Not passed — try again"}</p>
         <button
           type="button"
           onClick={() => router.push(`/learn/${slug}`)}
-          className="mt-6 rounded-lg bg-indigo-600 px-4 py-2 text-white"
+          className="mt-6 rounded-[var(--radius)] bg-[var(--primary)] px-4 py-2.5 font-semibold text-white shadow-[var(--shadow-primary)] hover:bg-[var(--primary-hover)]"
         >
           Back to course
         </button>
@@ -233,7 +233,7 @@ export function QuizTaker({
         <button
           type="submit"
           disabled={!attemptToken || submitting || secondsLeft === 0}
-          className="rounded-lg bg-indigo-600 px-6 py-2 font-medium text-white hover:bg-indigo-700 disabled:opacity-50"
+          className="rounded-[var(--radius)] bg-[var(--primary)] px-6 py-2.5 font-semibold text-white shadow-[var(--shadow-primary)] hover:bg-[var(--primary-hover)] disabled:opacity-50"
         >
           {submitting ? "Submitting…" : "Submit quiz"}
         </button>

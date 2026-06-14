@@ -41,7 +41,7 @@ export function HeaderNav({ initialSession }: { initialSession: Session | null }
   const closeMenu = () => setMenuOpen(false);
 
   return (
-    <header className="sticky top-0 z-50 border-b border-[var(--border)] bg-white/95 shadow-[var(--shadow-sm)] backdrop-blur-sm">
+    <header className="sticky top-0 z-50 border-b border-[var(--border)] bg-white/90 shadow-[var(--shadow-sm)] backdrop-blur-md">
       <div className="page-container">
         <div className="flex h-[var(--header-height)] items-center justify-between gap-4">
           <Link
@@ -49,7 +49,7 @@ export function HeaderNav({ initialSession }: { initialSession: Session | null }
             className="flex shrink-0 items-center gap-2.5"
             onClick={closeMenu}
           >
-            <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-[var(--primary)] text-white shadow-sm">
+            <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br from-[var(--primary)] to-violet-600 text-white shadow-[var(--shadow-primary)]">
               <BookOpen className="h-5 w-5" />
             </span>
             <span className="text-lg font-bold tracking-tight text-[var(--foreground)]">

@@ -82,12 +82,16 @@ async function signInAfterRegister(email: string, password: string): Promise<nev
   );
 
   try {
-    await signIn("credentials", {
+    const result = await signIn("credentials", {
       email: user!.email,
       identifier: user!.email,
       password,
-      redirectTo,
+      redirect: false,
     });
+
+    if (result?.error) {
+      redirect("/login?registered=1");
+    }
   } catch (error) {
     if (error instanceof AuthError) {
       redirect("/login?registered=1");

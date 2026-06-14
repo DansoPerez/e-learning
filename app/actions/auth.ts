@@ -68,12 +68,16 @@ async function signInAfterRegister(email: string, password: string): Promise<nev
   );
 
   try {
-    await signIn("credentials", {
-      email: user!.email,
+    const result = await signIn("credentials", {
       identifier: user!.email,
+      email: user!.email,
       password,
-      redirectTo,
+      redirect: false,
     });
+
+    if (result?.error) {
+      redirect("/login?registered=1");
+    }
   } catch (error) {
     if (error instanceof AuthError) {
       redirect("/login?registered=1");
@@ -275,18 +279,15 @@ export async function loginAction(
     userWithProfile.instructorProfile,
   );
 
-  try {
-    await signIn("credentials", {
-      identifier: userWithProfile.email,
-      email: userWithProfile.email,
-      password,
-      redirectTo,
-    });
-  } catch (error) {
-    if (error instanceof AuthError) {
-      return { error: "Invalid user ID or password" };
-    }
-    throw error;
+  const result = await signIn("credentials", {
+    identifier: userWithProfile.email,
+    email: userWithProfile.email,
+    password,
+    redirect: false,
+  });
+
+  if (result?.error) {
+    return { error: "Invalid user ID or password" };
   }
 
   redirect(redirectTo);
