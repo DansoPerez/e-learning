@@ -5,6 +5,7 @@ import Link from "next/link";
 import { Badge } from "@/components/ui/badge";
 import { formatLastSeen, isUserOnline, PRESENCE_POLL_MS } from "@/lib/presence-utils";
 import { useVisibleInterval } from "@/lib/use-visible-interval";
+import { Activity, Users } from "lucide-react";
 
 type PresenceUser = {
   id: string;
@@ -26,17 +27,17 @@ function UserRow({
 }) {
   const online = isUserOnline(u.lastSeenAt, nowMs);
   return (
-    <li className="flex items-center justify-between gap-2 rounded-lg border border-[var(--border)] bg-white px-3 py-2.5 text-sm">
+    <li className="flex items-center justify-between gap-2 rounded-lg border border-[var(--border)] bg-[var(--background-subtle)]/50 px-3 py-2.5 text-sm transition-colors hover:border-indigo-200 hover:bg-white">
       <div className="min-w-0">
         <div className="flex items-center gap-2">
           <span
             className={`h-2 w-2 shrink-0 rounded-full ${
               online ?
-                "bg-emerald-500 shadow-[0_0_4px_rgba(16,185,129,0.6)]"
+                "bg-emerald-500 shadow-[0_0_6px_rgba(16,185,129,0.5)]"
               : "border border-slate-300 bg-slate-100"
             }`}
           />
-          <p className="truncate font-medium">{u.name ?? "User"}</p>
+          <p className="truncate font-medium text-[var(--foreground)]">{u.name ?? "User"}</p>
         </div>
         <p className="mt-0.5 font-mono text-xs text-[var(--primary)]">{u.userCode ?? "—"}</p>
         <p className="text-[10px] text-[var(--foreground-muted)]">
@@ -104,46 +105,71 @@ export function OnlineUsersPanel({
   const offline = users.filter((u) => !isUserOnline(u.lastSeenAt, nowMs));
 
   return (
-    <section className="surface-card p-5">
-      <h2 className="mb-4 font-bold text-[var(--foreground)]">User presence</h2>
-      <div className="grid gap-6 lg:grid-cols-2">
+    <section className="surface-card p-5 sm:p-6">
+      <div className="mb-4 flex flex-wrap items-start justify-between gap-3">
         <div>
-          <div className="mb-2 flex items-center justify-between">
-            <h3 className="text-sm font-semibold text-emerald-800">Online</h3>
-            <span className="rounded-full bg-emerald-100 px-2 py-0.5 text-xs font-bold text-emerald-800">
-              {online.length}
+          <div className="flex items-center gap-2">
+            <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-[var(--primary-light)] text-[var(--primary)]">
+              <Activity className="h-4 w-4" />
             </span>
+            <h2 className="font-bold text-[var(--foreground)]">Live activity</h2>
           </div>
-          {online.length === 0 ?
-            <p className="rounded-lg border border-dashed border-[var(--border)] px-3 py-6 text-center text-xs text-[var(--foreground-muted)]">
-              No users online
-            </p>
-          : <ul className="max-h-52 space-y-2 overflow-y-auto">
+          <p className="mt-1 text-sm text-[var(--foreground-muted)]">
+            Who&apos;s on the platform right now
+          </p>
+        </div>
+        <div className="flex gap-2">
+          <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-50 px-3 py-1 text-xs font-bold text-emerald-800">
+            <span className="h-2 w-2 rounded-full bg-emerald-500" />
+            {online.length} online
+          </span>
+          <span className="inline-flex items-center gap-1.5 rounded-full bg-slate-100 px-3 py-1 text-xs font-bold text-slate-600">
+            {offline.length} offline
+          </span>
+        </div>
+      </div>
+
+      {users.length === 0 ?
+        <div className="flex flex-col items-center justify-center rounded-xl border border-dashed border-[var(--border)] px-6 py-10 text-center">
+          <Users className="h-8 w-8 text-[var(--foreground-muted)]" />
+          <p className="mt-2 text-sm text-[var(--foreground-muted)]">No users tracked yet</p>
+        </div>
+      : online.length === 0 ?
+        <div className="space-y-3">
+          <p className="rounded-lg border border-dashed border-emerald-200 bg-emerald-50/50 px-4 py-3 text-center text-sm text-emerald-800">
+            No one is online right now — showing recent users below
+          </p>
+          <ul className="max-h-72 space-y-2 overflow-y-auto">
+            {offline.map((u) => (
+              <UserRow key={u.id} u={u} showRole nowMs={nowMs} />
+            ))}
+          </ul>
+        </div>
+      : <div className="grid gap-4 lg:grid-cols-2">
+          <div>
+            <h3 className="mb-2 text-xs font-bold uppercase tracking-wider text-emerald-700">
+              Online now
+            </h3>
+            <ul className="max-h-52 space-y-2 overflow-y-auto">
               {online.map((u) => (
                 <UserRow key={u.id} u={u} showRole nowMs={nowMs} />
               ))}
             </ul>
-          }
-        </div>
-        <div>
-          <div className="mb-2 flex items-center justify-between">
-            <h3 className="text-sm font-semibold text-slate-600">Offline</h3>
-            <span className="rounded-full bg-slate-100 px-2 py-0.5 text-xs font-bold text-slate-600">
-              {offline.length}
-            </span>
           </div>
-          {offline.length === 0 ?
-            <p className="rounded-lg border border-dashed border-[var(--border)] px-3 py-6 text-center text-xs text-[var(--foreground-muted)]">
-              No offline users in list
-            </p>
-          : <ul className="max-h-52 space-y-2 overflow-y-auto">
-              {offline.map((u) => (
-                <UserRow key={u.id} u={u} showRole nowMs={nowMs} />
-              ))}
-            </ul>
-          }
+          {offline.length > 0 ?
+            <div>
+              <h3 className="mb-2 text-xs font-bold uppercase tracking-wider text-slate-500">
+                Recently offline
+              </h3>
+              <ul className="max-h-52 space-y-2 overflow-y-auto">
+                {offline.slice(0, 8).map((u) => (
+                  <UserRow key={u.id} u={u} showRole nowMs={nowMs} />
+                ))}
+              </ul>
+            </div>
+          : null}
         </div>
-      </div>
+      }
     </section>
   );
 }
@@ -179,7 +205,7 @@ export function InstructorOnlineStudentsPanel() {
   const total = students.length;
 
   return (
-    <section className="surface-card mb-6 p-4">
+    <section className="surface-card mb-6 p-4 sm:p-5">
       <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
         <h3 className="text-sm font-bold text-[var(--foreground)]">
           Enrolled students — presence

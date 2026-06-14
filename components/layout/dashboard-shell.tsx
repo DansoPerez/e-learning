@@ -4,8 +4,6 @@ import { getDashboardNavSections, type NavSection } from "@/lib/site-nav";
 import { cn } from "@/lib/utils";
 
 export type { NavLink, NavSection } from "@/lib/site-nav";
-/** @deprecated Use NavLink */
-export type NavItem = { href: string; label: string };
 
 const roleLabels: Record<Role, string> = {
   STUDENT: "Student",
@@ -30,16 +28,18 @@ export function DashboardShell({
   const isAdmin = role === "ADMIN";
 
   return (
-    <div className="page-container py-4 sm:py-8">
-      <div className="flex flex-col gap-4 lg:grid lg:grid-cols-[260px_1fr] lg:gap-8">
-        <DashboardNav
-          sections={sections}
-          pathname={pathname}
-          roleLabel={roleLabels[role]}
-        />
-        <div className={cn("min-w-0 flex-1", isAdmin && "pb-20 lg:pb-0")}>
-          <DashboardHeader title={title} />
-          {children}
+    <div className="dashboard-shell">
+      <div className="page-container py-4 sm:py-6">
+        <div className="flex flex-col gap-4 lg:grid lg:grid-cols-[minmax(0,220px)_minmax(0,1fr)] lg:items-start lg:gap-6 xl:grid-cols-[minmax(0,240px)_minmax(0,1fr)] xl:gap-8">
+          <DashboardNav
+            sections={sections}
+            pathname={pathname}
+            roleLabel={roleLabels[role]}
+          />
+          <div className={cn("min-w-0 flex-1", isAdmin && "pb-20 lg:pb-0")}>
+            <DashboardHeader title={title} />
+            <div className="space-y-6">{children}</div>
+          </div>
         </div>
       </div>
     </div>

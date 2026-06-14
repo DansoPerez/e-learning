@@ -12,11 +12,22 @@ import { createQuizAction, deleteQuizAction } from "@/app/actions/quiz";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { CourseReviews } from "@/components/courses/course-reviews";
 import { EditCourseForm } from "@/components/instructor/edit-course-form";
 import { CourseAnnouncementForm } from "@/components/instructor/course-announcement-form";
+import { LessonAddForm } from "@/components/instructor/lesson-add-form";
+
+const LESSON_ERRORS: Record<string, string> = {
+  "invalid-lesson": "Check the lesson title and fields, then try again.",
+  "video-too-large": "Video must be 100MB or smaller.",
+  "invalid-video": "Upload MP4, WebM, or MOV video only.",
+  "video-upload": "Video upload failed. Confirm Cloudinary keys in .env or use a video URL.",
+  "pdf-too-large": "PDF must be 20MB or smaller.",
+  "invalid-pdf": "Upload a PDF file only.",
+  "pdf-upload": "PDF upload failed. Try again or check Cloudinary configuration.",
+  "no-content": "Add at least one module and lesson before submitting this course for review.",
+};
 
 export default async function InstructorCourseEditPage({
   params,
@@ -61,9 +72,9 @@ export default async function InstructorCourseEditPage({
     <InstructorDashboardWrapper title={course.title}>
       <Badge className="mb-4">{course.status}</Badge>
 
-      {error === "no-content" ?
+      {error && LESSON_ERRORS[error] ?
         <p className="mb-4 rounded-lg bg-amber-50 px-3 py-2 text-sm text-amber-900">
-          Add at least one module and lesson before submitting this course for review.
+          {LESSON_ERRORS[error]}
         </p>
       : null}
 
@@ -129,68 +140,11 @@ export default async function InstructorCourseEditPage({
               </li>
             ))}
           </ul>
-          <form
+          <LessonAddForm
+            moduleId={mod.id}
+            lessonCount={mod.lessons.length}
             action={addLessonAction.bind(null, course.id, mod.id)}
-            encType="multipart/form-data"
-            className="mt-4 grid gap-3 sm:grid-cols-2"
-          >
-            <div className="space-y-1.5 sm:col-span-2">
-              <Label htmlFor={`lesson-title-${mod.id}`}>Lesson title</Label>
-              <Input id={`lesson-title-${mod.id}`} name="title" placeholder="Lesson title" required />
-            </div>
-            <div className="space-y-1.5">
-              <Label htmlFor={`lesson-order-${mod.id}`}>Order</Label>
-              <Input
-                id={`lesson-order-${mod.id}`}
-                name="orderIndex"
-                type="number"
-                min={0}
-                step={1}
-                defaultValue={mod.lessons.length}
-              />
-            </div>
-            <div className="space-y-1.5">
-              <Label htmlFor={`lesson-duration-${mod.id}`}>Duration (min)</Label>
-              <Input
-                id={`lesson-duration-${mod.id}`}
-                name="durationMin"
-                type="number"
-                min={0}
-                step={1}
-                placeholder="Optional"
-              />
-            </div>
-            <div className="space-y-1.5 sm:col-span-2">
-              <Label htmlFor={`lesson-video-${mod.id}`}>Video link</Label>
-              <Input
-                id={`lesson-video-${mod.id}`}
-                name="videoUrl"
-                placeholder="YouTube, Vimeo, Cloudinary, or direct .mp4 URL"
-              />
-            </div>
-            <div className="space-y-1.5 sm:col-span-2">
-              <Label htmlFor={`lesson-pdf-${mod.id}`}>PDF material (view-only for students)</Label>
-              <Input
-                id={`lesson-pdf-${mod.id}`}
-                name="pdf"
-                type="file"
-                accept="application/pdf"
-              />
-              <p className="text-xs text-[var(--foreground-muted)]">Max 20MB. Students can read in-browser but not download.</p>
-            </div>
-            <div className="space-y-1.5 sm:col-span-2">
-              <Label htmlFor={`lesson-content-${mod.id}`}>Text content</Label>
-              <Textarea
-                id={`lesson-content-${mod.id}`}
-                name="content"
-                placeholder="Optional written content"
-                rows={3}
-              />
-            </div>
-            <Button type="submit" className="sm:col-span-2 w-fit">
-              Add lesson
-            </Button>
-          </form>
+          />
         </section>
       ))}
 

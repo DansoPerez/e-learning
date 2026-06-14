@@ -5,7 +5,10 @@ import { getAnnouncementsForUser } from "@/lib/announcements";
 import { InstructorDashboardWrapper } from "@/components/layout/instructor-dashboard-wrapper";
 import { AnnouncementPanel } from "@/components/announcements/announcement-panel";
 import { StatCard } from "@/components/ui/stat-card";
+import { DashboardHero, DashboardSection } from "@/components/ui/dashboard-section";
+import { Button } from "@/components/ui/button";
 import { formatCurrency } from "@/lib/utils";
+import { BookOpen, DollarSign, Plus, Users, Wallet } from "lucide-react";
 
 export default async function InstructorDashboardPage() {
   const user = await requireRole("INSTRUCTOR", "ADMIN");
@@ -17,7 +20,7 @@ export default async function InstructorDashboardPage() {
       where: { course: { instructorId: user.id }, status: "SUCCESS" },
       _sum: { instructorShare: true },
     }),
-    getAnnouncementsForUser(user.id, user.role === "ADMIN" ? "INSTRUCTOR" : "INSTRUCTOR"),
+    getAnnouncementsForUser(user.id, "INSTRUCTOR"),
   ]);
 
   const enrollments = await prisma.enrollment.count({
@@ -25,48 +28,54 @@ export default async function InstructorDashboardPage() {
   });
 
   const unreadAnnouncements = announcements.filter((a) => !a.read).length;
+  const firstName = user.name?.split(" ")[0] ?? "Instructor";
 
   return (
-    <InstructorDashboardWrapper title="Instructor dashboard">
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <StatCard label="Courses" value={courses} />
-        <StatCard label="Students" value={enrollments} />
+    <InstructorDashboardWrapper title="Overview">
+      <DashboardHero
+        eyebrow="Teaching studio"
+        title={`Welcome back, ${firstName}`}
+        description="Create courses, upload lessons with video and PDFs, and track student progress from one place."
+      >
+        <Link href="/dashboard/instructor/courses/new">
+          <Button variant="accent" size="sm" className="gap-1.5">
+            <Plus className="h-4 w-4" />
+            New course
+          </Button>
+        </Link>
+        <Link href="/dashboard/instructor/courses">
+          <Button variant="outline" size="sm" className="border-white/30 bg-white/10 text-white hover:bg-white/20">
+            Manage courses
+          </Button>
+        </Link>
+      </DashboardHero>
+
+      <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+        <StatCard label="Courses" value={courses} icon={BookOpen} />
+        <StatCard label="Students" value={enrollments} icon={Users} tone="success" />
         <StatCard
           label="Total earnings"
           value={formatCurrency(Number(payments._sum.instructorShare ?? 0))}
+          icon={DollarSign}
+          tone="accent"
         />
         <StatCard
           label="Available balance"
           value={formatCurrency(Number(profile?.balance ?? 0))}
+          icon={Wallet}
         />
       </div>
 
-      <div className="mt-8 flex gap-4">
-        <Link
-          href="/dashboard/instructor/courses/new"
-          className="rounded-lg bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-700"
-        >
-          Create course
-        </Link>
-        <Link
-          href="/dashboard/instructor/courses"
-          className="rounded-lg border px-4 py-2 text-sm hover:bg-zinc-50"
-        >
-          Manage courses
-        </Link>
-      </div>
-
-      <section className="mt-10">
-        <h2 className="mb-4 text-lg font-semibold">
-          Announcements
-          {unreadAnnouncements > 0 ?
-            <span className="ml-2 text-sm font-normal text-indigo-600">
-              ({unreadAnnouncements} unread)
-            </span>
-          : null}
-        </h2>
+      <DashboardSection
+        title="Announcements"
+        description={
+          unreadAnnouncements > 0 ?
+            `${unreadAnnouncements} unread from the platform`
+          : "Updates from Bravio admin"
+        }
+      >
         <AnnouncementPanel announcements={announcements} />
-      </section>
+      </DashboardSection>
     </InstructorDashboardWrapper>
   );
 }

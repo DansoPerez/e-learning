@@ -12,7 +12,7 @@ import { uniqueSlug } from "@/lib/utils";
 import { chargesForCourse } from "@/lib/course-pricing";
 import { enrollInFreeCourse } from "@/lib/services/enrollment";
 import { initiateCoursePayment } from "@/lib/services/payment";
-import { saveLessonPdf } from "@/lib/lesson-pdf-storage";
+import { saveLessonPdf, saveLessonVideo, MEDIA_LIMITS } from "@/lib/lesson-pdf-storage";
 import { redirect } from "next/navigation";
 import { requireApprovedInstructor } from "@/lib/instructor";
 import { assertCanEditCourse, assertModuleInCourse } from "@/lib/course-owner";
@@ -168,18 +168,45 @@ export async function addLessonAction(
     orderIndex: formData.get("orderIndex") ?? 0,
     durationMin: formData.get("durationMin") || undefined,
   });
-  if (!parsed.success) return;
+  if (!parsed.success) {
+    redirect(`/dashboard/instructor/courses/${courseId}?error=invalid-lesson`);
+  }
+
+  let videoUrl = parsed.data.videoUrl?.trim() || null;
+  const videoFile = formData.get("video");
+  if (videoFile instanceof File && videoFile.size > 0) {
+    if (videoFile.size > MEDIA_LIMITS.videoBytes) {
+      redirect(`/dashboard/instructor/courses/${courseId}?error=video-too-large`);
+    }
+    const allowedVideo =
+      videoFile.type.startsWith("video/") ||
+      /\.(mp4|webm|mov|m4v)$/i.test(videoFile.name);
+    if (!allowedVideo) {
+      redirect(`/dashboard/instructor/courses/${courseId}?error=invalid-video`);
+    }
+    try {
+      const buffer = Buffer.from(await videoFile.arrayBuffer());
+      videoUrl = await saveLessonVideo(buffer);
+    } catch {
+      redirect(`/dashboard/instructor/courses/${courseId}?error=video-upload`);
+    }
+  }
 
   let pdfStorageKey: string | null = null;
   const pdfFile = formData.get("pdf");
   if (pdfFile instanceof File && pdfFile.size > 0) {
+    if (pdfFile.size > MEDIA_LIMITS.pdfBytes) {
+      redirect(`/dashboard/instructor/courses/${courseId}?error=pdf-too-large`);
+    }
     if (pdfFile.type === "application/pdf") {
       try {
         const buffer = Buffer.from(await pdfFile.arrayBuffer());
         pdfStorageKey = await saveLessonPdf(buffer);
       } catch {
-        return;
+        redirect(`/dashboard/instructor/courses/${courseId}?error=pdf-upload`);
       }
+    } else {
+      redirect(`/dashboard/instructor/courses/${courseId}?error=invalid-pdf`);
     }
   }
 
@@ -187,7 +214,7 @@ export async function addLessonAction(
     data: {
       ...parsed.data,
       moduleId,
-      videoUrl: parsed.data.videoUrl || null,
+      videoUrl,
       content: parsed.data.content || null,
       durationMin: parsed.data.durationMin ?? null,
       pdfStorageKey,
