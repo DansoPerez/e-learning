@@ -146,7 +146,7 @@ export default async function CourseDetailPage({
 
             <section>
               <h2 className="text-xl font-bold text-[var(--foreground)]">About this course</h2>
-              <p className="mt-3 whitespace-pre-wrap text-base leading-relaxed text-[var(--foreground-secondary)]">
+              <p className="mt-3 whitespace-pre-wrap break-words text-base leading-relaxed text-[var(--foreground-secondary)]">
                 {course.description}
               </p>
             </section>
@@ -172,7 +172,9 @@ export default async function CourseDetailPage({
                           key={l.id}
                           className="flex items-center justify-between gap-2 px-4 py-3 text-sm"
                         >
-                          <span className="text-[var(--foreground-secondary)]">{l.title}</span>
+                          <span className="min-w-0 flex-1 break-words text-[var(--foreground-secondary)]">
+                            {l.title}
+                          </span>
                           {l.durationMin ?
                             <span className="shrink-0 text-xs text-[var(--foreground-muted)]">
                               {l.durationMin} min

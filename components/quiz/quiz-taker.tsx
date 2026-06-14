@@ -167,9 +167,9 @@ export function QuizTaker({
             {previousAttempts.map((a) => (
               <li
                 key={a.id}
-                className="flex items-center justify-between text-sm"
+                className="flex flex-wrap items-center justify-between gap-2 text-sm"
               >
-                <span className="text-zinc-500">
+                <span className="min-w-0 break-words text-zinc-500">
                   {a.endedAt ? new Date(a.endedAt).toLocaleString() : "—"}
                 </span>
                 <span className="flex items-center gap-2">
@@ -195,13 +195,13 @@ export function QuizTaker({
       <form onSubmit={handleSubmit} className="mt-8 space-y-8">
         {questions.map((q, i) => (
           <fieldset key={q.id} className="rounded-xl border bg-white p-4">
-            <legend className="font-medium">
+            <legend className="break-words font-medium">
               {i + 1}. {q.question}
             </legend>
             {q.type === "TRUE_FALSE" ?
-              <div className="mt-3 flex gap-4">
+              <div className="mt-3 flex flex-wrap gap-4">
                 {["true", "false"].map((opt) => (
-                  <label key={opt} className="flex items-center gap-2">
+                  <label key={opt} className="flex min-h-[44px] items-center gap-2 touch-manipulation">
                     <input
                       type="radio"
                       name={q.id}
@@ -215,15 +215,16 @@ export function QuizTaker({
               </div>
             : <div className="mt-3 space-y-2">
                 {(q.options ?? []).map((opt) => (
-                  <label key={opt} className="flex items-center gap-2">
+                  <label key={opt} className="flex min-h-[44px] items-start gap-2 touch-manipulation">
                     <input
                       type="radio"
                       name={q.id}
                       value={opt}
                       onChange={() => setAnswers((a) => ({ ...a, [q.id]: opt }))}
                       required
+                      className="mt-1 shrink-0"
                     />
-                    {opt}
+                    <span className="break-words">{opt}</span>
                   </label>
                 ))}
               </div>
@@ -233,7 +234,7 @@ export function QuizTaker({
         <button
           type="submit"
           disabled={!attemptToken || submitting || secondsLeft === 0}
-          className="rounded-[var(--radius)] bg-[var(--primary)] px-6 py-2.5 font-semibold text-white shadow-[var(--shadow-primary)] hover:bg-[var(--primary-hover)] disabled:opacity-50"
+          className="w-full rounded-[var(--radius)] bg-[var(--primary)] px-6 py-3 font-semibold text-white shadow-[var(--shadow-primary)] hover:bg-[var(--primary-hover)] disabled:opacity-50 sm:w-auto sm:py-2.5"
         >
           {submitting ? "Submitting…" : "Submit quiz"}
         </button>

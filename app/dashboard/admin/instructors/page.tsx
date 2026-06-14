@@ -40,15 +40,15 @@ export default async function AdminInstructorsPage() {
         {profiles.map((p) => (
           <div key={p.id} className="surface-card p-5">
             <div className="flex flex-wrap items-start justify-between gap-4">
-              <div className="flex gap-4">
+              <div className="flex min-w-0 flex-1 flex-wrap gap-4">
                 {p.selfieUrl ?
                   <img
                     src={p.selfieUrl}
                     alt={`${p.user.name} verification selfie`}
-                    className="h-24 w-24 shrink-0 rounded-xl border object-cover"
+                    className="h-20 w-20 shrink-0 rounded-xl border object-cover sm:h-24 sm:w-24"
                   />
                 : null}
-                <div>
+                <div className="min-w-0 flex-1">
                   <div className="flex flex-wrap items-center gap-2">
                     <p className="font-bold text-[var(--foreground)]">{p.user.name}</p>
                     <Badge
@@ -61,7 +61,7 @@ export default async function AdminInstructorsPage() {
                       {p.user.status}
                     </Badge>
                   </div>
-                  <p className="text-sm text-[var(--foreground-muted)]">{p.user.email}</p>
+                  <p className="break-words text-sm text-[var(--foreground-muted)]">{p.user.email}</p>
                   <p className="mt-2 text-sm text-[var(--foreground-secondary)]">
                     {p.expertise} · {p.experienceYears} years
                   </p>

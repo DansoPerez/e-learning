@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useSession } from "next-auth/react";
 import { usePathname } from "next/navigation";
@@ -39,6 +39,15 @@ export function HeaderNav({ initialSession }: { initialSession: Session | null }
   const headerLinks = publicHeaderLinks(isAuthenticated);
 
   const closeMenu = () => setMenuOpen(false);
+
+  useEffect(() => {
+    if (!menuOpen) return;
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.body.style.overflow = prev;
+    };
+  }, [menuOpen]);
 
   return (
     <header className="sticky top-0 z-50 border-b border-[var(--border)] bg-white/90 shadow-[var(--shadow-sm)] backdrop-blur-md">

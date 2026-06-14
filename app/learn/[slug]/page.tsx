@@ -1,4 +1,3 @@
-import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { requireAuth } from "@/lib/auth";
@@ -7,6 +6,7 @@ import { markLessonCompleteAction } from "@/app/actions/learning";
 import { getFirstUnpassedQuizId, getResumeLessonId } from "@/lib/resume-lesson";
 import { getPassedQuizIds } from "@/lib/course-completion";
 import { LessonViewTracker } from "@/components/learn/lesson-view-tracker";
+import { LearnPageLayout } from "@/components/learn/learn-curriculum";
 import { LessonPdfViewer, LessonVideo } from "@/components/lessons/lesson-media";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -75,81 +75,40 @@ export default async function LearnPage({
     allLessons.length > 0 && allLessons.every((l) => completedIds.has(l.id));
   const quizzesRemaining = enabledQuizIds.filter((id) => !passedQuizIds.has(id)).length;
 
-  return (
-    <div className="page-container grid gap-6 py-8 lg:grid-cols-[280px_1fr]">
-      <aside className="surface-card h-fit p-4 lg:sticky lg:top-24">
-        <Link
-          href={`/courses/${slug}`}
-          className="text-sm font-semibold text-[var(--primary)] hover:underline"
-        >
-          ← Back to course
-        </Link>
-        <h2 className="mt-3 font-bold text-[var(--foreground)]">{course.title}</h2>
-        <div className="mt-4 space-y-4">
-          {course.modules.map((mod) => (
-            <div key={mod.id}>
-              <p className="px-2 text-xs font-bold uppercase tracking-wide text-[var(--foreground-muted)]">
-                {mod.title}
-              </p>
-              <ul className="mt-1 space-y-0.5">
-                {mod.lessons.map((l) => (
-                  <li key={l.id}>
-                    <Link
-                      href={`/learn/${slug}?lesson=${l.id}`}
-                      className={`block rounded-lg px-3 py-2 text-sm font-medium transition-colors ${
-                        activeLesson?.id === l.id ?
-                          "bg-[var(--primary)] text-white"
-                        : "text-[var(--foreground-secondary)] hover:bg-[var(--primary-light)]"
-                      }`}
-                    >
-                      {completedIds.has(l.id) ? "✓ " : ""}
-                      {l.title}
-                    </Link>
-                  </li>
-                ))}
-              </ul>
-            </div>
-          ))}
-        </div>
-        {course.quizzes.length > 0 ?
-          <div className="mt-6 border-t border-[var(--border)] pt-4">
-            <p className="px-2 text-xs font-bold uppercase text-[var(--foreground-muted)]">Quizzes</p>
-            {course.quizzes.map((q) => {
-              const required = q.isEnabled && q._count.questions > 0;
-              const passed = passedQuizIds.has(q.id);
-              return (
-              <Link
-                key={q.id}
-                href={q.isEnabled ? `/learn/${slug}/quiz/${q.id}` : "#"}
-                className={`mt-2 block px-2 text-sm font-medium ${
-                  q.isEnabled ?
-                    "text-[var(--primary)] hover:underline"
-                  : "cursor-not-allowed text-[var(--foreground-muted)]"
-                }`}
-                aria-disabled={!q.isEnabled}
-              >
-                {passed ? "✓ " : required && !passed ? "○ " : ""}
-                {q.title} ({q._count.questions} questions)
-                {passed ? " — passed" : ""}
-                {!q.isEnabled ? " — disabled" : ""}
-              </Link>
-            );
-            })}
-          </div>
-        : null}
-        {allLessonsDone && quizzesRemaining > 0 ?
-          <p className="mt-4 rounded-lg bg-amber-50 px-3 py-2 text-xs text-amber-900">
-            All lessons complete. Pass {quizzesRemaining} remaining quiz
-            {quizzesRemaining === 1 ? "" : "zes"} to finish the course.
-          </p>
-        : null}
-      </aside>
+  const curriculum = {
+    slug,
+    courseTitle: course.title,
+    modules: course.modules.map((mod) => ({
+      id: mod.id,
+      title: mod.title,
+      lessons: mod.lessons.map((l) => ({ id: l.id, title: l.title })),
+    })),
+    quizzes: course.quizzes.map((q) => {
+      const required = q.isEnabled && q._count.questions > 0;
+      return {
+        id: q.id,
+        title: q.title,
+        isEnabled: q.isEnabled,
+        questionCount: q._count.questions,
+        passed: passedQuizIds.has(q.id),
+        required,
+      };
+    }),
+    activeLessonId: activeLesson?.id,
+    completedLessonIds: [...completedIds],
+    allLessonsDone,
+    quizzesRemaining,
+  };
 
-      <div className="surface-card p-6 sm:p-8">
+  return (
+    <LearnPageLayout curriculum={curriculum}>
+      <div className="surface-card p-4 sm:p-6 lg:p-8">
         {activeLesson ?
           <>
             <LessonViewTracker lessonId={activeLesson.id} courseSlug={slug} />
-            <h1 className="text-2xl font-extrabold text-[var(--foreground)]">{activeLesson.title}</h1>
+            <h1 className="break-words text-xl font-extrabold text-[var(--foreground)] sm:text-2xl">
+              {activeLesson.title}
+            </h1>
             {activeLesson.videoUrl ?
               <LessonVideo url={activeLesson.videoUrl} />
             : null}
@@ -157,7 +116,7 @@ export default async function LearnPage({
               <LessonPdfViewer lessonId={activeLesson.id} title={activeLesson.title} />
             : null}
             {activeLesson.content ?
-              <div className="mt-6 whitespace-pre-wrap text-base leading-relaxed text-[var(--foreground-secondary)]">
+              <div className="prose-safe mt-6 whitespace-pre-wrap text-base leading-relaxed text-[var(--foreground-secondary)]">
                 {activeLesson.content}
               </div>
             : null}
@@ -166,7 +125,7 @@ export default async function LearnPage({
                 action={markLessonCompleteAction.bind(null, activeLesson.id, slug)}
                 className="mt-8"
               >
-                <Button type="submit" size="lg">
+                <Button type="submit" size="lg" className="w-full sm:w-auto">
                   Mark as complete
                 </Button>
               </form>
@@ -177,6 +136,6 @@ export default async function LearnPage({
           </>
         : <p className="text-[var(--foreground-muted)]">No lessons in this course yet.</p>}
       </div>
-    </div>
+    </LearnPageLayout>
   );
 }

@@ -45,7 +45,7 @@ export default async function CoursesPage({
       <div className="page-container py-8 sm:py-10">
         <div className="flex flex-col gap-8 lg:flex-row lg:gap-10">
           <aside className="lg:w-64 lg:shrink-0">
-            <div className="surface-card-elevated sticky top-20 p-4 sm:p-5">
+            <div className="surface-card-elevated p-4 sm:p-5 lg:sticky lg:top-20">
               <h2 className="text-sm font-bold uppercase tracking-wide text-[var(--foreground)]">
                 Filter
               </h2>

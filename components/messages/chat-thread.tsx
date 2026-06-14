@@ -99,7 +99,7 @@ export function ChatThread({
           placeholder="Type your message..."
           className="resize-none"
         />
-        <Button type="submit" disabled={pending}>
+        <Button type="submit" disabled={pending} className="w-full sm:w-auto">
           {pending ? "Sending..." : "Send message"}
         </Button>
       </form>
