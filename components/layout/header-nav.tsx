@@ -33,8 +33,9 @@ export function HeaderNav({ initialSession }: { initialSession: Session | null }
 
   const session = clientSession ?? initialSession;
   const isAuthenticated = !!session?.user?.id;
-  const isLoading = status === "loading" && !initialSession?.user?.id;
+  const isLoading = status === "loading";
   const onDashboard = pathname.startsWith("/dashboard");
+  const onAppShell = onDashboard || pathname.startsWith("/learn");
   const role = (session?.user?.role ?? "STUDENT") as DashboardRole;
   const headerLinks = publicHeaderLinks(isAuthenticated);
 
@@ -85,7 +86,9 @@ export function HeaderNav({ initialSession }: { initialSession: Session | null }
               <span className="h-9 w-36 animate-pulse rounded-lg bg-[var(--background-subtle)]" />
             : isAuthenticated && session.user ?
               <>
-                <NotificationBell />
+                {onAppShell ?
+                  <NotificationBell />
+                : null}
                 <UserMenu
                   name={session.user.name}
                   email={session.user.email}
@@ -107,7 +110,7 @@ export function HeaderNav({ initialSession }: { initialSession: Session | null }
           </div>
 
           <div className="flex items-center gap-2 md:hidden">
-            {isAuthenticated ?
+            {isAuthenticated && onAppShell ?
               <NotificationBell />
             : null}
             <button

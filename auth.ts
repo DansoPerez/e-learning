@@ -89,7 +89,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
 
       if (token.id && trigger !== "signIn") {
         const refreshedAt = (token.refreshedAt as number | undefined) ?? 0;
-        const stale = Date.now() - refreshedAt > 5 * 60_000;
+        const stale = Date.now() - refreshedAt > 15 * 60_000;
         if (!stale) return token;
 
         try {

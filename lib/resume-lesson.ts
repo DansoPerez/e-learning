@@ -25,8 +25,7 @@ export async function getFirstUnpassedQuizId(
     },
   });
   const passedSet = new Set(passed.map((p) => p.quizId));
-  const next = quizzes.find((q) => !passedSet.has(q.id));
-  return next?.id ?? null;
+  return quizzes.find((q) => !passedSet.has(q.id))?.id ?? null;
 }
 
 /** First incomplete lesson, or last visited if still incomplete, or first lesson. */
@@ -34,33 +33,36 @@ export async function getResumeLessonId(
   userId: string,
   courseId: string,
 ): Promise<string | null> {
-  const enrollment = await prisma.enrollment.findUnique({
-    where: { userId_courseId: { userId, courseId } },
-    select: { lastLessonId: true },
-  });
-
-  const lessons = await prisma.lesson.findMany({
-    where: { module: { courseId } },
-    orderBy: [{ module: { orderIndex: "asc" } }, { orderIndex: "asc" }],
-    select: { id: true },
-  });
+  const [enrollment, lessons, completed] = await Promise.all([
+    prisma.enrollment.findUnique({
+      where: { userId_courseId: { userId, courseId } },
+      select: { lastLessonId: true },
+    }),
+    prisma.lesson.findMany({
+      where: { module: { courseId } },
+      orderBy: [{ module: { orderIndex: "asc" } }, { orderIndex: "asc" }],
+      select: { id: true },
+    }),
+    prisma.lessonProgress.findMany({
+      where: {
+        userId,
+        completed: true,
+        lesson: { module: { courseId } },
+      },
+      select: { lessonId: true },
+    }),
+  ]);
 
   if (lessons.length === 0) return null;
 
   const lessonIds = lessons.map((l) => l.id);
-  const lessonIdSet = new Set(lessonIds);
-
-  const completed = await prisma.lessonProgress.findMany({
-    where: { userId, lessonId: { in: lessonIds }, completed: true },
-    select: { lessonId: true },
-  });
   const completedSet = new Set(completed.map((p) => p.lessonId));
-
   const firstIncomplete = lessonIds.find((id) => !completedSet.has(id));
+
   if (firstIncomplete) {
     if (
       enrollment?.lastLessonId &&
-      lessonIdSet.has(enrollment.lastLessonId) &&
+      lessonIds.includes(enrollment.lastLessonId) &&
       !completedSet.has(enrollment.lastLessonId)
     ) {
       return enrollment.lastLessonId;

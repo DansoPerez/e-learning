@@ -31,10 +31,17 @@ export async function GET() {
     : Promise.resolve(0),
   ]);
 
-  return NextResponse.json({
-    unreadNotifications,
-    unreadMessages,
-    pendingInstructors,
-    at: Date.now(),
-  });
+  return NextResponse.json(
+    {
+      unreadNotifications,
+      unreadMessages,
+      pendingInstructors,
+      at: Date.now(),
+    },
+    {
+      headers: {
+        "Cache-Control": "private, max-age=30, stale-while-revalidate=60",
+      },
+    },
+  );
 }

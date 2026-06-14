@@ -60,6 +60,10 @@ function applySupabasePoolerParams(url: string): string {
     }
   }
 
+  if (!/[?&]connect_timeout=/.test(url)) {
+    params.push("connect_timeout=10");
+  }
+
   if (params.length === 0) return url;
   const sep = url.includes("?") ? "&" : "?";
   return `${url}${sep}${params.join("&")}`;
