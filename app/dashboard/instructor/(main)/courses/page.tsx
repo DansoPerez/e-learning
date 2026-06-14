@@ -27,10 +27,10 @@ export default async function InstructorCoursesPage() {
           <Link
             key={c.id}
             href={`/dashboard/instructor/courses/${c.id}`}
-            className="flex items-center justify-between rounded-xl border bg-white p-4 shadow-sm hover:border-indigo-200"
+            className="flex flex-col gap-3 rounded-xl border bg-white p-4 shadow-sm hover:border-indigo-200 sm:flex-row sm:items-center sm:justify-between"
           >
-            <div>
-              <p className="font-medium">{c.title}</p>
+            <div className="min-w-0 flex-1">
+              <p className="break-words font-medium">{c.title}</p>
               <p className="text-sm text-zinc-500">
                 {c._count.enrollments} students · {formatCurrency(Number(c.price))}
               </p>

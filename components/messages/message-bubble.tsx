@@ -27,12 +27,12 @@ export function MessageBubble({
       <div
         className={
           adminDeletedView ?
-            "max-w-[85%] rounded-2xl border-2 border-red-500 bg-red-50 px-4 py-3 text-sm shadow-sm ring-2 ring-red-200"
+            "max-w-[min(85%,100%)] break-words rounded-2xl border-2 border-red-500 bg-red-50 px-4 py-3 text-sm shadow-sm ring-2 ring-red-200"
           : deleted && !viewerIsAdmin ?
-            "max-w-[85%] rounded-2xl border border-dashed border-zinc-300 bg-zinc-50 px-4 py-2.5 text-sm italic text-zinc-500"
+            "max-w-[min(85%,100%)] break-words rounded-2xl border border-dashed border-zinc-300 bg-zinc-50 px-4 py-2.5 text-sm italic text-zinc-500"
           : isMine ?
-            "max-w-[85%] rounded-2xl bg-[var(--primary)] px-4 py-2.5 text-sm text-white shadow-md"
-          : "max-w-[85%] rounded-2xl border border-[var(--border)] bg-white px-4 py-2.5 text-sm text-[var(--foreground-secondary)] shadow-sm"
+            "max-w-[min(85%,100%)] break-words rounded-2xl bg-[var(--primary)] px-4 py-2.5 text-sm text-white shadow-md"
+          : "max-w-[min(85%,100%)] break-words rounded-2xl border border-[var(--border)] bg-white px-4 py-2.5 text-sm text-[var(--foreground-secondary)] shadow-sm"
         }
       >
         {!isMine ?
@@ -51,7 +51,7 @@ export function MessageBubble({
         : null}
 
         <p
-          className={`whitespace-pre-wrap ${
+          className={`break-words whitespace-pre-wrap ${
             adminDeletedView ? "text-red-900"
             : deleted ? "text-zinc-500"
             : ""

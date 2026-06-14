@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Plus_Jakarta_Sans, JetBrains_Mono } from "next/font/google";
 import { auth } from "@/auth";
 import { Header } from "@/components/layout/header";
@@ -21,6 +21,11 @@ const jetbrainsMono = JetBrains_Mono({
   display: "swap",
 });
 
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+};
+
 export const metadata: Metadata = {
   title: {
     default: PLATFORM_NAME,
@@ -42,7 +47,7 @@ export default async function RootLayout({
       <body className="flex min-h-full flex-col antialiased">
         <AuthProvider session={session}>
           <Header initialSession={session} />
-          <main className="flex-1">{children}</main>
+          <main className="min-w-0 flex-1">{children}</main>
           <ConditionalFooter initialSession={session} />
         </AuthProvider>
       </body>

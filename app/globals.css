@@ -3,6 +3,7 @@
 html {
   color-scheme: light;
   scroll-behavior: smooth;
+  overflow-x: clip;
 }
 
 :root {
@@ -53,7 +54,19 @@ body {
   color: var(--foreground);
   font-family: var(--font-sans-app), system-ui, sans-serif;
   min-height: 100vh;
+  overflow-x: clip;
   -webkit-font-smoothing: antialiased;
+  -webkit-text-size-adjust: 100%;
+}
+
+.break-words {
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+
+.prose-safe {
+  overflow-wrap: anywhere;
+  word-break: break-word;
 }
 
 .text-body {

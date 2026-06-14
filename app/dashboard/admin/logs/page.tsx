@@ -149,11 +149,11 @@ export default async function AdminLogsPage({
                     key={log.id}
                     className="rounded-lg border border-[var(--border)] bg-white px-4 py-3 text-sm"
                   >
-                    <p className="font-medium">
+                    <p className="break-words font-medium">
                       {log.action} · {log.targetType}
                       {log.targetId ? ` · ${log.targetId.slice(0, 8)}` : ""}
                     </p>
-                    <p className="text-[var(--foreground-muted)]">{log.description}</p>
+                    <p className="break-words text-[var(--foreground-muted)]">{log.description}</p>
                     <p className="mt-1 text-xs text-zinc-400">{formatDate(log.createdAt)}</p>
                   </div>
                 ))}

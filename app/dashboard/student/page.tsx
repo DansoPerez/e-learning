@@ -63,9 +63,9 @@ export default async function StudentDashboardPage() {
           </p>
         : <div className="space-y-3">
             {continueItems.map(({ enrollment: e, lessonId, quizId }) => (
-              <Card key={e.id} className="flex items-center justify-between gap-4">
-                <div>
-                  <CardTitle className="text-base">{e.course.title}</CardTitle>
+              <Card key={e.id} className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                <div className="min-w-0 flex-1">
+                  <CardTitle className="break-words text-base">{e.course.title}</CardTitle>
                   <CardDescription>{e.progressPercent}% complete</CardDescription>
                 </div>
                 <Link

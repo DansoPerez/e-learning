@@ -114,7 +114,7 @@ export default async function HomePage() {
 
       <section className="border-b border-[var(--border)] bg-white py-8 sm:py-10">
         <div className="page-container">
-          <div className="grid grid-cols-2 gap-4 sm:grid-cols-4 sm:gap-5">
+          <div className="grid grid-cols-1 gap-3 min-[400px]:grid-cols-2 sm:grid-cols-4 sm:gap-5">
             {[
               { icon: BookOpen, label: "Courses", value: `${publishedCount}+` },
               { icon: Users, label: "Learners", value: `${enrollmentCount}+` },
