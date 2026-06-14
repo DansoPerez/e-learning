@@ -5,9 +5,8 @@ import { sendMessageAction, deleteMessageAction } from "@/app/actions/messages";
 import { MessageBubble, type MessageBubbleData } from "@/components/messages/message-bubble";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
+import { MESSAGE_POLL_MS } from "@/lib/presence-utils";
 import { useVisibleInterval } from "@/lib/use-visible-interval";
-
-const MESSAGE_POLL_MS = 15_000;
 
 export function ChatThread({
   conversationId,

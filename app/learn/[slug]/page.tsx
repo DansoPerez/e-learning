@@ -3,13 +3,34 @@ import { prisma } from "@/lib/prisma";
 import { requireAuth } from "@/lib/auth";
 import { hasCourseAccess } from "@/lib/services/enrollment";
 import { markLessonCompleteAction } from "@/app/actions/learning";
-import { getFirstUnpassedQuizId, getResumeLessonId } from "@/lib/resume-lesson";
+import { getFirstUnpassedQuizId } from "@/lib/resume-lesson";
 import { getPassedQuizIds } from "@/lib/course-completion";
 import { LessonViewTracker } from "@/components/learn/lesson-view-tracker";
 import { LearnPageLayout } from "@/components/learn/learn-curriculum";
 import { LessonPdfViewer, LessonVideo } from "@/components/lessons/lesson-media";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+
+function resolveResumeLessonId(
+  lessonIds: string[],
+  completedSet: Set<string>,
+  lastLessonId: string | null | undefined,
+  explicitLessonId?: string,
+): string | null {
+  if (explicitLessonId && lessonIds.includes(explicitLessonId)) {
+    return explicitLessonId;
+  }
+
+  const firstIncomplete = lessonIds.find((id) => !completedSet.has(id));
+  if (firstIncomplete) {
+    if (lastLessonId && !completedSet.has(lastLessonId) && lessonIds.includes(lastLessonId)) {
+      return lastLessonId;
+    }
+    return firstIncomplete;
+  }
+
+  return lessonIds[0] ?? null;
+}
 
 export default async function LearnPage({
   params,
@@ -18,17 +39,30 @@ export default async function LearnPage({
   params: Promise<{ slug: string }>;
   searchParams: Promise<{ lesson?: string }>;
 }) {
+  const [{ slug }, { lesson: lessonIdParam }] = await Promise.all([params, searchParams]);
   const user = await requireAuth();
-  const { slug } = await params;
-  const { lesson: lessonId } = await searchParams;
 
   const course = await prisma.course.findUnique({
     where: { slug },
-    include: {
+    select: {
+      id: true,
+      title: true,
+      slug: true,
       modules: {
         orderBy: { orderIndex: "asc" },
-        include: {
-          lessons: { orderBy: { orderIndex: "asc" } },
+        select: {
+          id: true,
+          title: true,
+          lessons: {
+            orderBy: { orderIndex: "asc" },
+            select: {
+              id: true,
+              title: true,
+              videoUrl: true,
+              pdfStorageKey: true,
+              content: true,
+            },
+          },
         },
       },
       quizzes: {
@@ -44,33 +78,50 @@ export default async function LearnPage({
 
   if (!course) notFound();
 
-  const allowed = await hasCourseAccess(user.id, course.id);
+  const allLessons = course.modules.flatMap((m) => m.lessons);
+  const lessonIds = allLessons.map((l) => l.id);
+  const enabledQuizIds = course.quizzes
+    .filter((q) => q.isEnabled && q._count.questions > 0)
+    .map((q) => q.id);
+
+  const [allowed, enrollment, progress, passedQuizIds] = await Promise.all([
+    hasCourseAccess(user.id, course.id),
+    prisma.enrollment.findUnique({
+      where: { userId_courseId: { userId: user.id, courseId: course.id } },
+      select: { lastLessonId: true },
+    }),
+    lessonIds.length > 0 ?
+      prisma.lessonProgress.findMany({
+        where: { userId: user.id, lessonId: { in: lessonIds } },
+        select: { lessonId: true, completed: true },
+      })
+    : Promise.resolve([]),
+    getPassedQuizIds(user.id, enabledQuizIds),
+  ]);
+
   if (!allowed) redirect(`/courses/${slug}`);
 
-  const allLessons = course.modules.flatMap((m) => m.lessons);
+  const completedIds = new Set(
+    progress.filter((p) => p.completed).map((p) => p.lessonId),
+  );
 
-  const resumeLessonId = lessonId ?? (await getResumeLessonId(user.id, course.id));
+  let resumeLessonId = resolveResumeLessonId(
+    lessonIds,
+    completedIds,
+    enrollment?.lastLessonId,
+    lessonIdParam,
+  );
 
-  if (!lessonId && !resumeLessonId) {
+  if (!lessonIdParam && !resumeLessonId) {
     const nextQuizId = await getFirstUnpassedQuizId(user.id, course.id);
     if (nextQuizId) {
       redirect(`/learn/${slug}/quiz/${nextQuizId}`);
     }
   }
 
-  const resumeId = resumeLessonId;
   const activeLesson =
-    allLessons.find((l) => l.id === resumeId) ?? allLessons[0];
+    allLessons.find((l) => l.id === resumeLessonId) ?? allLessons[0];
 
-  const progress = await prisma.lessonProgress.findMany({
-    where: { userId: user.id, lessonId: { in: allLessons.map((l) => l.id) } },
-  });
-  const completedIds = new Set(progress.filter((p) => p.completed).map((p) => p.lessonId));
-
-  const enabledQuizIds = course.quizzes
-    .filter((q) => q.isEnabled && q._count.questions > 0)
-    .map((q) => q.id);
-  const passedQuizIds = await getPassedQuizIds(user.id, enabledQuizIds);
   const allLessonsDone =
     allLessons.length > 0 && allLessons.every((l) => completedIds.has(l.id));
   const quizzesRemaining = enabledQuizIds.filter((id) => !passedQuizIds.has(id)).length;

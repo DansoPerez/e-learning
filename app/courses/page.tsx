@@ -3,8 +3,20 @@ import { prisma } from "@/lib/prisma";
 import { containsFilter } from "@/lib/prisma-search";
 import { CourseCard } from "@/components/courses/course-card";
 import { Button } from "@/components/ui/button";
+import { getCachedCategories } from "@/lib/catalog-cache";
 
 export const metadata = { title: "Explore courses" };
+
+const courseListSelect = {
+  id: true,
+  slug: true,
+  title: true,
+  description: true,
+  price: true,
+  featured: true,
+  category: { select: { name: true } },
+  instructor: { select: { name: true } },
+} as const;
 
 export default async function CoursesPage({
   searchParams,
@@ -14,20 +26,18 @@ export default async function CoursesPage({
   const { q, category } = await searchParams;
   const titleFilter = q ? containsFilter(q) : undefined;
 
-  const courses = await prisma.course.findMany({
-    where: {
-      status: "PUBLISHED",
-      ...(titleFilter ? { title: titleFilter } : {}),
-      ...(category ? { category: { slug: category } } : {}),
-    },
-    include: {
-      category: true,
-      instructor: { select: { name: true } },
-    },
-    orderBy: [{ featured: "desc" }, { createdAt: "desc" }],
-  });
-
-  const categories = await prisma.category.findMany({ orderBy: { name: "asc" } });
+  const [courses, categories] = await Promise.all([
+    prisma.course.findMany({
+      where: {
+        status: "PUBLISHED",
+        ...(titleFilter ? { title: titleFilter } : {}),
+        ...(category ? { category: { slug: category } } : {}),
+      },
+      select: courseListSelect,
+      orderBy: [{ featured: "desc" }, { createdAt: "desc" }],
+    }),
+    getCachedCategories(),
+  ]);
 
   return (
     <div className="min-h-screen bg-[var(--background)]">

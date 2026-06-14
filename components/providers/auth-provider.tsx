@@ -1,14 +1,8 @@
 "use client";
 
-import { SessionProvider, useSession } from "next-auth/react";
+import { SessionProvider } from "next-auth/react";
 import type { Session } from "next-auth";
-import { PresenceHeartbeat } from "@/components/presence/presence-heartbeat";
-
-function PresenceWhenSignedIn() {
-  const { status } = useSession();
-  if (status !== "authenticated") return null;
-  return <PresenceHeartbeat />;
-}
+import { PresenceWhenSignedIn } from "@/components/presence/presence-when-signed-in";
 
 export function AuthProvider({
   children,

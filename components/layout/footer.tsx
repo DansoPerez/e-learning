@@ -2,7 +2,6 @@
 
 import Link from "next/link";
 import { useSession } from "next-auth/react";
-import type { Session } from "next-auth";
 import { PLATFORM_NAME } from "@/lib/constants";
 import {
   EXPLORE_COURSES_LINK,
@@ -13,9 +12,8 @@ import {
 import type { DashboardRole } from "@/lib/dashboard-nav";
 import { BookOpen } from "lucide-react";
 
-export function Footer({ initialSession }: { initialSession: Session | null }) {
-  const { data: clientSession } = useSession();
-  const session = clientSession ?? initialSession;
+export function Footer() {
+  const { data: session } = useSession();
   const year = new Date().getFullYear();
   const isAuthenticated = !!session?.user?.id;
   const role = (session?.user?.role ?? "STUDENT") as DashboardRole;

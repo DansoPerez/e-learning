@@ -1,67 +1,22 @@
 import Link from "next/link";
-import { getServerSession } from "@/lib/session";
-import { prisma } from "@/lib/prisma";
+import { Suspense } from "react";
 import { Button } from "@/components/ui/button";
 import { CourseCard } from "@/components/courses/course-card";
+import { HomeClosingCta, HomeHeroCta } from "@/components/home/home-hero-cta";
 import {
-  dashboardCtaLabelForRole,
-  dashboardPathForRole,
-} from "@/lib/dashboard-nav";
-import type { Role } from "@/app/generated/prisma/client";
+  getCachedFeaturedCourses,
+  getCachedLatestCourses,
+  getCachedPlatformStats,
+} from "@/lib/catalog-cache";
 import { Award, BookOpen, Globe, Layers, Shield, Users } from "lucide-react";
 
-function homepageClosingCopy(role: Role): { heading: string; body: string; cta: string } {
-  switch (role) {
-    case "ADMIN":
-      return {
-        heading: "Manage the platform",
-        body: "Review users, courses, payouts, and platform settings from your admin panel.",
-        cta: "Open admin panel",
-      };
-    case "INSTRUCTOR":
-      return {
-        heading: "Grow your teaching",
-        body: "Update your courses, respond to learners, and track earnings from your dashboard.",
-        cta: "Open teaching dashboard",
-      };
-    default:
-      return {
-        heading: "Ready to start learning?",
-        body: "Join thousands building skills with instructor-led courses on Bravio.",
-        cta: "Get started — it's free",
-      };
-  }
-}
-
 export default async function HomePage() {
-  const session = await getServerSession();
-  const isAuthenticated = !!session?.user?.id;
-  const [featured, latest, publishedCount, categoryCount, enrollmentCount] =
-    await Promise.all([
-    prisma.course.findMany({
-      where: { status: "PUBLISHED", featured: true },
-      take: 4,
-      include: {
-        category: true,
-        instructor: { select: { name: true } },
-      },
-      orderBy: { createdAt: "desc" },
-    }),
-    prisma.course.findMany({
-      where: { status: "PUBLISHED" },
-      take: 8,
-      include: {
-        category: true,
-        instructor: { select: { name: true } },
-      },
-      orderBy: { createdAt: "desc" },
-    }),
-    prisma.course.count({ where: { status: "PUBLISHED" } }),
-    prisma.category.count(),
-    prisma.enrollment.count(),
+  const [featured, stats] = await Promise.all([
+    getCachedFeaturedCourses(),
+    getCachedPlatformStats(),
   ]);
-
-  const courses = featured.length > 0 ? featured : latest.slice(0, 8);
+  const latest = featured.length === 0 ? await getCachedLatestCourses() : [];
+  const courses = featured.length > 0 ? featured : latest;
 
   return (
     <div>
@@ -81,33 +36,7 @@ export default async function HomePage() {
               Structured courses from verified instructors — modules, quizzes, and
               progress tracking built for students and professionals.
             </p>
-            <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:justify-center">
-              {isAuthenticated && session.user ?
-                <Link href={dashboardPathForRole(session.user.role)} className="w-full sm:w-auto">
-                  <Button size="lg" variant="accent" className="w-full sm:min-w-[200px]">
-                    {dashboardCtaLabelForRole(session.user.role)}
-                  </Button>
-                </Link>
-              : <Link href="/register" className="w-full sm:w-auto">
-                  <Button size="lg" variant="accent" className="w-full sm:min-w-[200px]">
-                    Join for free
-                  </Button>
-                </Link>
-              }
-              <Link href="/courses" className="w-full sm:w-auto">
-                <Button size="lg" variant="outline" className="w-full sm:min-w-[200px]">
-                  Explore courses
-                </Button>
-              </Link>
-            </div>
-            {!isAuthenticated ?
-              <p className="mt-4 text-sm text-[var(--foreground-muted)]">
-                Already learning?{" "}
-                <Link href="/login" className="font-semibold text-[var(--primary)] hover:underline">
-                  Log in
-                </Link>
-              </p>
-            : null}
+            <HomeHeroCta />
           </div>
         </div>
       </section>
@@ -116,9 +45,9 @@ export default async function HomePage() {
         <div className="page-container">
           <div className="grid grid-cols-1 gap-3 min-[400px]:grid-cols-2 sm:grid-cols-4 sm:gap-5">
             {[
-              { icon: BookOpen, label: "Courses", value: `${publishedCount}+` },
-              { icon: Users, label: "Learners", value: `${enrollmentCount}+` },
-              { icon: Globe, label: "Categories", value: `${categoryCount}` },
+              { icon: BookOpen, label: "Courses", value: `${stats.publishedCount}+` },
+              { icon: Users, label: "Learners", value: `${stats.enrollmentCount}+` },
+              { icon: Globe, label: "Categories", value: `${stats.categoryCount}` },
               { icon: Award, label: "Instructors", value: "Verified" },
             ].map(({ icon: Icon, label, value }) => (
               <div key={label} className="stat-pill text-center">
@@ -216,35 +145,9 @@ export default async function HomePage() {
       <section className="relative overflow-hidden border-t border-[var(--border)] bg-gradient-to-br from-[var(--primary)] via-indigo-600 to-violet-700 py-14 text-white sm:py-16">
         <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjAiIGhlaWdodD0iNjAiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PGRlZnM+PHBhdHRlcm4gaWQ9ImEiIHdpZHRoPSI2MCIgaGVpZ2h0PSI2MCIgcGF0dGVyblVuaXRzPSJ1c2VyU3BhY2VPblVzZSI+PHBhdGggZD0iTTAgMzBoMzBWMHoiIGZpbGw9IiNmZmYiIGZpbGwtb3BhY2l0eT0uMDUiLz48L3BhdHRlcm4+PC9kZWZzPjxyZWN0IHdpZHRoPSIxMDAlIiBoZWlnaHQ9IjEwMCUiIGZpbGw9InVybCgjYSkiLz48L3N2Zz4=')] opacity-30" />
         <div className="page-container relative text-center">
-          {(() => {
-            const closing =
-              isAuthenticated && session.user ?
-                homepageClosingCopy(session.user.role)
-              : {
-                  heading: "Ready to start learning?",
-                  body: "Join thousands building skills with instructor-led courses on Bravio.",
-                  cta: "Get started — it's free",
-                };
-            const closingHref =
-              isAuthenticated && session.user ?
-                dashboardPathForRole(session.user.role)
-              : "/register";
-            return (
-              <>
-                <h2 className="text-2xl font-bold sm:text-3xl">{closing.heading}</h2>
-                <p className="mx-auto mt-3 max-w-lg text-indigo-100">{closing.body}</p>
-                <Link href={closingHref} className="mt-6 inline-block w-full sm:w-auto">
-                  <Button
-                    size="lg"
-                    variant="accent"
-                    className="w-full sm:min-w-[220px]"
-                  >
-                    {closing.cta}
-                  </Button>
-                </Link>
-              </>
-            );
-          })()}
+          <Suspense fallback={null}>
+            <HomeClosingCta />
+          </Suspense>
         </div>
       </section>
     </div>

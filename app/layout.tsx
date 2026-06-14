@@ -1,6 +1,5 @@
 import type { Metadata, Viewport } from "next";
 import { Plus_Jakarta_Sans, JetBrains_Mono } from "next/font/google";
-import { getServerSession } from "@/lib/session";
 import { Header } from "@/components/layout/header";
 import { ConditionalFooter } from "@/components/layout/conditional-footer";
 import { AuthProvider } from "@/components/providers/auth-provider";
@@ -33,20 +32,18 @@ export const metadata: Metadata = {
     "A secure e-learning marketplace connecting students and instructors.",
 };
 
-export default async function RootLayout({
+export default function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  const session = await getServerSession();
-
   return (
     <html lang="en" className={`${plusJakarta.variable} ${jetbrainsMono.variable} h-full light`} style={{ colorScheme: "light" }}>
       <body className="flex min-h-full flex-col antialiased">
-        <AuthProvider session={session}>
-          <Header initialSession={session} />
+        <AuthProvider session={null}>
+          <Header initialSession={null} />
           <main className="min-w-0 flex-1">{children}</main>
-          <ConditionalFooter initialSession={session} />
+          <ConditionalFooter />
         </AuthProvider>
       </body>
     </html>
