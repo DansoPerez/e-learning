@@ -1,4 +1,5 @@
 import { v2 as cloudinary } from "cloudinary";
+import { randomUUID } from "crypto";
 import { readEnv } from "@/lib/env-utils";
 import { MEDIA_LIMITS, VERCEL_UPLOAD_BYTES } from "@/lib/media-limits";
 import {
@@ -47,6 +48,23 @@ export function cloudinaryFolderForKind(kind: CloudinaryUploadKind): string {
   return kind === "pdf" ? LESSON_PDF_FOLDER : LESSON_VIDEO_FOLDER;
 }
 
+/** Signed delivery URL for raw files (PDFs). Required when strict delivery is enabled. */
+export function cloudinarySignedRawUrl(publicId: string, ttlSeconds = 3600): string {
+  ensureConfigured();
+  const expiresAt = Math.round(Date.now() / 1000) + ttlSeconds;
+  return cloudinary.url(publicId, {
+    resource_type: "raw",
+    type: "upload",
+    secure: true,
+    sign_url: true,
+    expires_at: expiresAt,
+  });
+}
+
+export function createPdfUploadPublicId(): string {
+  return `${LESSON_PDF_FOLDER}/${randomUUID()}.pdf`;
+}
+
 /** Signed params for browser → Cloudinary uploads (file never hits Vercel). */
 export function createSignedUploadParams(kind: CloudinaryUploadKind) {
   ensureConfigured();
@@ -56,6 +74,20 @@ export function createSignedUploadParams(kind: CloudinaryUploadKind) {
   }
 
   const timestamp = Math.round(Date.now() / 1000);
+
+  if (kind === "pdf") {
+    const publicId = createPdfUploadPublicId();
+    const signature = cloudinary.utils.api_sign_request({ timestamp, public_id: publicId }, apiSecret);
+    return {
+      cloudName,
+      apiKey,
+      timestamp,
+      signature,
+      publicId,
+      uploadPath: "raw/upload" as const,
+    };
+  }
+
   const folder = cloudinaryFolderForKind(kind);
   const signature = cloudinary.utils.api_sign_request({ timestamp, folder }, apiSecret);
 
@@ -65,7 +97,7 @@ export function createSignedUploadParams(kind: CloudinaryUploadKind) {
     timestamp,
     signature,
     folder,
-    uploadPath: kind === "pdf" ? "raw/upload" : "video/upload",
+    uploadPath: "video/upload" as const,
   };
 }
 
@@ -91,7 +123,11 @@ export async function uploadToCloudinary(
     const result = await cloudinary.uploader.upload(
       `data:${mimeType};base64,${buffer.toString("base64")}`,
       {
-        folder: options.folder,
+        folder: options.resourceType === "raw" ? undefined : options.folder,
+        public_id:
+          options.resourceType === "raw" ?
+            createPdfUploadPublicId()
+          : undefined,
         resource_type: options.resourceType,
       },
     );
@@ -104,18 +140,30 @@ export async function uploadToCloudinary(
 }
 
 export function cloudinaryPdfViewUrl(publicId: string): string {
-  ensureConfigured();
-  return cloudinary.url(publicId, {
-    resource_type: "raw",
-    secure: true,
-  });
+  return cloudinarySignedRawUrl(publicId);
 }
 
 export async function fetchCloudinaryRaw(publicId: string): Promise<Buffer> {
-  const url = cloudinaryPdfViewUrl(publicId);
-  const res = await fetch(url);
+  ensureConfigured();
+
+  let deliveryUrl = cloudinarySignedRawUrl(publicId);
+  try {
+    const resource = await cloudinary.api.resource(publicId, { resource_type: "raw" });
+    if (typeof resource.secure_url === "string") {
+      deliveryUrl = resource.secure_url;
+    }
+  } catch {
+    // Use signed URL fallback below.
+  }
+
+  const res = await fetch(deliveryUrl);
   if (!res.ok) {
-    throw new Error("Failed to fetch file from Cloudinary");
+    const signedUrl = cloudinarySignedRawUrl(publicId);
+    const signedRes = await fetch(signedUrl);
+    if (!signedRes.ok) {
+      throw new Error(`Failed to fetch PDF from Cloudinary (${signedRes.status})`);
+    }
+    return Buffer.from(await signedRes.arrayBuffer());
   }
   return Buffer.from(await res.arrayBuffer());
 }
