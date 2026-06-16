@@ -177,7 +177,7 @@ function ReviewCard({
       : null}
 
       {review.replies.length > 0 ?
-        <ul className="mt-4 space-y-3 border-l-2 border-indigo-100 pl-4">
+        <ul className="mt-4 space-y-3 border-l-2 border-[var(--primary-muted)] pl-4">
           {review.replies.map((reply) => {
             const replyDeleted = !!reply.deletedAt;
             const isOwnReply = reply.author.id === currentUserId;

@@ -104,7 +104,7 @@ export function AdminUsersList({
               return (
                 <tr
                   key={u.id}
-                  className="border-b border-[var(--border)] last:border-0 hover:bg-indigo-50/30"
+                  className="border-b border-[var(--border)] last:border-0 hover:bg-[var(--primary-light)]/30"
                 >
                   <td className="p-4">
                     <p className="font-semibold text-[var(--foreground)]">{u.name ?? "—"}</p>

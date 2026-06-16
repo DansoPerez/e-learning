@@ -64,7 +64,7 @@ export function MessageBubble({
           <p
             className={`text-[10px] ${
               adminDeletedView ? "text-red-700"
-              : isMine && !deleted ? "text-indigo-200"
+              : isMine && !deleted ? "text-blue-100"
               : "text-[var(--foreground-muted)]"
             }`}
           >
@@ -73,7 +73,7 @@ export function MessageBubble({
           {isMine && !deleted && onDelete ?
             <button
               type="button"
-              className={`text-[10px] font-medium underline ${isMine ? "text-indigo-100" : ""}`}
+              className={`text-[10px] font-medium underline ${isMine ? "text-blue-100" : ""}`}
               onClick={onDelete}
             >
               Delete

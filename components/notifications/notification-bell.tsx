@@ -108,7 +108,7 @@ export function NotificationBell({ pollIntervalMs = DASHBOARD_POLL_MS }: { pollI
                   <button
                     type="button"
                     className={`w-full px-3 py-2.5 text-left text-sm hover:bg-[var(--background)] ${
-                      !n.readAt ? "bg-indigo-50/50" : ""
+                      !n.readAt ? "bg-[var(--primary-light)]/50" : ""
                     }`}
                     onClick={() => onMarkRead(n.id, n.link)}
                   >

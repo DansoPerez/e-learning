@@ -81,7 +81,7 @@ export default async function InstructorMessagesPage({
                 <li key={c.id}>
                   <Link
                     href={`/dashboard/instructor/messages/${c.id}`}
-                    className="surface-card flex flex-wrap items-center justify-between gap-3 p-4 transition-colors hover:border-indigo-200"
+                    className="surface-card flex flex-wrap items-center justify-between gap-3 p-4 transition-colors hover:border-[var(--primary-muted)]"
                   >
                     <div>
                       <p className="font-semibold">{c.other.name ?? "Admin"}</p>
@@ -125,7 +125,7 @@ export default async function InstructorMessagesPage({
                 <li key={c.id}>
                   <Link
                     href={`/dashboard/instructor/messages/${c.id}`}
-                    className="surface-card flex flex-wrap items-center justify-between gap-3 p-4 transition-colors hover:border-indigo-200"
+                    className="surface-card flex flex-wrap items-center justify-between gap-3 p-4 transition-colors hover:border-[var(--primary-muted)]"
                   >
                     <div>
                       <div className="flex flex-wrap items-center gap-2">

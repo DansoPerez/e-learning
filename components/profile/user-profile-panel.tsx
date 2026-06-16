@@ -103,7 +103,7 @@ export function UserProfilePanel({
         </dl>
 
         {user.role === "ADMIN" && !user.isSuperAdmin ?
-          <p className="mt-4 rounded-xl border border-indigo-200 bg-indigo-50 px-4 py-3 text-sm text-indigo-900">
+          <p className="mt-4 rounded-sm border border-[var(--primary-muted)] bg-[var(--primary-light)] px-4 py-3 text-sm text-[var(--primary)]">
             <Shield className="mb-1 inline h-4 w-4" />
             {user.adminSensitiveApproved && !user.adminSensitiveSuspended ?
               "You have super-admin–approved access to sensitive actions (finances, delete users, all-course access)."

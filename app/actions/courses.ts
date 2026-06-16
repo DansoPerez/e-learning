@@ -13,6 +13,7 @@ import { chargesForCourse } from "@/lib/course-pricing";
 import { enrollInFreeCourse } from "@/lib/services/enrollment";
 import { initiateCoursePayment } from "@/lib/services/payment";
 import { saveLessonPdf, saveLessonVideo, MEDIA_LIMITS } from "@/lib/lesson-pdf-storage";
+import { resolveCourseThumbnailFromForm } from "@/lib/course-thumbnail-storage";
 import { redirect } from "next/navigation";
 import { requireApprovedInstructor } from "@/lib/instructor";
 import { assertCanEditCourse, assertModuleInCourse } from "@/lib/course-owner";
@@ -34,11 +35,17 @@ export async function createCourseAction(
     description: formData.get("description"),
     categoryId: formData.get("categoryId") || undefined,
     price: formData.get("price"),
-    thumbnailUrl: formData.get("thumbnailUrl") || undefined,
   });
 
   if (!parsed.success) {
     return { error: parsed.error.issues[0]?.message ?? "Invalid input" };
+  }
+
+  let thumbnailUrl: string | null = null;
+  try {
+    thumbnailUrl = await resolveCourseThumbnailFromForm(formData);
+  } catch (err) {
+    return { error: err instanceof Error ? err.message : "Invalid course image" };
   }
 
   const slug = await uniqueSlug(parsed.data.title, async (s) => {
@@ -51,7 +58,7 @@ export async function createCourseAction(
       ...parsed.data,
       slug,
       instructorId: user.id,
-      thumbnailUrl: parsed.data.thumbnailUrl || null,
+      thumbnailUrl,
       categoryId: parsed.data.categoryId || null,
     },
   });
@@ -81,18 +88,24 @@ export async function updateCourseAction(
     description: formData.get("description"),
     categoryId: formData.get("categoryId") || undefined,
     price: formData.get("price"),
-    thumbnailUrl: formData.get("thumbnailUrl") || undefined,
   });
 
   if (!parsed.success) {
     return { error: parsed.error.issues[0]?.message ?? "Invalid input" };
   }
 
+  let thumbnailUrl: string | null = course.thumbnailUrl;
+  try {
+    thumbnailUrl = await resolveCourseThumbnailFromForm(formData, course.thumbnailUrl);
+  } catch (err) {
+    return { error: err instanceof Error ? err.message : "Invalid course image" };
+  }
+
   await prisma.course.update({
     where: { id: courseId },
     data: {
       ...parsed.data,
-      thumbnailUrl: parsed.data.thumbnailUrl || null,
+      thumbnailUrl,
       categoryId: parsed.data.categoryId || null,
     },
   });

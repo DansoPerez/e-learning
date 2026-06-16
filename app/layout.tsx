@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from "next";
-import { Plus_Jakarta_Sans, JetBrains_Mono } from "next/font/google";
+import { Source_Sans_3, JetBrains_Mono } from "next/font/google";
 import { getServerSession } from "@/lib/session";
 import { Header } from "@/components/layout/header";
 import { ConditionalFooter } from "@/components/layout/conditional-footer";
@@ -7,7 +7,7 @@ import { AuthProvider } from "@/components/providers/auth-provider";
 import { PLATFORM_NAME } from "@/lib/constants";
 import "./globals.css";
 
-const plusJakarta = Plus_Jakarta_Sans({
+const sourceSans = Source_Sans_3({
   variable: "--font-sans-app",
   subsets: ["latin"],
   display: "swap",
@@ -41,12 +41,12 @@ export default async function RootLayout({
   const session = await getServerSession();
 
   return (
-    <html lang="en" className={`${plusJakarta.variable} ${jetbrainsMono.variable} h-full light`} style={{ colorScheme: "light" }}>
+    <html lang="en" className={`${sourceSans.variable} ${jetbrainsMono.variable} h-full light`} style={{ colorScheme: "light" }}>
       <body className="flex min-h-full flex-col antialiased">
         <AuthProvider session={session}>
           <Header initialSession={session} />
           <main className="min-w-0 flex-1">{children}</main>
-          <ConditionalFooter />
+          <ConditionalFooter initialSession={session} />
         </AuthProvider>
       </body>
     </html>

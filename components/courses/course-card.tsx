@@ -1,7 +1,7 @@
 import Link from "next/link";
-import { Badge } from "@/components/ui/badge";
+import { CourseThumbnail } from "@/components/courses/course-thumbnail";
 import { studentPriceLabel } from "@/lib/course-pricing";
-import { BookOpen, Star } from "lucide-react";
+import { cn } from "@/lib/utils";
 
 type CourseCardProps = {
   slug: string;
@@ -11,15 +11,16 @@ type CourseCardProps = {
   category?: string | null;
   instructor?: string | null;
   featured?: boolean;
+  thumbnailUrl?: string | null;
 };
 
 function thumbnailGradient(seed: string) {
   const palettes = [
-    "from-indigo-500 via-violet-500 to-purple-600",
-    "from-blue-500 via-indigo-500 to-violet-600",
-    "from-violet-600 via-purple-500 to-fuchsia-500",
-    "from-sky-500 via-blue-500 to-indigo-600",
-    "from-indigo-600 via-blue-600 to-cyan-500",
+    "from-[#0056d2] to-[#2a73cc]",
+    "from-[#1c7ed6] to-[#339af0]",
+    "from-[#1864ab] to-[#228be6]",
+    "from-[#364fc7] to-[#4c6ef5]",
+    "from-[#0b7285] to-[#1098ad]",
   ];
   let hash = 0;
   for (let i = 0; i < seed.length; i++) hash = seed.charCodeAt(i) + ((hash << 5) - hash);
@@ -34,48 +35,53 @@ export function CourseCard({
   category,
   instructor,
   featured,
+  thumbnailUrl,
 }: CourseCardProps) {
   const gradient = thumbnailGradient(category ?? title);
+  const priceLabel = studentPriceLabel(price);
 
   return (
     <Link href={`/courses/${slug}`} className="group block h-full min-w-0">
-      <article className="flex h-full flex-col overflow-hidden rounded-[var(--radius-lg)] border border-[var(--border)] bg-white shadow-[var(--shadow-sm)] transition-all duration-300 hover:-translate-y-1 hover:border-[var(--primary-muted)] hover:shadow-[var(--shadow-lg)]">
-        <div
-          className={`relative flex h-36 items-center justify-center bg-gradient-to-br ${gradient} sm:h-40`}
-        >
-          <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjAiIGhlaWdodD0iNjAiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PGRlZnM+PHBhdHRlcm4gaWQ9ImEiIHdpZHRoPSI2MCIgaGVpZ2h0PSI2MCIgcGF0dGVyblVuaXRzPSJ1c2VyU3BhY2VPblVzZSI+PHBhdGggIGQ9Ik0wIDYwaDYwVjB6IiBmaWxsPSJub25lIi8+PHBhdGggZD0iTTAgMzBoMzBWMHoiIGZpbGw9IiNmZmYiIGZpbGwtb3BhY2l0eT0uMDUiLz48L3BhdHRlcm4+PC9kZWZzPjxyZWN0IHdpZHRoPSIxMDAlIiBoZWlnaHQ9IjEwMCUiIGZpbGw9InVybCgjYSkiLz48L3N2Zz4=')] opacity-40" />
-          <BookOpen className="relative h-14 w-14 text-white/90 drop-shadow-md" strokeWidth={1.25} />
-          <div className="absolute left-3 top-3 flex flex-wrap gap-1.5">
-            {category ?
-              <Badge variant="info" className="border-0 bg-white/95 text-xs normal-case shadow-sm">
-                {category}
-              </Badge>
-            : null}
-            {featured ?
-              <Badge variant="warning" className="border-0 text-xs normal-case shadow-sm">
-                Featured
-              </Badge>
-            : null}
-          </div>
+      <article className="coursera-card flex h-full flex-col overflow-hidden">
+        <div className="relative aspect-[16/9] w-full overflow-hidden bg-[var(--background-subtle)]">
+          {thumbnailUrl ?
+            <CourseThumbnail
+              src={thumbnailUrl}
+              className="transition-transform duration-300 group-hover:scale-[1.02]"
+            />
+          : <div className={`flex h-full w-full items-end bg-gradient-to-br ${gradient} p-4`}>
+              {category ?
+                <span className="rounded-sm bg-white/95 px-2 py-1 text-xs font-semibold text-[var(--foreground)]">
+                  {category}
+                </span>
+              : null}
+            </div>
+          }
+          {featured ?
+            <span className="absolute left-2 top-2 rounded-sm bg-[var(--accent)] px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-[var(--foreground)]">
+              Popular
+            </span>
+          : null}
         </div>
-        <div className="flex flex-1 flex-col p-5">
-          <h3 className="line-clamp-2 text-base font-bold leading-snug text-[var(--foreground)] transition-colors group-hover:text-[var(--primary)]">
+        <div className="flex flex-1 flex-col p-2 sm:p-4">
+          <h3 className="line-clamp-2 text-xs font-bold leading-snug text-[var(--foreground)] group-hover:text-[var(--primary)] sm:text-[0.9375rem]">
             {title}
           </h3>
           {instructor ?
-            <p className="mt-1.5 text-xs font-medium text-[var(--foreground-muted)]">{instructor}</p>
+            <p className="mt-0.5 line-clamp-1 text-[10px] text-[var(--foreground-muted)] sm:mt-1 sm:text-xs">
+              {instructor}
+            </p>
           : null}
-          <p className="mt-2.5 line-clamp-2 flex-1 text-sm leading-relaxed text-[var(--foreground-muted)]">
+          <p
+            className={cn(
+              "mt-1.5 line-clamp-2 flex-1 text-[10px] leading-relaxed text-[var(--foreground-muted)] sm:mt-2 sm:text-sm",
+              "hidden sm:block",
+            )}
+          >
             {description}
           </p>
-          <div className="mt-4 flex items-center justify-between gap-2 border-t border-[var(--border)] pt-4">
-            <span className="text-lg font-bold text-[var(--foreground)]">
-              {studentPriceLabel(price)}
-            </span>
-            <span className="flex items-center gap-1 text-xs font-medium text-[var(--foreground-muted)]">
-              <Star className="h-3.5 w-3.5 fill-[var(--accent)] text-[var(--accent)]" />
-              Top rated
-            </span>
+          <div className="mt-2 border-t border-[var(--border)] pt-2 sm:mt-3 sm:pt-3">
+            <span className="text-xs font-bold text-[var(--foreground)] sm:text-sm">{priceLabel}</span>
           </div>
         </div>
       </article>

@@ -1,107 +1,102 @@
 "use client";
 
-import { useEffect, useState } from "react";
 import Link from "next/link";
-import { useSession } from "next-auth/react";
 import { usePathname } from "next/navigation";
 import type { Session } from "next-auth";
+import { useAppSession } from "@/lib/use-app-session";
 import { PLATFORM_NAME } from "@/lib/constants";
 import { publicHeaderLinks } from "@/lib/site-nav";
-import { dashboardPathForRole, type DashboardRole } from "@/lib/dashboard-nav";
+import { dashboardPathForRole } from "@/lib/dashboard-nav";
 import { Button } from "@/components/ui/button";
+import { CourseSearch } from "@/components/layout/course-search";
 import { NotificationBell } from "@/components/notifications/notification-bell";
 import { UserMenu } from "@/components/layout/user-menu";
-import { BookOpen, LayoutDashboard, Menu, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 
-function navLinkClass(active: boolean) {
+function navTabClass(active: boolean) {
   return cn(
-    "rounded-lg px-3 py-2 text-sm font-medium transition-colors",
+    "inline-flex shrink-0 items-center whitespace-nowrap rounded-sm px-3 py-2 text-sm font-semibold transition-colors touch-manipulation",
     active ?
       "bg-[var(--primary-light)] text-[var(--primary)]"
-    : "text-[var(--foreground-secondary)] hover:bg-[var(--background-subtle)] hover:text-[var(--foreground)]",
+    : "text-[var(--foreground-secondary)] hover:bg-[var(--background-subtle)] hover:text-[var(--primary)]",
   );
 }
 
-const mobileLinkClass =
-  "block rounded-lg px-3 py-2.5 text-sm font-medium text-[var(--foreground-secondary)] transition-colors hover:bg-[var(--background-subtle)] hover:text-[var(--foreground)]";
-
-function userInitials(name: string | null | undefined, email: string | null | undefined) {
-  const source = name?.trim() || email?.trim() || "?";
-  const parts = source.split(/\s+/);
-  if (parts.length >= 2) return `${parts[0][0]}${parts[1][0]}`.toUpperCase();
-  return source.slice(0, 2).toUpperCase();
-}
-
 export function HeaderNav({ initialSession }: { initialSession: Session | null }) {
-  const { data: clientSession, status } = useSession();
   const pathname = usePathname();
-  const [menuOpen, setMenuOpen] = useState(false);
-
-  const session = clientSession ?? initialSession;
-  const isAuthenticated = !!session?.user?.id;
-  const isLoading = status === "loading" && !initialSession?.user?.id;
+  const { session, isAuthenticated, isLoading, role } = useAppSession(initialSession);
   const onDashboard = pathname.startsWith("/dashboard");
   const onLearn = pathname.startsWith("/learn");
   const isAppShell = onDashboard || onLearn;
-  const role = (session?.user?.role ?? "STUDENT") as DashboardRole;
-  const headerLinks = isAppShell && isAuthenticated ? [] : publicHeaderLinks(isAuthenticated);
 
-  const closeMenu = () => setMenuOpen(false);
+  const appShellLinks = isAuthenticated ?
+    [
+      {
+        href: dashboardPathForRole(role),
+        label: role === "STUDENT" ? "My Learning" : "Dashboard",
+        active: onDashboard,
+      },
+      {
+        href: "/courses",
+        label: "Explore",
+        active: pathname.startsWith("/courses"),
+      },
+    ]
+  : [];
 
-  useEffect(() => {
-    if (!menuOpen) return;
-    const prev = document.body.style.overflow;
-    document.body.style.overflow = "hidden";
-    return () => {
-      document.body.style.overflow = prev;
-    };
-  }, [menuOpen]);
+  const headerLinks = isAppShell && isAuthenticated ? [] : publicHeaderLinks(isAuthenticated, role);
+
+  const mobileLinks = isAppShell && isAuthenticated ? appShellLinks : headerLinks.map((link) => ({
+    href: link.href,
+    label: link.label,
+    active:
+      link.href === "/courses" ?
+        pathname.startsWith("/courses")
+      : pathname.startsWith(link.href.split("?")[0] ?? link.href),
+  }));
+
+  const showMobileSubNav = mobileLinks.length > 0;
+  const showMobileSearch =
+    !isAppShell &&
+    pathname !== "/" &&
+    !pathname.startsWith("/courses") &&
+    !pathname.startsWith("/login") &&
+    !pathname.startsWith("/register");
 
   return (
     <header
       className={cn(
-        "sticky top-0 z-50 border-b backdrop-blur-md",
-        isAppShell ?
-          "border-[var(--border)] bg-white/95 shadow-[var(--shadow-sm)]"
-        : "border-[var(--border)] bg-white/90 shadow-[var(--shadow-sm)]",
+        "sticky top-0 z-50 border-b border-[var(--border)] bg-white/95 shadow-[var(--shadow-sm)] backdrop-blur-md",
+        (showMobileSubNav || showMobileSearch) && "header-with-subnav",
       )}
     >
       <div className={cn(isAppShell ? "mx-auto max-w-[1400px] px-4 sm:px-6" : "page-container")}>
-        <div className="flex h-[var(--header-height)] items-center justify-between gap-3">
+        <div className="flex h-14 items-center gap-3 sm:h-[var(--header-height)] lg:gap-6">
           <Link
             href={isAuthenticated ? dashboardPathForRole(role) : "/"}
-            className="flex shrink-0 items-center gap-2.5"
-            onClick={closeMenu}
+            className="flex shrink-0 items-center"
           >
-            <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br from-[var(--primary)] to-violet-600 text-white shadow-[var(--shadow-primary)]">
-              <BookOpen className="h-5 w-5" />
-            </span>
-            <span className="text-lg font-bold tracking-tight text-[var(--foreground)]">
+            <span className="text-xl font-bold tracking-tight text-[var(--primary)] sm:text-2xl">
               {PLATFORM_NAME}
             </span>
           </Link>
 
           {isAppShell && isAuthenticated ?
-            <nav className="hidden flex-1 items-center justify-center gap-1 md:flex" aria-label="App">
-              <Link href={dashboardPathForRole(role)} className={navLinkClass(onDashboard)}>
-                <span className="inline-flex items-center gap-1.5">
-                  <LayoutDashboard className="h-4 w-4" />
-                  Dashboard
-                </span>
-              </Link>
-              <Link href="/courses" className={navLinkClass(pathname.startsWith("/courses"))}>
-                Courses
-              </Link>
+            <nav className="hidden flex-1 items-center gap-1 md:flex" aria-label="App">
+              {appShellLinks.map((link) => (
+                <Link key={link.href} href={link.href} className={navTabClass(link.active)}>
+                  {link.label}
+                </Link>
+              ))}
             </nav>
-          : <nav className="hidden flex-1 items-center justify-center gap-1 md:flex" aria-label="Main">
+          : <nav className="hidden shrink-0 items-center gap-1 lg:flex" aria-label="Main">
               {headerLinks.map((link) => {
                 const active =
                   link.href === "/courses" ?
                     pathname.startsWith("/courses")
                   : pathname.startsWith(link.href.split("?")[0] ?? link.href);
                 return (
-                  <Link key={link.href} href={link.href} className={navLinkClass(active)}>
+                  <Link key={link.href} href={link.href} className={navTabClass(active)}>
                     {link.label}
                   </Link>
                 );
@@ -109,9 +104,15 @@ export function HeaderNav({ initialSession }: { initialSession: Session | null }
             </nav>
           }
 
-          <div className="hidden items-center gap-2 md:flex">
+          {!isAppShell ?
+            <div className="hidden min-w-0 flex-1 lg:block">
+              <CourseSearch className="mx-auto max-w-xl" />
+            </div>
+          : null}
+
+          <div className="ml-auto hidden items-center gap-2 md:flex">
             {isLoading ?
-              <span className="h-9 w-32 animate-pulse rounded-lg bg-[var(--background-subtle)]" />
+              <span className="h-9 w-32 animate-pulse rounded-sm bg-[var(--background-subtle)]" />
             : isAuthenticated && session.user ?
               <>
                 {isAppShell ?
@@ -137,87 +138,55 @@ export function HeaderNav({ initialSession }: { initialSession: Session | null }
             }
           </div>
 
-          <div className="flex items-center gap-2 md:hidden">
-            {isAuthenticated ?
+          <div className="ml-auto flex items-center gap-2 md:hidden">
+            {isAuthenticated && session.user ?
               <>
                 {isAppShell ?
                   <NotificationBell />
                 : null}
-                <Link
-                  href={dashboardPathForRole(role)}
-                  className="flex h-9 w-9 items-center justify-center rounded-full bg-[var(--primary)] text-xs font-bold text-white"
-                  aria-label="Open dashboard"
-                >
-                  {userInitials(session.user?.name, session.user?.email)}
-                </Link>
-              </>
-            : null}
-            <button
-              type="button"
-              className="inline-flex h-10 w-10 items-center justify-center rounded-lg border border-[var(--border)] text-[var(--foreground)] hover:bg-[var(--background-subtle)]"
-              aria-expanded={menuOpen}
-              aria-label={menuOpen ? "Close menu" : "Open menu"}
-              onClick={() => setMenuOpen((o) => !o)}
-            >
-              {menuOpen ?
-                <X className="h-5 w-5" />
-              : <Menu className="h-5 w-5" />}
-            </button>
-          </div>
-        </div>
-      </div>
-
-      {menuOpen ?
-        <div className="border-t border-[var(--border)] bg-white md:hidden">
-          <nav className="page-container flex flex-col gap-1 py-4" aria-label="Mobile">
-            {isAppShell && isAuthenticated ?
-              <>
-                <Link href={dashboardPathForRole(role)} className={mobileLinkClass} onClick={closeMenu}>
-                  Dashboard
-                </Link>
-                <Link href="/courses" className={mobileLinkClass} onClick={closeMenu}>
-                  Explore courses
-                </Link>
-              </>
-            : headerLinks.map((link) => (
-                <Link
-                  key={link.href}
-                  href={link.href}
-                  className={mobileLinkClass}
-                  onClick={closeMenu}
-                >
-                  {link.label}
-                </Link>
-              ))
-            }
-
-            <div className="mt-3 border-t border-[var(--border)] pt-4">
-              {isLoading ?
-                <div className="h-24 animate-pulse rounded-lg bg-[var(--background-subtle)]" />
-              : isAuthenticated && session.user ?
                 <UserMenu
-                  variant="mobile"
+                  variant="icon"
                   name={session.user.name}
                   email={session.user.email}
                   role={role}
                   onDashboard={onDashboard}
-                  onNavigate={closeMenu}
                 />
-              : <div className="flex flex-col gap-2">
-                  <Link href="/login" onClick={closeMenu}>
-                    <Button variant="outline" className="w-full">
-                      Log in
-                    </Button>
-                  </Link>
-                  <Link href="/register" onClick={closeMenu}>
-                    <Button className="w-full">Join for free</Button>
-                  </Link>
-                </div>
-              }
-            </div>
-          </nav>
+              </>
+            : <>
+                <Link href="/login">
+                  <Button variant="ghost" size="sm" className="h-9 px-3">
+                    Log in
+                  </Button>
+                </Link>
+              </>
+            }
+          </div>
         </div>
-      : null}
+
+        {showMobileSubNav ?
+          <nav
+            className="-mx-4 flex gap-1 overflow-x-auto overscroll-x-contain border-t border-[var(--border)] px-4 py-2 md:hidden [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+            aria-label="Mobile"
+          >
+            {mobileLinks.map((link) => (
+              <Link key={link.href} href={link.href} className={navTabClass(link.active)}>
+                {link.label}
+              </Link>
+            ))}
+            {!isAuthenticated ?
+              <Link href="/register" className={navTabClass(pathname.startsWith("/register"))}>
+                Join for free
+              </Link>
+            : null}
+          </nav>
+        : null}
+
+        {showMobileSearch ?
+          <div className="border-t border-[var(--border)] py-3 lg:hidden">
+            <CourseSearch />
+          </div>
+        : null}
+      </div>
     </header>
   );
 }

@@ -68,7 +68,7 @@ export default async function AdminReviewsPage() {
               <p className="mt-1 text-sm text-[var(--foreground-secondary)]">{r.comment}</p>
 
               {r.replies.length > 0 ?
-                <ul className="mt-4 space-y-2 border-l-2 border-indigo-100 pl-4">
+                <ul className="mt-4 space-y-2 border-l-2 border-[var(--primary-muted)] pl-4">
                   {r.replies.map((reply) => (
                     <li key={reply.id} className="text-sm">
                       <span className="font-medium">{reply.author.name ?? "User"}</span>{" "}
