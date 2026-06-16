@@ -17,6 +17,7 @@ import { CourseReviews } from "@/components/courses/course-reviews";
 import { EditCourseForm } from "@/components/instructor/edit-course-form";
 import { CourseAnnouncementForm } from "@/components/instructor/course-announcement-form";
 import { LessonAddForm } from "@/components/instructor/lesson-add-form";
+import { LessonListItem } from "@/components/instructor/lesson-list-item";
 import { isCloudinaryEnabled } from "@/lib/cloudinary";
 import { MEDIA_LIMITS } from "@/lib/media-limits";
 
@@ -39,12 +40,15 @@ const LESSON_ERRORS: Record<string, string> = {
   unauthorized: "You do not have permission to edit this course.",
   "module-not-found": "That module was not found. Refresh the page and try again.",
   "no-content": "Add at least one module and lesson before submitting this course for review.",
+  "lesson-not-found": "That lesson was not found. Refresh the page and try again.",
   "invalid-quiz": "Check the quiz title and passing score, then try again.",
 };
 
 const LESSON_SUCCESS: Record<string, string> = {
   "module-added": "Module added.",
   "lesson-added": "Lesson added.",
+  "lesson-updated": "Lesson updated.",
+  "lesson-deleted": "Lesson deleted.",
 };
 
 export default async function InstructorCourseEditPage({
@@ -158,13 +162,23 @@ export default async function InstructorCourseEditPage({
       {course.modules.map((mod) => (
         <section key={mod.id} className="mb-8 rounded-xl border bg-white p-6">
           <h3 className="font-semibold">{mod.title}</h3>
-          <ul className="mt-2 space-y-1 text-sm text-zinc-600">
+          <ul className="mt-3 space-y-2">
             {mod.lessons.map((l) => (
-              <li key={l.id}>
-                {l.title}
-                {l.videoUrl ? " · video" : ""}
-                {l.pdfStorageKey ? " · PDF" : ""}
-              </li>
+              <LessonListItem
+                key={l.id}
+                courseId={course.id}
+                moduleId={mod.id}
+                cloudinaryReady={cloudinaryReady}
+                lesson={{
+                  id: l.id,
+                  title: l.title,
+                  content: l.content,
+                  videoUrl: l.videoUrl,
+                  pdfStorageKey: l.pdfStorageKey,
+                  orderIndex: l.orderIndex,
+                  durationMin: l.durationMin,
+                }}
+              />
             ))}
           </ul>
           <LessonAddForm

@@ -12,12 +12,12 @@ import { uniqueSlug } from "@/lib/utils";
 import { chargesForCourse } from "@/lib/course-pricing";
 import { enrollInFreeCourse } from "@/lib/services/enrollment";
 import { initiateCoursePayment } from "@/lib/services/payment";
-import { saveLessonPdf, saveLessonVideo, MEDIA_LIMITS } from "@/lib/lesson-pdf-storage";
 import { resolveCourseThumbnailFromForm } from "@/lib/course-thumbnail-storage";
 import { redirect } from "next/navigation";
 import { rethrowNavigationError } from "@/lib/navigation-errors";
 import { requireApprovedInstructor } from "@/lib/instructor";
-import { assertCanEditCourse, assertModuleInCourse } from "@/lib/course-owner";
+import { assertCanEditCourse, assertLessonInCourse, assertModuleInCourse } from "@/lib/course-owner";
+import { resolveLessonMediaFromForm } from "@/lib/instructor-lesson-media-form";
 import { recalculateCourseEnrollments } from "@/lib/services/enrollment";
 
 export type ActionState = { error?: string; success?: boolean };
@@ -196,57 +196,13 @@ export async function addLessonAction(
   }
 
   let videoUrl = parsed.data.videoUrl?.trim() || null;
-  const preUploadedPdf = formData.get("uploadedPdfStorageKey");
-  let pdfStorageKey =
-    typeof preUploadedPdf === "string" && preUploadedPdf.trim() ?
-      preUploadedPdf.trim()
-    : null;
+  let pdfStorageKey: string | null = null;
 
-  const videoFile = formData.get("video");
-  if (videoFile instanceof File && videoFile.size > 0) {
-    if (videoFile.size > MEDIA_LIMITS.videoBytes) {
-      redirect(`/dashboard/instructor/courses/${courseId}?error=video-too-large`);
-    }
-    const allowedVideo =
-      videoFile.type.startsWith("video/") ||
-      /\.(mp4|webm|mov|m4v)$/i.test(videoFile.name);
-    if (!allowedVideo) {
-      redirect(`/dashboard/instructor/courses/${courseId}?error=invalid-video`);
-    }
-    try {
-      const buffer = Buffer.from(await videoFile.arrayBuffer());
-      videoUrl = await saveLessonVideo(buffer);
-    } catch (err) {
-      rethrowNavigationError(err);
-      console.error("[courses] video upload failed:", err);
-      redirect(`/dashboard/instructor/courses/${courseId}?error=video-upload`);
-    }
-  }
-
-  const pdfFile = formData.get("pdf");
-  if (!pdfStorageKey && pdfFile instanceof File && pdfFile.size > 0) {
-    if (pdfFile.size > MEDIA_LIMITS.pdfBytes) {
-      redirect(`/dashboard/instructor/courses/${courseId}?error=pdf-too-large`);
-    }
-    const isPdf =
-      pdfFile.type === "application/pdf" || /\.pdf$/i.test(pdfFile.name);
-    if (isPdf) {
-      try {
-        const buffer = Buffer.from(await pdfFile.arrayBuffer());
-        pdfStorageKey = await saveLessonPdf(buffer);
-      } catch (err) {
-        rethrowNavigationError(err);
-        console.error("[courses] pdf upload failed:", err);
-        const needsCloudinary =
-          err instanceof Error && err.message.includes("Cloudinary");
-        redirect(
-          `/dashboard/instructor/courses/${courseId}?error=${needsCloudinary ? "pdf-needs-cloudinary" : "pdf-upload"}`,
-        );
-      }
-    } else {
-      redirect(`/dashboard/instructor/courses/${courseId}?error=invalid-pdf`);
-    }
-  }
+  ({ videoUrl, pdfStorageKey } = await resolveLessonMediaFromForm(
+    formData,
+    courseId,
+    parsed.data.videoUrl,
+  ));
 
   try {
     await prisma.lesson.create({
@@ -268,6 +224,88 @@ export async function addLessonAction(
 
   revalidatePath(`/dashboard/instructor/courses/${courseId}`);
   redirect(`/dashboard/instructor/courses/${courseId}?success=lesson-added`);
+}
+
+export async function updateLessonAction(
+  courseId: string,
+  lessonId: string,
+  formData: FormData,
+): Promise<void> {
+  const user = await requireRole("INSTRUCTOR", "ADMIN");
+  if (user.role === "INSTRUCTOR") {
+    await requireApprovedInstructor(user.id);
+  }
+  const course = await assertCanEditCourse(user.id, user.role, courseId);
+  const existing = await assertLessonInCourse(lessonId, courseId);
+
+  const parsed = lessonSchema.safeParse({
+    title: formData.get("title"),
+    content: formData.get("content") || undefined,
+    videoUrl: formData.get("videoUrl") || undefined,
+    orderIndex: formData.get("orderIndex") ?? 0,
+    durationMin: formData.get("durationMin") || undefined,
+  });
+  if (!parsed.success) {
+    redirect(`/dashboard/instructor/courses/${courseId}?error=invalid-lesson`);
+  }
+
+  let videoUrl = parsed.data.videoUrl?.trim() || null;
+  let pdfStorageKey = existing.pdfStorageKey;
+
+  ({ videoUrl, pdfStorageKey } = await resolveLessonMediaFromForm(
+    formData,
+    courseId,
+    parsed.data.videoUrl,
+    existing,
+  ));
+
+  try {
+    await prisma.lesson.update({
+      where: { id: lessonId },
+      data: {
+        title: parsed.data.title,
+        content: parsed.data.content || null,
+        videoUrl,
+        orderIndex: parsed.data.orderIndex,
+        durationMin: parsed.data.durationMin ?? null,
+        pdfStorageKey,
+      },
+    });
+    await recalculateCourseEnrollments(courseId);
+  } catch (err) {
+    rethrowNavigationError(err);
+    console.error("[courses] updateLessonAction failed:", err);
+    redirect(`/dashboard/instructor/courses/${courseId}?error=save-failed`);
+  }
+
+  revalidatePath(`/dashboard/instructor/courses/${courseId}`);
+  revalidatePath(`/learn/${course.slug}`);
+  redirect(`/dashboard/instructor/courses/${courseId}?success=lesson-updated`);
+}
+
+export async function deleteLessonAction(
+  courseId: string,
+  lessonId: string,
+): Promise<void> {
+  const user = await requireRole("INSTRUCTOR", "ADMIN");
+  if (user.role === "INSTRUCTOR") {
+    await requireApprovedInstructor(user.id);
+  }
+  const course = await assertCanEditCourse(user.id, user.role, courseId);
+  await assertLessonInCourse(lessonId, courseId);
+
+  try {
+    await prisma.lesson.delete({ where: { id: lessonId } });
+    await recalculateCourseEnrollments(courseId);
+  } catch (err) {
+    rethrowNavigationError(err);
+    console.error("[courses] deleteLessonAction failed:", err);
+    redirect(`/dashboard/instructor/courses/${courseId}?error=save-failed`);
+  }
+
+  revalidatePath(`/dashboard/instructor/courses/${courseId}`);
+  revalidatePath(`/learn/${course.slug}`);
+  redirect(`/dashboard/instructor/courses/${courseId}?success=lesson-deleted`);
 }
 
 export async function enrollCourseAction(courseId: string): Promise<void> {
