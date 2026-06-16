@@ -18,9 +18,8 @@ export const lessonSchema = z.object({
   title: z.string().min(2, "Lesson title is required"),
   content: z.string().optional(),
   videoUrl: z
-    .string()
-    .optional()
-    .or(z.literal(""))
+    .union([z.string(), z.undefined()])
+    .transform((val) => (typeof val === "string" ? val.trim() : ""))
     .refine((val) => !val || isValidVideoUrl(val), {
       message: "Enter a valid YouTube, Vimeo, Cloudinary, or direct video (.mp4) URL",
     }),

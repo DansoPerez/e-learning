@@ -4,10 +4,9 @@ import {
   isCloudinaryEnabled,
   isCloudinaryStorageKey,
   publicIdFromStorageKey,
-  toCloudinaryStorageKey,
-  uploadToCloudinary,
-  MEDIA_LIMITS,
 } from "@/lib/cloudinary";
+import { MEDIA_LIMITS } from "@/lib/media-limits";
+import { saveLessonMediaToCloudinary } from "@/lib/instructor-lesson-upload";
 import { mkdir, readFile, writeFile } from "fs/promises";
 import path from "path";
 import { randomUUID } from "crypto";
@@ -24,11 +23,9 @@ export async function saveLessonPdf(buffer: Buffer): Promise<string> {
   }
 
   if (isCloudinaryEnabled()) {
-    const { publicId } = await uploadToCloudinary(buffer, {
-      folder: "bravio/lesson-pdfs",
-      resourceType: "raw",
-    });
-    return toCloudinaryStorageKey(publicId);
+    const { pdfStorageKey } = await saveLessonMediaToCloudinary(buffer, "pdf");
+    if (!pdfStorageKey) throw new Error("PDF upload failed");
+    return pdfStorageKey;
   }
 
   if (isServerlessFilesystem()) {
@@ -52,11 +49,9 @@ export async function saveLessonVideo(buffer: Buffer): Promise<string> {
     throw new Error("Video upload requires Cloudinary. Add your Cloudinary keys to .env or paste a video URL instead.");
   }
 
-  const { url } = await uploadToCloudinary(buffer, {
-    folder: "bravio/lesson-videos",
-    resourceType: "video",
-  });
-  return url;
+  const { videoUrl } = await saveLessonMediaToCloudinary(buffer, "video");
+  if (!videoUrl) throw new Error("Video upload failed");
+  return videoUrl;
 }
 
 export async function readLessonPdf(storageKey: string): Promise<Buffer> {

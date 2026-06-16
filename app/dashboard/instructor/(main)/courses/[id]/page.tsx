@@ -17,6 +17,7 @@ import { CourseReviews } from "@/components/courses/course-reviews";
 import { EditCourseForm } from "@/components/instructor/edit-course-form";
 import { CourseAnnouncementForm } from "@/components/instructor/course-announcement-form";
 import { LessonAddForm } from "@/components/instructor/lesson-add-form";
+import { isCloudinaryEnabled } from "@/lib/cloudinary";
 
 const LESSON_ERRORS: Record<string, string> = {
   "invalid-module": "Check the module title and order, then try again.",
@@ -80,6 +81,8 @@ export default async function InstructorCourseEditPage({
   if (!course || (course.instructorId !== user.id && user.role !== "ADMIN")) {
     notFound();
   }
+
+  const cloudinaryReady = isCloudinaryEnabled();
 
   return (
     <InstructorDashboardWrapper title={course.title}>
@@ -162,6 +165,7 @@ export default async function InstructorCourseEditPage({
           <LessonAddForm
             moduleId={mod.id}
             lessonCount={mod.lessons.length}
+            cloudinaryReady={cloudinaryReady}
             action={addLessonAction.bind(null, course.id, mod.id)}
           />
         </section>

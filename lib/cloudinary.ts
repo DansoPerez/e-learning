@@ -1,25 +1,35 @@
 import { v2 as cloudinary } from "cloudinary";
+import { readEnv } from "@/lib/env-utils";
+import { MEDIA_LIMITS, VERCEL_UPLOAD_BYTES } from "@/lib/media-limits";
+
+export { MEDIA_LIMITS, VERCEL_UPLOAD_BYTES };
 
 const CLOUDINARY_PREFIX = "cloudinary:";
 
+export function getCloudinaryConfig() {
+  return {
+    cloudName: readEnv("CLOUDINARY_CLOUD_NAME") ?? readEnv("NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME"),
+    apiKey: readEnv("CLOUDINARY_API_KEY"),
+    apiSecret: readEnv("CLOUDINARY_API_SECRET"),
+  };
+}
+
 export function isCloudinaryEnabled(): boolean {
-  return !!(
-    process.env.CLOUDINARY_CLOUD_NAME &&
-    process.env.CLOUDINARY_API_KEY &&
-    process.env.CLOUDINARY_API_SECRET
-  );
+  const { cloudName, apiKey, apiSecret } = getCloudinaryConfig();
+  return !!(cloudName && apiKey && apiSecret);
 }
 
 function ensureConfigured(): void {
-  if (!isCloudinaryEnabled()) {
+  const { cloudName, apiKey, apiSecret } = getCloudinaryConfig();
+  if (!cloudName || !apiKey || !apiSecret) {
     throw new Error(
       "Cloudinary is not configured. Set CLOUDINARY_CLOUD_NAME, CLOUDINARY_API_KEY, and CLOUDINARY_API_SECRET.",
     );
   }
   cloudinary.config({
-    cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
-    api_key: process.env.CLOUDINARY_API_KEY,
-    api_secret: process.env.CLOUDINARY_API_SECRET,
+    cloud_name: cloudName,
+    api_key: apiKey,
+    api_secret: apiSecret,
     secure: true,
   });
 }
@@ -41,26 +51,33 @@ export async function uploadToCloudinary(
   options: {
     folder: string;
     resourceType: "video" | "raw" | "image";
+    mimeType?: string;
   },
 ): Promise<{ url: string; publicId: string }> {
   ensureConfigured();
 
-  return new Promise((resolve, reject) => {
-    const stream = cloudinary.uploader.upload_stream(
+  const mimeType =
+    options.mimeType ??
+    (options.resourceType === "raw" ?
+      "application/pdf"
+    : options.resourceType === "video" ?
+      "video/mp4"
+    : "image/jpeg");
+
+  try {
+    const result = await cloudinary.uploader.upload(
+      `data:${mimeType};base64,${buffer.toString("base64")}`,
       {
         folder: options.folder,
         resource_type: options.resourceType,
       },
-      (error, result) => {
-        if (error || !result) {
-          reject(error ?? new Error("Cloudinary upload failed"));
-          return;
-        }
-        resolve({ url: result.secure_url, publicId: result.public_id });
-      },
     );
-    stream.end(buffer);
-  });
+    return { url: result.secure_url, publicId: result.public_id };
+  } catch (error) {
+    const message =
+      error instanceof Error ? error.message : "Cloudinary upload failed";
+    throw new Error(message);
+  }
 }
 
 export function cloudinaryPdfViewUrl(publicId: string): string {
@@ -79,10 +96,3 @@ export async function fetchCloudinaryRaw(publicId: string): Promise<Buffer> {
   }
   return Buffer.from(await res.arrayBuffer());
 }
-
-export const MEDIA_LIMITS = {
-  videoBytes: 100 * 1024 * 1024,
-  pdfBytes: 20 * 1024 * 1024,
-  selfieBytes: 5 * 1024 * 1024,
-  thumbnailBytes: 5 * 1024 * 1024,
-} as const;

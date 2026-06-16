@@ -15,6 +15,7 @@ import { initiateCoursePayment } from "@/lib/services/payment";
 import { saveLessonPdf, saveLessonVideo, MEDIA_LIMITS } from "@/lib/lesson-pdf-storage";
 import { resolveCourseThumbnailFromForm } from "@/lib/course-thumbnail-storage";
 import { redirect } from "next/navigation";
+import { rethrowNavigationError } from "@/lib/navigation-errors";
 import { requireApprovedInstructor } from "@/lib/instructor";
 import { assertCanEditCourse, assertModuleInCourse } from "@/lib/course-owner";
 import { recalculateCourseEnrollments } from "@/lib/services/enrollment";
@@ -162,6 +163,7 @@ export async function addModuleAction(
     });
     await recalculateCourseEnrollments(courseId);
   } catch (err) {
+    rethrowNavigationError(err);
     console.error("[courses] addModuleAction failed:", err);
     redirect(`/dashboard/instructor/courses/${courseId}?error=save-failed`);
   }
@@ -194,6 +196,12 @@ export async function addLessonAction(
   }
 
   let videoUrl = parsed.data.videoUrl?.trim() || null;
+  const preUploadedPdf = formData.get("uploadedPdfStorageKey");
+  let pdfStorageKey =
+    typeof preUploadedPdf === "string" && preUploadedPdf.trim() ?
+      preUploadedPdf.trim()
+    : null;
+
   const videoFile = formData.get("video");
   if (videoFile instanceof File && videoFile.size > 0) {
     if (videoFile.size > MEDIA_LIMITS.videoBytes) {
@@ -209,14 +217,14 @@ export async function addLessonAction(
       const buffer = Buffer.from(await videoFile.arrayBuffer());
       videoUrl = await saveLessonVideo(buffer);
     } catch (err) {
+      rethrowNavigationError(err);
       console.error("[courses] video upload failed:", err);
       redirect(`/dashboard/instructor/courses/${courseId}?error=video-upload`);
     }
   }
 
-  let pdfStorageKey: string | null = null;
   const pdfFile = formData.get("pdf");
-  if (pdfFile instanceof File && pdfFile.size > 0) {
+  if (!pdfStorageKey && pdfFile instanceof File && pdfFile.size > 0) {
     if (pdfFile.size > MEDIA_LIMITS.pdfBytes) {
       redirect(`/dashboard/instructor/courses/${courseId}?error=pdf-too-large`);
     }
@@ -227,6 +235,7 @@ export async function addLessonAction(
         const buffer = Buffer.from(await pdfFile.arrayBuffer());
         pdfStorageKey = await saveLessonPdf(buffer);
       } catch (err) {
+        rethrowNavigationError(err);
         console.error("[courses] pdf upload failed:", err);
         const needsCloudinary =
           err instanceof Error && err.message.includes("Cloudinary");
@@ -252,6 +261,7 @@ export async function addLessonAction(
     });
     await recalculateCourseEnrollments(courseId);
   } catch (err) {
+    rethrowNavigationError(err);
     console.error("[courses] addLessonAction failed:", err);
     redirect(`/dashboard/instructor/courses/${courseId}?error=save-failed`);
   }
