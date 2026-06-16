@@ -75,7 +75,7 @@ export default async function AdminUsersPage({
 
   return (
     <DashboardWrapper role="ADMIN" title="User management">
-      <div className="mb-6 rounded-2xl border border-indigo-200 bg-gradient-to-r from-indigo-50 to-violet-50 p-4 sm:p-5">
+      <div className="mb-6 rounded-sm border border-[var(--primary-muted)] bg-[var(--primary-light)] p-4 sm:p-5">
         <div className="flex items-start gap-3">
           <div className="rounded-xl bg-[var(--primary)] p-2.5 text-white shadow-md">
             <Shield className="h-5 w-5" />

@@ -8,6 +8,7 @@ const courseCardSelect = {
   description: true,
   price: true,
   featured: true,
+  thumbnailUrl: true,
   category: { select: { name: true } },
   instructor: { select: { name: true } },
 } as const;
@@ -19,6 +20,7 @@ export type CatalogCourse = {
   description: string;
   price: unknown;
   featured: boolean;
+  thumbnailUrl: string | null;
   category: { name: string } | null;
   instructor: { name: string | null };
 };

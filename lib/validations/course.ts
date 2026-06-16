@@ -7,7 +7,6 @@ export const courseSchema = z.object({
   description: z.string().min(20, "Description must be at least 20 characters"),
   categoryId: z.string().optional(),
   price: z.coerce.number().min(0, "Price cannot be negative"),
-  thumbnailUrl: z.string().url().optional().or(z.literal("")),
 });
 
 export const moduleSchema = z.object({

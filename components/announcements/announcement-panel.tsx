@@ -51,7 +51,7 @@ export function AnnouncementPanel({
             className={`rounded-xl border p-4 transition-colors ${
               a.read ?
                 "border-[var(--border)] bg-[var(--card)]"
-              : "border-indigo-200 bg-indigo-50/60"
+              : "border-[var(--primary-muted)] bg-[var(--primary-light)]/60"
             }`}
           >
             <div className="mb-2 flex flex-wrap items-center justify-between gap-2">

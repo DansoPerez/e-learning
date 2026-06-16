@@ -108,7 +108,7 @@ export default async function StudentMessagesPage({
                 <li key={c.id}>
                   <Link
                     href={`/dashboard/student/messages/${c.id}`}
-                    className="surface-card flex flex-wrap items-center justify-between gap-3 p-4 transition-colors hover:border-indigo-200"
+                    className="surface-card flex flex-wrap items-center justify-between gap-3 p-4 transition-colors hover:border-[var(--primary-muted)]"
                   >
                     <div>
                       <p className="font-semibold">{c.other.name ?? "User"}</p>

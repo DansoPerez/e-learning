@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { prisma } from "@/lib/prisma";
+import { CourseThumbnail } from "@/components/courses/course-thumbnail";
 import { courseAccessCtaForRole, getSessionUser } from "@/lib/auth";
 import { hasCourseAccess } from "@/lib/services/enrollment";
 import { enrollCourseAction } from "@/app/actions/courses";
@@ -8,7 +9,7 @@ import { CourseReviews } from "@/components/courses/course-reviews";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { studentEnrollLabel, studentPriceLabel } from "@/lib/course-pricing";
-import { BookOpen, CheckCircle2 } from "lucide-react";
+import { CheckCircle2, Star } from "lucide-react";
 
 export default async function CourseDetailPage({
   params,
@@ -57,6 +58,11 @@ export default async function CourseDetailPage({
   const isAdmin = user?.role === "ADMIN";
   const canReview = !!user && enrolled && user.role === "STUDENT";
   const lessonCount = course.modules.reduce((n, m) => n + m.lessons.length, 0);
+  const reviewCount = course.reviews.length;
+  const averageRating =
+    reviewCount > 0 ?
+      course.reviews.reduce((sum, r) => sum + r.rating, 0) / reviewCount
+    : null;
   const accessCta = courseAccessCtaForRole(user?.role, {
     slug: course.slug,
     courseId: course.id,
@@ -64,49 +70,59 @@ export default async function CourseDetailPage({
   });
 
   const enrollBox = (
-    <div className="surface-card-elevated p-5 sm:p-6">
-      <p className="text-2xl font-bold text-[var(--foreground)]">
-        {studentPriceLabel(storedPrice)}
-      </p>
-      <ul className="mt-4 space-y-2 text-sm text-[var(--foreground-secondary)]">
-        <li className="flex items-center gap-2">
-          <CheckCircle2 className="h-4 w-4 shrink-0 text-[var(--primary)]" />
-          {lessonCount} lessons
-        </li>
-        <li className="flex items-center gap-2">
-          <CheckCircle2 className="h-4 w-4 shrink-0 text-[var(--primary)]" />
-          {course._count.enrollments} enrolled
-        </li>
-        <li className="flex items-center gap-2">
-          <CheckCircle2 className="h-4 w-4 shrink-0 text-[var(--primary)]" />
-          Learn at your own pace
-        </li>
-      </ul>
-      <div className="mt-5">
-        {enrolled ?
-          <Link href={accessCta.href} className="block">
-            <Button className="w-full" size="lg">
-              {accessCta.label}
-            </Button>
-          </Link>
-        : user && user.role === "STUDENT" ?
-          <form action={enrollCourseAction.bind(null, course.id)}>
-            <Button type="submit" className="w-full" size="lg">
-              {studentEnrollLabel(storedPrice)}
-            </Button>
-          </form>
-        : user ?
-          <Link href={accessCta.href} className="block">
-            <Button className="w-full" size="lg" variant="outline">
-              {accessCta.label}
-            </Button>
-          </Link>
-        : <Link href="/login" className="block">
-            <Button className="w-full" size="lg">
-              Sign in to enroll
-            </Button>
-          </Link>
+    <div className="surface-card-elevated overflow-hidden">
+      <div className="relative aspect-video w-full bg-[var(--background-subtle)]">
+        {course.thumbnailUrl ?
+          <CourseThumbnail src={course.thumbnailUrl} priority sizes="320px" />
+        : <div className="flex h-full items-center justify-center bg-gradient-to-br from-[#0056d2] to-[#2a73cc] text-sm font-semibold text-white">
+            Course preview
+          </div>
         }
+      </div>
+      <div className="p-5 sm:p-6">
+        <p className="text-2xl font-bold text-[var(--foreground)]">
+          {studentPriceLabel(storedPrice)}
+        </p>
+        <ul className="mt-4 space-y-2 text-sm text-[var(--foreground-secondary)]">
+          <li className="flex items-center gap-2">
+            <CheckCircle2 className="h-4 w-4 shrink-0 text-[var(--primary)]" />
+            {lessonCount} lessons
+          </li>
+          <li className="flex items-center gap-2">
+            <CheckCircle2 className="h-4 w-4 shrink-0 text-[var(--primary)]" />
+            {course._count.enrollments} already enrolled
+          </li>
+          <li className="flex items-center gap-2">
+            <CheckCircle2 className="h-4 w-4 shrink-0 text-[var(--primary)]" />
+            Learn at your own pace
+          </li>
+        </ul>
+        <div className="mt-5">
+          {enrolled ?
+            <Link href={accessCta.href} className="block">
+              <Button className="w-full" size="lg">
+                {accessCta.label}
+              </Button>
+            </Link>
+          : user && user.role === "STUDENT" ?
+            <form action={enrollCourseAction.bind(null, course.id)}>
+              <Button type="submit" className="w-full" size="lg">
+                {studentEnrollLabel(storedPrice)}
+              </Button>
+            </form>
+          : user ?
+            <Link href={accessCta.href} className="block">
+              <Button className="w-full" size="lg" variant="outline">
+                {accessCta.label}
+              </Button>
+            </Link>
+          : <Link href="/login" className="block">
+              <Button className="w-full" size="lg">
+                Sign in to enroll
+              </Button>
+            </Link>
+          }
+        </div>
       </div>
     </div>
   );
@@ -115,34 +131,58 @@ export default async function CourseDetailPage({
     <div className="bg-[var(--background)] pb-16">
       <div className="border-b border-[var(--border)] bg-white">
         <div className="page-container py-6 sm:py-8">
-          <div className="flex flex-wrap gap-2">
+          <nav className="text-sm text-[var(--foreground-muted)]">
+            <Link href="/courses" className="hover:text-[var(--primary)]">
+              Explore
+            </Link>
+            {course.category ?
+              <>
+                <span className="mx-2">/</span>
+                <Link
+                  href={`/courses?category=${course.category.slug}`}
+                  className="hover:text-[var(--primary)]"
+                >
+                  {course.category.name}
+                </Link>
+              </>
+            : null}
+          </nav>
+          <div className="mt-4 flex flex-wrap gap-2">
             {course.category ?
               <Badge variant="info">{course.category.name}</Badge>
             : null}
             {course.featured ?
-              <Badge variant="warning">Featured</Badge>
+              <Badge variant="warning">Popular</Badge>
             : null}
           </div>
-          <h1 className="mt-4 text-2xl font-bold leading-tight text-[var(--foreground)] sm:text-3xl lg:text-4xl">
+          <h1 className="mt-3 text-2xl font-bold leading-tight text-[var(--foreground)] sm:text-3xl lg:text-4xl">
             {course.title}
           </h1>
           <p className="mt-2 text-[var(--foreground-muted)]">
-            Created by{" "}
+            Instructor:{" "}
             <span className="font-semibold text-[var(--foreground-secondary)]">
               {course.instructor.name}
             </span>
-            {" · "}
-            {course._count.enrollments} learners enrolled
           </p>
+          <div className="mt-2 flex flex-wrap items-center gap-3 text-sm text-[var(--foreground-muted)]">
+            {averageRating !== null ?
+              <span className="flex items-center gap-1">
+                <Star className="h-4 w-4 fill-[var(--accent)] text-[var(--accent)]" />
+                <span className="font-semibold text-[var(--foreground)]">
+                  {averageRating.toFixed(1)}
+                </span>
+                <span>({reviewCount})</span>
+              </span>
+            : null}
+            <span>{course._count.enrollments} learners enrolled</span>
+          </div>
         </div>
       </div>
 
       <div className="page-container py-8 sm:py-10">
-        <div className="flex flex-col gap-8 lg:flex-row lg:gap-10">
+        <div className="flex flex-col gap-8 lg:flex-row lg:items-start lg:gap-10">
           <div className="min-w-0 flex-1 space-y-8">
-            <div className="flex h-48 items-center justify-center rounded-[var(--radius)] border border-[var(--border)] bg-[var(--background-subtle)] sm:h-56">
-              <BookOpen className="h-16 w-16 text-[var(--border-strong)]" strokeWidth={1} />
-            </div>
+            <section className="lg:hidden">{enrollBox}</section>
 
             <section>
               <h2 className="text-xl font-bold text-[var(--foreground)]">About this course</h2>
@@ -151,21 +191,24 @@ export default async function CourseDetailPage({
               </p>
             </section>
 
-            <section className="lg:hidden">{enrollBox}</section>
-
             <section>
-              <h2 className="text-xl font-bold text-[var(--foreground)]">Course content</h2>
+              <h2 className="text-xl font-bold text-[var(--foreground)]">Syllabus</h2>
               <p className="mt-1 text-sm text-[var(--foreground-muted)]">
                 {course.modules.length} sections · {lessonCount} lessons
               </p>
-              <div className="mt-4 space-y-3">
+              <div className="mt-4 space-y-2">
                 {course.modules.map((mod, i) => (
-                  <div key={mod.id} className="surface-card overflow-hidden">
-                    <div className="border-b border-[var(--border)] bg-[var(--background-subtle)] px-4 py-3">
-                      <h3 className="font-bold text-[var(--foreground)]">
-                        {i + 1}. {mod.title}
-                      </h3>
-                    </div>
+                  <details key={mod.id} className="surface-card group overflow-hidden" open={i === 0}>
+                    <summary className="cursor-pointer border-b border-[var(--border)] bg-[var(--background-subtle)] px-4 py-3 font-bold text-[var(--foreground)] marker:content-none">
+                      <span className="flex items-center justify-between gap-2">
+                        <span>
+                          {i + 1}. {mod.title}
+                        </span>
+                        <span className="text-xs font-normal text-[var(--foreground-muted)]">
+                          {mod.lessons.length} lessons
+                        </span>
+                      </span>
+                    </summary>
                     <ul className="divide-y divide-[var(--border)]">
                       {mod.lessons.map((l) => (
                         <li
@@ -183,7 +226,7 @@ export default async function CourseDetailPage({
                         </li>
                       ))}
                     </ul>
-                  </div>
+                  </details>
                 ))}
               </div>
             </section>

@@ -1,12 +1,14 @@
 "use client";
 
 import Link from "next/link";
-import { useSession } from "next-auth/react";
+import type { Session } from "next-auth";
 import { Button } from "@/components/ui/button";
+import { CourseSearch } from "@/components/layout/course-search";
 import {
   dashboardCtaLabelForRole,
   dashboardPathForRole,
 } from "@/lib/dashboard-nav";
+import { useAppSession } from "@/lib/use-app-session";
 import type { Role } from "@/app/generated/prisma/client";
 
 function closingCopy(role: Role): { heading: string; body: string; cta: string } {
@@ -25,57 +27,56 @@ function closingCopy(role: Role): { heading: string; body: string; cta: string }
       };
     default:
       return {
-        heading: "Ready to start learning?",
-        body: "Join thousands building skills with instructor-led courses on Bravio.",
-        cta: "Get started — it's free",
+        heading: "Keep building your skills",
+        body: "Pick up your courses and continue learning where you left off.",
+        cta: dashboardCtaLabelForRole("STUDENT"),
       };
   }
 }
 
-export function HomeHeroCta() {
-  const { data: session, status } = useSession();
-  const loading = status === "loading";
+export function HomeHeroCta({ initialSession }: { initialSession?: Session | null }) {
+  const { session, isAuthenticated, isLoading } = useAppSession(initialSession);
 
-  if (loading) {
+  if (isLoading) {
     return (
-      <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:justify-center">
-        <div className="h-12 w-full animate-pulse rounded-[var(--radius)] bg-[var(--background-subtle)] sm:min-w-[200px] sm:w-auto" />
-        <Link href="/courses" className="w-full sm:w-auto">
-          <Button size="lg" variant="outline" className="w-full sm:min-w-[200px]">
-            Explore courses
-          </Button>
-        </Link>
+      <div className="mt-8 space-y-4">
+        <div className="mx-auto h-14 max-w-2xl animate-pulse rounded-sm bg-white/20" />
+        <div className="flex flex-col gap-3 sm:flex-row sm:justify-center">
+          <div className="h-11 w-full animate-pulse rounded-sm bg-white/20 sm:min-w-[180px] sm:w-auto" />
+          <div className="h-11 w-full animate-pulse rounded-sm bg-white/20 sm:min-w-[180px] sm:w-auto" />
+        </div>
       </div>
     );
   }
 
-  const isAuthenticated = !!session?.user?.id;
-
   return (
     <>
-      <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:justify-center">
-        {isAuthenticated && session.user ?
+      <div className="mx-auto mt-8 max-w-2xl">
+        <CourseSearch size="lg" placeholder="What do you want to learn?" />
+      </div>
+      <div className="mt-6 flex flex-col gap-3 sm:flex-row sm:justify-center">
+        {isAuthenticated && session?.user ?
           <Link href={dashboardPathForRole(session.user.role)} className="w-full sm:w-auto">
-            <Button size="lg" variant="accent" className="w-full sm:min-w-[200px]">
+            <Button size="lg" variant="secondaryOnDark" className="w-full sm:min-w-[200px]">
               {dashboardCtaLabelForRole(session.user.role)}
             </Button>
           </Link>
         : <Link href="/register" className="w-full sm:w-auto">
-            <Button size="lg" variant="accent" className="w-full sm:min-w-[200px]">
+            <Button size="lg" variant="secondaryOnDark" className="w-full sm:min-w-[200px]">
               Join for free
             </Button>
           </Link>
         }
         <Link href="/courses" className="w-full sm:w-auto">
-          <Button size="lg" variant="outline" className="w-full sm:min-w-[200px]">
-            Explore courses
+          <Button size="lg" variant="outlineOnDark" className="w-full sm:min-w-[200px]">
+            Explore catalog
           </Button>
         </Link>
       </div>
       {!isAuthenticated ?
-        <p className="mt-4 text-sm text-[var(--foreground-muted)]">
-          Already learning?{" "}
-          <Link href="/login" className="font-semibold text-[var(--primary)] hover:underline">
+        <p className="mt-4 text-sm text-blue-100">
+          Already on Bravio?{" "}
+          <Link href="/login" className="font-semibold text-white underline-offset-2 hover:underline">
             Log in
           </Link>
         </p>
@@ -84,36 +85,34 @@ export function HomeHeroCta() {
   );
 }
 
-export function HomeClosingCta() {
-  const { data: session, status } = useSession();
-  const loading = status === "loading";
+export function HomeClosingCta({ initialSession }: { initialSession?: Session | null }) {
+  const { session, isAuthenticated, isLoading } = useAppSession(initialSession);
 
-  if (loading) {
+  if (isLoading) {
     return (
-      <div className="mt-6 h-12 w-full max-w-[220px] animate-pulse rounded-[var(--radius)] bg-white/20 sm:mx-auto" />
+      <div className="mt-6 h-12 w-full max-w-[220px] animate-pulse rounded-sm bg-white/20 sm:mx-auto" />
     );
   }
 
-  const isAuthenticated = !!session?.user?.id;
   const closing =
-    isAuthenticated && session.user ?
+    isAuthenticated && session?.user ?
       closingCopy(session.user.role)
     : {
-        heading: "Ready to start learning?",
-        body: "Join thousands building skills with instructor-led courses on Bravio.",
-        cta: "Get started — it's free",
+        heading: "Take the next step toward your goals",
+        body: "Join learners worldwide building skills with expert-led courses.",
+        cta: "Join for free",
       };
   const href =
-    isAuthenticated && session.user ?
+    isAuthenticated && session?.user ?
       dashboardPathForRole(session.user.role)
     : "/register";
 
   return (
     <>
       <h2 className="text-2xl font-bold sm:text-3xl">{closing.heading}</h2>
-      <p className="mx-auto mt-3 max-w-lg text-indigo-100">{closing.body}</p>
+      <p className="mx-auto mt-3 max-w-lg text-blue-100">{closing.body}</p>
       <Link href={href} className="mt-6 inline-block w-full sm:w-auto">
-        <Button size="lg" variant="accent" className="w-full sm:min-w-[220px]">
+        <Button size="lg" variant="secondaryOnDark" className="w-full sm:min-w-[220px]">
           {closing.cta}
         </Button>
       </Link>

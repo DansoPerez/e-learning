@@ -27,7 +27,7 @@ function UserRow({
 }) {
   const online = isUserOnline(u.lastSeenAt, nowMs);
   return (
-    <li className="flex items-center justify-between gap-2 rounded-lg border border-[var(--border)] bg-[var(--background-subtle)]/50 px-3 py-2.5 text-sm transition-colors hover:border-indigo-200 hover:bg-white">
+    <li className="flex items-center justify-between gap-2 rounded-lg border border-[var(--border)] bg-[var(--background-subtle)]/50 px-3 py-2.5 text-sm transition-colors hover:border-[var(--primary-muted)] hover:bg-white">
       <div className="min-w-0">
         <div className="flex items-center gap-2">
           <span

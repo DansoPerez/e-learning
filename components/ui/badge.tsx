@@ -5,7 +5,7 @@ const styles = {
   success: "bg-[var(--success-bg)] text-[var(--success)] border border-emerald-200/80",
   warning: "bg-[var(--warning-bg)] text-amber-800 border border-amber-200/80",
   danger: "bg-[var(--danger-bg)] text-[var(--danger)] border border-red-200/80",
-  info: "bg-[var(--primary-light)] text-[var(--primary)] border border-indigo-200/80",
+  info: "bg-[var(--primary-light)] text-[var(--primary)] border border-[var(--primary-muted)]/50",
 } as const;
 
 export function Badge({

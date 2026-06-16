@@ -8,9 +8,7 @@ function createPrismaClient() {
 
   if (isDevSessionPoolerUrl(process.env.DATABASE_URL ?? "")) {
     console.warn(
-      "[prisma] Local dev is using the Supabase session pooler. " +
-        "Using auto-derived direct connection (db.*.supabase.co). " +
-        "Set DIRECT_DATABASE_URL to override.",
+      "[prisma] Rewriting Supabase session pooler (5432) → transaction pooler (6543) for Prisma.",
     );
   }
 

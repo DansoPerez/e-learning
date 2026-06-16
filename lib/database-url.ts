@@ -6,8 +6,9 @@
  *   - "prepared statement sN already exists"  (connection reused with it cached)
  * Both are fixed by forcing `pgbouncer=true` (statement_cache_size=0) on pooler URLs.
  *
- * Local dev: prefers DIRECT_DATABASE_URL, or auto-derives a direct URI from the pooler
- * string (db.<ref>.supabase.co) to avoid the session pooler's ~15 connection cap.
+ * Session pooler URLs (port 5432) are rewritten to transaction pooler (6543) automatically.
+ * Optional DIRECT_DATABASE_URL: only used when explicitly set (Supabase direct host).
+ * Do not auto-derive direct URLs — many networks cannot reach db.*.supabase.co.
  */
 export function getDatabaseUrl(): string {
   const explicitDirect = process.env.DIRECT_DATABASE_URL?.trim();
@@ -20,13 +21,8 @@ export function getDatabaseUrl(): string {
     );
   }
 
-  if (isLocalDev) {
-    if (explicitDirect) {
-      raw = explicitDirect;
-    } else {
-      const derived = deriveDirectUrlFromPooler(raw.trim());
-      if (derived) raw = derived;
-    }
+  if (isLocalDev && explicitDirect) {
+    raw = explicitDirect;
   }
 
   let url = raw.trim().replace(/^["']|["']$/g, "");
@@ -49,7 +45,7 @@ export function getDatabaseUrl(): string {
 }
 
 /**
- * Build direct Supabase URI from pooler URI:
+ * Build direct Supabase URI from pooler URI (for manual DIRECT_DATABASE_URL setup only).
  * postgres.<ref>:pass@*.pooler.supabase.com → postgres:pass@db.<ref>.supabase.co
  */
 export function deriveDirectUrlFromPooler(poolerUrl: string): string | null {

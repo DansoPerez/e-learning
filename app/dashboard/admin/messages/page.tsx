@@ -117,7 +117,7 @@ export default async function AdminMessagesPage({
               <li key={c.id}>
                 <Link
                   href={`/dashboard/admin/messages/${c.id}`}
-                  className="surface-card flex flex-wrap items-center justify-between gap-3 p-4 transition-colors hover:border-indigo-200"
+                  className="surface-card flex flex-wrap items-center justify-between gap-3 p-4 transition-colors hover:border-[var(--primary-muted)]"
                 >
                   <div>
                     <p className="font-semibold">{titleLine}</p>

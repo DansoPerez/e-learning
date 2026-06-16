@@ -34,8 +34,13 @@ yarn-debug.log*
 yarn-error.log*
 .pnpm-debug.log*
 
-# env files (can opt-in for committing if needed)
-.env*
+# env files — never commit secrets (.env.example is tracked via negation below)
+.env
+.env.*
+!.env.example
+
+# third-party HTML templates (may contain embedded API keys)
+.reference/
 
 # vercel
 .vercel
@@ -48,6 +53,7 @@ next-env.d.ts
 
 # instructor verification uploads
 /public/uploads/selfies/
+/public/uploads/course-thumbnails/
 
 # private lesson PDFs (served via authenticated API)
 /storage/lesson-pdfs/

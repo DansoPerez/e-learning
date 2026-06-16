@@ -22,7 +22,7 @@ export function dashboardNavLabelForRole(role: DashboardRole): string {
     case "INSTRUCTOR":
       return "Teaching";
     default:
-      return "My learning";
+      return "My Learning";
   }
 }
 
@@ -33,7 +33,7 @@ export function dashboardCtaLabelForRole(role: DashboardRole): string {
     case "INSTRUCTOR":
       return "Go to teaching dashboard";
     default:
-      return "Go to my learning";
+      return "Go to My Learning";
   }
 }
 

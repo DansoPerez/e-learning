@@ -12,8 +12,20 @@ export type NavSection = { label: string; items: NavLink[] };
 
 export const EXPLORE_COURSES_LINK: NavLink = {
   href: "/courses",
-  label: "Explore courses",
+  label: "Explore",
 };
+
+export const MY_LEARNING_LINK: NavLink = {
+  href: "/dashboard/student",
+  label: "My Learning",
+};
+
+export function myLearningLink(role: DashboardRole): NavLink {
+  return {
+    href: dashboardPathForRole(role),
+    label: role === "STUDENT" ? "My Learning" : dashboardNavLabelForRole(role),
+  };
+}
 
 export const TEACH_LINK: NavLink = {
   href: "/register?role=instructor",
@@ -43,9 +55,16 @@ export function messagesPathForRole(role: DashboardRole): string {
 }
 
 /** Primary links shown in the site header (public pages). */
-export function publicHeaderLinks(isAuthenticated: boolean): NavLink[] {
-  const links = [EXPLORE_COURSES_LINK];
-  if (!isAuthenticated) links.push(TEACH_LINK);
+export function publicHeaderLinks(
+  isAuthenticated: boolean,
+  role: DashboardRole = "STUDENT",
+): NavLink[] {
+  const links: NavLink[] = [EXPLORE_COURSES_LINK];
+  if (isAuthenticated) {
+    links.push(myLearningLink(role));
+  } else {
+    links.push(TEACH_LINK);
+  }
   return links;
 }
 
@@ -74,10 +93,11 @@ export function flattenNavSections(sections: NavSection[]): NavLink[] {
 
 const STUDENT_SECTIONS: NavSection[] = [
   {
-    label: "Learning",
+    label: "Learner",
     items: [
-      { href: "/dashboard/student", label: "Overview" },
+      { href: "/dashboard/student", label: "My Learning" },
       { href: "/dashboard/student/courses", label: "My courses" },
+      { href: "/courses", label: "Explore" },
       { href: "/dashboard/student/messages", label: "Messages" },
     ],
   },
@@ -91,11 +111,12 @@ const INSTRUCTOR_APPROVED_SECTIONS: NavSection[] = [
   {
     label: "Teaching",
     items: [
-      { href: "/dashboard/instructor", label: "Overview" },
+      { href: "/dashboard/instructor", label: "Teaching home" },
       { href: "/dashboard/instructor/courses", label: "My courses" },
+      { href: "/dashboard/instructor/courses/new", label: "Create course" },
       { href: "/dashboard/instructor/analytics", label: "Analytics" },
       { href: "/dashboard/instructor/messages", label: "Messages" },
-      { href: "/dashboard/instructor/withdrawals", label: "Withdrawals" },
+      { href: "/dashboard/instructor/withdrawals", label: "Earnings" },
     ],
   },
 ];

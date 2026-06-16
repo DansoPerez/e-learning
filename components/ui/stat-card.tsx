@@ -16,7 +16,7 @@ export function StatCard({
   tone?: "primary" | "success" | "accent" | "neutral";
 }) {
   const tones = {
-    primary: "from-indigo-500 to-violet-600",
+    primary: "from-[#0056d2] to-[#2a73cc]",
     success: "from-emerald-500 to-teal-600",
     accent: "from-amber-500 to-orange-500",
     neutral: "from-slate-500 to-slate-600",

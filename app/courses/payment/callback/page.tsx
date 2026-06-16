@@ -18,7 +18,7 @@ export default async function PaymentCallbackPage({
     return (
       <div className="mx-auto max-w-lg px-4 py-20 text-center">
         <h1 className="text-xl font-bold">Payment reference missing</h1>
-        <Link href="/courses" className="mt-4 inline-block text-indigo-600 hover:underline">
+        <Link href="/courses" className="mt-4 inline-block text-[var(--primary)] hover:underline">
           Browse courses
         </Link>
       </div>
@@ -34,7 +34,7 @@ export default async function PaymentCallbackPage({
     return (
       <div className="mx-auto max-w-lg px-4 py-20 text-center">
         <h1 className="text-xl font-bold">Payment not found</h1>
-        <Link href="/courses" className="mt-4 inline-block text-indigo-600 hover:underline">
+        <Link href="/courses" className="mt-4 inline-block text-[var(--primary)] hover:underline">
           Browse courses
         </Link>
       </div>
@@ -51,15 +51,15 @@ export default async function PaymentCallbackPage({
       return (
         <div className="mx-auto max-w-lg px-4 py-20 text-center">
           <h1 className="text-xl font-bold">Payment not confirmed yet</h1>
-          <p className="mt-2 text-zinc-600">
+          <p className="mt-2 text-[var(--foreground-muted)]">
             We could not verify this payment with Paystack. If you were charged, wait a moment
             and refresh, or contact support with reference <strong>{ref}</strong>.
           </p>
           <Link
             href="/dashboard/student"
-            className="mt-4 inline-block text-indigo-600 hover:underline"
+            className="mt-4 inline-block text-[var(--primary)] hover:underline"
           >
-            Go to dashboard
+            Go to My Learning
           </Link>
         </div>
       );
@@ -80,9 +80,11 @@ export default async function PaymentCallbackPage({
   return (
     <div className="mx-auto max-w-lg px-4 py-20 text-center">
       <h1 className="text-xl font-bold">Processing payment</h1>
-      <p className="mt-2 text-zinc-600">Please refresh in a moment if access is not granted.</p>
-      <Link href="/dashboard/student" className="mt-4 inline-block text-indigo-600 hover:underline">
-        Go to dashboard
+      <p className="mt-2 text-[var(--foreground-muted)]">
+        Please refresh in a moment if access is not granted.
+      </p>
+      <Link href="/dashboard/student" className="mt-4 inline-block text-[var(--primary)] hover:underline">
+        Go to My Learning
       </Link>
     </div>
   );

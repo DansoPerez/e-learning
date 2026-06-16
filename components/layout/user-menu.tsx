@@ -30,7 +30,7 @@ export function UserMenu({
   role: DashboardRole;
   onDashboard: boolean;
   onNavigate?: () => void;
-  variant?: "desktop" | "mobile";
+  variant?: "desktop" | "mobile" | "icon";
 }) {
   const [open, setOpen] = useState(false);
   const rootRef = useRef<HTMLDivElement>(null);
@@ -89,6 +89,8 @@ export function UserMenu({
     );
   }
 
+  const isIcon = variant === "icon";
+
   return (
     <div ref={rootRef} className="relative">
       <button
@@ -96,32 +98,54 @@ export function UserMenu({
         onClick={() => setOpen((v) => !v)}
         aria-expanded={open}
         aria-haspopup="menu"
+        aria-label="Account menu"
         className={cn(
-          "inline-flex max-w-[220px] items-center gap-2 rounded-lg border border-[var(--border)] bg-white px-2 py-1.5 pl-1.5 text-left transition-colors hover:bg-[var(--background-subtle)]",
-          open && "border-[var(--border-strong)] bg-[var(--background-subtle)]",
+          isIcon ?
+            "flex h-9 w-9 items-center justify-center rounded-full bg-[var(--primary)] text-xs font-bold text-white touch-manipulation"
+          : "inline-flex max-w-[220px] items-center gap-2 rounded-lg border border-[var(--border)] bg-white px-2 py-1.5 pl-1.5 text-left transition-colors hover:bg-[var(--background-subtle)]",
+          !isIcon && open && "border-[var(--border-strong)] bg-[var(--background-subtle)]",
         )}
       >
-        <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[var(--primary)] text-xs font-bold text-white">
-          {initials(name, email)}
-        </span>
-        <span className="hidden min-w-0 sm:block">
-          <span className="block truncate text-sm font-semibold leading-tight text-[var(--foreground)]">
-            {name?.split(" ")[0] || "Account"}
-          </span>
-        </span>
-        <ChevronDown
-          className={cn(
-            "h-4 w-4 shrink-0 text-[var(--foreground-muted)] transition-transform",
-            open && "rotate-180",
-          )}
-        />
+        {isIcon ?
+          initials(name, email)
+        : <>
+            <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[var(--primary)] text-xs font-bold text-white">
+              {initials(name, email)}
+            </span>
+            <span className="hidden min-w-0 sm:block">
+              <span className="block truncate text-sm font-semibold leading-tight text-[var(--foreground)]">
+                {name?.split(" ")[0] || "Account"}
+              </span>
+            </span>
+            <ChevronDown
+              className={cn(
+                "h-4 w-4 shrink-0 text-[var(--foreground-muted)] transition-transform",
+                open && "rotate-180",
+              )}
+            />
+          </>
+        }
       </button>
 
       {open ?
-        <div
-          role="menu"
-          className="absolute right-0 top-[calc(100%+0.5rem)] z-50 w-56 overflow-hidden rounded-lg border border-[var(--border)] bg-white py-1 shadow-[var(--shadow-lg)]"
-        >
+        <>
+          {isIcon ?
+            <button
+              type="button"
+              className="fixed inset-0 z-[55] bg-black/25 md:hidden"
+              aria-label="Close account menu"
+              onClick={close}
+            />
+          : null}
+          <div
+            role="menu"
+            className={cn(
+              "z-[60] overflow-hidden rounded-lg border border-[var(--border)] bg-white py-1 shadow-[var(--shadow-lg)]",
+              isIcon ?
+                "fixed right-4 top-14 w-[min(100vw-2rem,16rem)] md:absolute md:right-0 md:top-[calc(100%+0.5rem)] md:w-56"
+              : "absolute right-0 top-[calc(100%+0.5rem)] w-56",
+            )}
+          >
           <div className="border-b border-[var(--border)] px-3 py-2.5">
             <p className="truncate text-sm font-semibold text-[var(--foreground)]">
               {name || "Account"}
@@ -154,7 +178,8 @@ export function UserMenu({
               </button>
             </form>
           </div>
-        </div>
+          </div>
+        </>
       : null}
     </div>
   );

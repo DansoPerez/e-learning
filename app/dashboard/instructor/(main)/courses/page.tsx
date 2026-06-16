@@ -2,8 +2,11 @@ import Link from "next/link";
 import { prisma } from "@/lib/prisma";
 import { requireRole } from "@/lib/auth";
 import { InstructorDashboardWrapper } from "@/components/layout/instructor-dashboard-wrapper";
-import { Badge } from "@/components/ui/badge";
-import { formatCurrency } from "@/lib/utils";
+import { InstructorCourseCard } from "@/components/instructor/instructor-course-card";
+import { DashboardSection } from "@/components/ui/dashboard-section";
+import { Button } from "@/components/ui/button";
+import { instructorCourseGridClass } from "@/lib/course-grid";
+import { BookOpen, Plus } from "lucide-react";
 
 export default async function InstructorCoursesPage() {
   const user = await requireRole("INSTRUCTOR", "ADMIN");
@@ -11,42 +14,65 @@ export default async function InstructorCoursesPage() {
   const courses = await prisma.course.findMany({
     where: { instructorId: user.id },
     orderBy: { updatedAt: "desc" },
-    include: { _count: { select: { enrollments: true } } },
+    select: {
+      id: true,
+      title: true,
+      slug: true,
+      status: true,
+      price: true,
+      thumbnailUrl: true,
+      _count: { select: { enrollments: true } },
+    },
   });
+
+  const published = courses.filter((c) => c.status === "PUBLISHED").length;
+  const draft = courses.length - published;
 
   return (
     <InstructorDashboardWrapper title="My courses">
-      <Link
-        href="/dashboard/instructor/courses/new"
-        className="mb-6 inline-block rounded-lg bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-700"
-      >
-        + New course
-      </Link>
-      <div className="space-y-3">
-        {courses.map((c) => (
-          <Link
-            key={c.id}
-            href={`/dashboard/instructor/courses/${c.id}`}
-            className="flex flex-col gap-3 rounded-xl border bg-white p-4 shadow-sm hover:border-indigo-200 sm:flex-row sm:items-center sm:justify-between"
-          >
-            <div className="min-w-0 flex-1">
-              <p className="break-words font-medium">{c.title}</p>
-              <p className="text-sm text-zinc-500">
-                {c._count.enrollments} students · {formatCurrency(Number(c.price))}
-              </p>
-            </div>
-            <Badge
-              variant={
-                c.status === "PUBLISHED" ? "success"
-                : c.status === "PENDING" ? "warning"
-                : "default"
-              }
-            >
-              {c.status}
-            </Badge>
-          </Link>
-        ))}
+      <div className="flex flex-col gap-3 border-b border-[var(--border)] pb-6 sm:flex-row sm:items-center sm:justify-between">
+        <p className="text-sm text-[var(--foreground-muted)]">
+          {courses.length} course{courses.length === 1 ? "" : "s"} · {published} published
+          {draft > 0 ? ` · ${draft} draft` : ""}
+        </p>
+        <Link href="/dashboard/instructor/courses/new">
+          <Button size="sm" className="gap-1.5">
+            <Plus className="h-4 w-4" />
+            Create course
+          </Button>
+        </Link>
       </div>
+
+      <DashboardSection title="Course catalog">
+        {courses.length === 0 ?
+          <div className="surface-card flex flex-col items-center justify-center px-6 py-12 text-center">
+            <BookOpen className="h-10 w-10 text-[var(--primary-muted)]" />
+            <p className="mt-3 text-sm text-[var(--foreground-muted)]">
+              Create a course to start teaching on Bravio.
+            </p>
+            <Link href="/dashboard/instructor/courses/new" className="mt-4">
+              <Button className="gap-1.5">
+                <Plus className="h-4 w-4" />
+                Create course
+              </Button>
+            </Link>
+          </div>
+        : <div className={instructorCourseGridClass}>
+            {courses.map((c) => (
+              <InstructorCourseCard
+                key={c.id}
+                id={c.id}
+                title={c.title}
+                slug={c.slug}
+                status={c.status}
+                price={Number(c.price)}
+                thumbnailUrl={c.thumbnailUrl}
+                enrollmentCount={c._count.enrollments}
+              />
+            ))}
+          </div>
+        }
+      </DashboardSection>
     </InstructorDashboardWrapper>
   );
 }
