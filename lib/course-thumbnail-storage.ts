@@ -11,6 +11,10 @@ const LOCAL_DIR = path.join(process.cwd(), "public", "uploads", "course-thumbnai
 
 const ALLOWED_TYPES = new Set(["image/jpeg", "image/png", "image/webp", "image/gif"]);
 
+function isServerlessFilesystem(): boolean {
+  return process.env.VERCEL === "1" || process.env.AWS_LAMBDA_FUNCTION_NAME !== undefined;
+}
+
 function extensionForMime(mime: string): string {
   switch (mime) {
     case "image/jpeg":
@@ -38,8 +42,15 @@ export async function saveCourseThumbnail(buffer: Buffer, mimeType: string): Pro
     const { url } = await uploadToCloudinary(buffer, {
       folder: "bravio/course-thumbnails",
       resourceType: "image",
+      mimeType,
     });
     return url;
+  }
+
+  if (isServerlessFilesystem()) {
+    throw new Error(
+      "Image uploads on Vercel require Cloudinary. Add CLOUDINARY_CLOUD_NAME, CLOUDINARY_API_KEY, and CLOUDINARY_API_SECRET, or paste an image URL instead.",
+    );
   }
 
   await mkdir(LOCAL_DIR, { recursive: true });
@@ -59,11 +70,20 @@ function isValidThumbnailUrl(value: string): boolean {
   }
 }
 
-/** File upload overrides URL. Empty URL with no file clears the thumbnail on edit. */
+/** File upload overrides URL. Pre-uploaded Cloudinary URL or file clears/persists per field values. */
 export async function resolveCourseThumbnailFromForm(
   formData: FormData,
   existingUrl: string | null = null,
 ): Promise<string | null> {
+  const preUploaded = formData.get("uploadedThumbnailUrl");
+  if (typeof preUploaded === "string" && preUploaded.trim()) {
+    const trimmed = preUploaded.trim();
+    if (!isValidThumbnailUrl(trimmed)) {
+      throw new Error("Enter a valid image URL");
+    }
+    return trimmed;
+  }
+
   const file = formData.get("thumbnail");
   if (file instanceof File && file.size > 0) {
     const mime =

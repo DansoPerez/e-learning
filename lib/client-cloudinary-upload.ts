@@ -1,7 +1,7 @@
 import { MEDIA_LIMITS } from "@/lib/media-limits";
 import { toCloudinaryStorageKey } from "@/lib/cloudinary-keys";
 
-type UploadKind = "video" | "pdf";
+type UploadKind = "video" | "pdf" | "image";
 
 type SignatureResponse = {
   error?: string;
@@ -21,18 +21,18 @@ type CloudinaryUploadResponse = {
 };
 
 function maxBytesForKind(kind: UploadKind): number {
-  return kind === "video" ? MEDIA_LIMITS.videoBytes : MEDIA_LIMITS.pdfBytes;
+  if (kind === "video") return MEDIA_LIMITS.videoBytes;
+  if (kind === "pdf") return MEDIA_LIMITS.pdfBytes;
+  return MEDIA_LIMITS.thumbnailBytes;
 }
 
 function validateFile(file: File, kind: UploadKind): void {
   const maxBytes = maxBytesForKind(kind);
   const maxMb = Math.round(maxBytes / (1024 * 1024));
   if (file.size > maxBytes) {
-    throw new Error(
-      kind === "video" ?
-        `Video must be ${maxMb}MB or smaller.`
-      : `PDF must be ${maxMb}MB or smaller.`,
-    );
+    if (kind === "video") throw new Error(`Video must be ${maxMb}MB or smaller.`);
+    if (kind === "pdf") throw new Error(`PDF must be ${maxMb}MB or smaller.`);
+    throw new Error(`Image must be ${maxMb}MB or smaller.`);
   }
 
   if (kind === "video") {
@@ -42,15 +42,22 @@ function validateFile(file: File, kind: UploadKind): void {
     return;
   }
 
-  const isPdf = file.type === "application/pdf" || /\.pdf$/i.test(file.name);
-  if (!isPdf) throw new Error("Upload a PDF file only.");
+  if (kind === "pdf") {
+    const isPdf = file.type === "application/pdf" || /\.pdf$/i.test(file.name);
+    if (!isPdf) throw new Error("Upload a PDF file only.");
+    return;
+  }
+
+  const allowedImage =
+    file.type.startsWith("image/") || /\.(jpe?g|png|webp|gif)$/i.test(file.name);
+  if (!allowedImage) throw new Error("Upload JPEG, PNG, WebP, or GIF only.");
 }
 
 /** Upload directly to Cloudinary from the browser (bypasses Vercel's ~4.5MB body limit). */
-export async function uploadLessonFileToCloudinary(
+export async function uploadFileToCloudinary(
   file: File,
   kind: UploadKind,
-): Promise<{ videoUrl?: string; pdfStorageKey?: string }> {
+): Promise<{ videoUrl?: string; pdfStorageKey?: string; imageUrl?: string }> {
   validateFile(file, kind);
 
   const sigRes = await fetch(`/api/instructor/cloudinary-signature?kind=${kind}`);
@@ -66,8 +73,8 @@ export async function uploadLessonFileToCloudinary(
   if (kind === "pdf" && !publicId) {
     throw new Error("Invalid PDF upload signature from server");
   }
-  if (kind === "video" && !folder) {
-    throw new Error("Invalid video upload signature from server");
+  if ((kind === "video" || kind === "image") && !folder) {
+    throw new Error("Invalid upload signature from server");
   }
 
   const body = new FormData();
@@ -96,5 +103,40 @@ export async function uploadLessonFileToCloudinary(
     return { videoUrl: data.secure_url };
   }
 
+  if (kind === "image") {
+    if (!data.secure_url) throw new Error("Cloudinary did not return an image URL");
+    return { imageUrl: data.secure_url };
+  }
+
   return { pdfStorageKey: toCloudinaryStorageKey(data.public_id) };
+}
+
+export async function uploadLessonFileToCloudinary(
+  file: File,
+  kind: "video" | "pdf",
+): Promise<{ videoUrl?: string; pdfStorageKey?: string }> {
+  return uploadFileToCloudinary(file, kind);
+}
+
+export async function uploadCourseThumbnailToCloudinary(
+  file: File,
+): Promise<{ imageUrl: string }> {
+  const result = await uploadFileToCloudinary(file, "image");
+  if (!result.imageUrl) throw new Error("Cloudinary did not return an image URL");
+  return { imageUrl: result.imageUrl };
+}
+
+/** Uploads a selected thumbnail file before the server action runs (Cloudinary only). */
+export async function prepareCourseThumbnailFormData(
+  formData: FormData,
+  cloudinaryReady: boolean,
+): Promise<void> {
+  const file = formData.get("thumbnail");
+  if (!(file instanceof File) || file.size === 0) return;
+
+  if (!cloudinaryReady) return;
+
+  const { imageUrl } = await uploadCourseThumbnailToCloudinary(file);
+  formData.set("uploadedThumbnailUrl", imageUrl);
+  formData.delete("thumbnail");
 }

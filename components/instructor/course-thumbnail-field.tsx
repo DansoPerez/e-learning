@@ -5,15 +5,18 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { ImageIcon, Link2 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { MEDIA_LIMITS } from "@/lib/media-limits";
 
-const maxMb = 5;
+const maxMb = Math.round(MEDIA_LIMITS.thumbnailBytes / (1024 * 1024));
 
 export function CourseThumbnailField({
   idPrefix,
   currentUrl,
+  cloudinaryReady,
 }: {
   idPrefix: string;
   currentUrl?: string | null;
+  cloudinaryReady: boolean;
 }) {
   const [preview, setPreview] = useState<string | null>(currentUrl ?? null);
 
@@ -42,6 +45,13 @@ export function CourseThumbnailField({
         <ImageIcon className="h-4 w-4 text-[var(--primary)]" />
         Course cover image
       </div>
+
+      {!cloudinaryReady ?
+        <p className="rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-900">
+          On Vercel, file uploads need Cloudinary env vars. Locally, files save to disk. You can
+          always paste an image URL instead.
+        </p>
+      : null}
 
       <div
         className={cn(
@@ -76,7 +86,9 @@ export function CourseThumbnailField({
           accept="image/jpeg,image/png,image/webp,image/gif,.jpg,.jpeg,.png,.webp,.gif"
           onChange={onFileChange}
         />
-        <p className="text-xs text-[var(--foreground-muted)]">JPEG, PNG, WebP, or GIF</p>
+        <p className="text-xs text-[var(--foreground-muted)]">
+          JPEG, PNG, WebP, or GIF. Uploads go directly to Cloudinary.
+        </p>
       </div>
 
       <div className="space-y-1.5">
