@@ -42,3 +42,18 @@ export async function assertQuizInCourse(quizId: string, courseId: string) {
     redirect(`/dashboard/instructor/courses/${courseId}?error=quiz-not-found`);
   }
 }
+
+/** Ensures lesson belongs to the given course (via its module). */
+export async function assertLessonInCourse(
+  lessonId: string,
+  courseId: string,
+): Promise<{ id: string; moduleId: string; videoUrl: string | null; pdfStorageKey: string | null }> {
+  const lesson = await prisma.lesson.findFirst({
+    where: { id: lessonId, module: { courseId } },
+    select: { id: true, moduleId: true, videoUrl: true, pdfStorageKey: true },
+  });
+  if (!lesson) {
+    redirect(`/dashboard/instructor/courses/${courseId}?error=lesson-not-found`);
+  }
+  return lesson;
+}
