@@ -48,17 +48,36 @@ export function cloudinaryFolderForKind(kind: CloudinaryUploadKind): string {
   return kind === "pdf" ? LESSON_PDF_FOLDER : LESSON_VIDEO_FOLDER;
 }
 
-/** Signed delivery URL for raw files (PDFs). Required when strict delivery is enabled. */
-export function cloudinarySignedRawUrl(publicId: string, ttlSeconds = 3600): string {
+function isPdfBuffer(buffer: Buffer): boolean {
+  return buffer.length >= 4 && buffer.subarray(0, 4).toString("utf8") === "%PDF";
+}
+
+function cloudinaryPdfDownloadCandidates(publicId: string, ttlSeconds = 3600): string[] {
   ensureConfigured();
   const expiresAt = Math.round(Date.now() / 1000) + ttlSeconds;
-  return cloudinary.url(publicId, {
-    resource_type: "raw",
-    type: "upload",
-    secure: true,
-    sign_url: true,
+  const baseOptions = {
+    resource_type: "raw" as const,
+    type: "upload" as const,
     expires_at: expiresAt,
-  });
+    attachment: false,
+  };
+
+  const urls = [
+    // Full public_id (including .pdf suffix when stored that way in Cloudinary).
+    cloudinary.utils.private_download_url(publicId, "", baseOptions),
+  ];
+
+  if (!publicId.toLowerCase().endsWith(".pdf")) {
+    urls.push(cloudinary.utils.private_download_url(publicId, "pdf", baseOptions));
+    urls.push(cloudinary.utils.private_download_url(`${publicId}.pdf`, "", baseOptions));
+  }
+
+  return [...new Set(urls)];
+}
+
+/** Time-limited signed download URL for raw PDFs (works with restricted PDF delivery). */
+export function cloudinarySignedRawUrl(publicId: string, ttlSeconds = 3600): string {
+  return cloudinaryPdfDownloadCandidates(publicId, ttlSeconds)[0]!;
 }
 
 export function createPdfUploadPublicId(): string {
@@ -153,14 +172,15 @@ export async function fetchCloudinaryRaw(publicId: string): Promise<Buffer> {
 
   let lastStatus = 0;
   for (const candidate of candidates) {
-    const signedUrl = cloudinarySignedRawUrl(candidate);
-    const res = await fetch(signedUrl);
-    lastStatus = res.status;
-    if (!res.ok) continue;
+    for (const url of cloudinaryPdfDownloadCandidates(candidate)) {
+      const res = await fetch(url);
+      lastStatus = res.status;
+      if (!res.ok) continue;
 
-    const buffer = Buffer.from(await res.arrayBuffer());
-    if (buffer.length >= 4 && buffer.subarray(0, 4).toString("utf8") === "%PDF") {
-      return buffer;
+      const buffer = Buffer.from(await res.arrayBuffer());
+      if (isPdfBuffer(buffer)) {
+        return buffer;
+      }
     }
   }
 
