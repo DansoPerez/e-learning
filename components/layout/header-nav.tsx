@@ -25,6 +25,7 @@ function navTabClass(active: boolean) {
 export function HeaderNav({ initialSession }: { initialSession: Session | null }) {
   const pathname = usePathname();
   const { session, isAuthenticated, isLoading, role } = useAppSession(initialSession);
+  const user = session?.user;
   const onDashboard = pathname.startsWith("/dashboard");
   const onLearn = pathname.startsWith("/learn");
   const isAppShell = onDashboard || onLearn;
@@ -113,14 +114,14 @@ export function HeaderNav({ initialSession }: { initialSession: Session | null }
           <div className="ml-auto hidden items-center gap-2 md:flex">
             {isLoading ?
               <span className="h-9 w-32 animate-pulse rounded-sm bg-[var(--background-subtle)]" />
-            : isAuthenticated && session.user ?
+            : isAuthenticated && user ?
               <>
                 {isAppShell ?
                   <NotificationBell />
                 : null}
                 <UserMenu
-                  name={session.user.name}
-                  email={session.user.email}
+                  name={user.name}
+                  email={user.email}
                   role={role}
                   onDashboard={onDashboard}
                 />
@@ -139,15 +140,15 @@ export function HeaderNav({ initialSession }: { initialSession: Session | null }
           </div>
 
           <div className="ml-auto flex items-center gap-2 md:hidden">
-            {isAuthenticated && session.user ?
+            {isAuthenticated && user ?
               <>
                 {isAppShell ?
                   <NotificationBell />
                 : null}
                 <UserMenu
                   variant="icon"
-                  name={session.user.name}
-                  email={session.user.email}
+                  name={user.name}
+                  email={user.email}
                   role={role}
                   onDashboard={onDashboard}
                 />
