@@ -120,6 +120,7 @@ export default async function InstructorCourseEditPage({
 
       <EditCourseForm
         courseId={course.id}
+        cloudinaryReady={cloudinaryReady}
         course={{
           title: course.title,
           description: course.description,

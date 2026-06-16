@@ -13,6 +13,7 @@ export { isCloudinaryStorageKey, publicIdFromStorageKey, toCloudinaryStorageKey 
 
 const LESSON_PDF_FOLDER = "bravio/lesson-pdfs";
 const LESSON_VIDEO_FOLDER = "bravio/lesson-videos";
+const COURSE_THUMBNAIL_FOLDER = "bravio/course-thumbnails";
 
 export function getCloudinaryConfig() {
   return {
@@ -42,10 +43,12 @@ function ensureConfigured(): void {
   });
 }
 
-export type CloudinaryUploadKind = "pdf" | "video";
+export type CloudinaryUploadKind = "pdf" | "video" | "image";
 
 export function cloudinaryFolderForKind(kind: CloudinaryUploadKind): string {
-  return kind === "pdf" ? LESSON_PDF_FOLDER : LESSON_VIDEO_FOLDER;
+  if (kind === "pdf") return LESSON_PDF_FOLDER;
+  if (kind === "video") return LESSON_VIDEO_FOLDER;
+  return COURSE_THUMBNAIL_FOLDER;
 }
 
 function isPdfBuffer(buffer: Buffer): boolean {
@@ -116,7 +119,7 @@ export function createSignedUploadParams(kind: CloudinaryUploadKind) {
     timestamp,
     signature,
     folder,
-    uploadPath: "video/upload" as const,
+    uploadPath: kind === "image" ? "image/upload" as const : "video/upload" as const,
   };
 }
 

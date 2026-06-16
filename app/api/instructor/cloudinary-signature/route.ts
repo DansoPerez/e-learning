@@ -10,7 +10,7 @@ import {
 export const runtime = "nodejs";
 
 function parseKind(value: string | null): CloudinaryUploadKind | null {
-  if (value === "pdf" || value === "video") return value;
+  if (value === "pdf" || value === "video" || value === "image") return value;
   return null;
 }
 
