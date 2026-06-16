@@ -1,9 +1,11 @@
 import {
   cloudinaryPdfViewUrl,
+  cloudinarySignedRawUrl,
   fetchCloudinaryRaw,
   isCloudinaryEnabled,
   isCloudinaryStorageKey,
   publicIdFromStorageKey,
+  toCloudinaryStorageKey,
 } from "@/lib/cloudinary";
 import { MEDIA_LIMITS } from "@/lib/media-limits";
 import { saveLessonMediaToCloudinary } from "@/lib/instructor-lesson-upload";
@@ -55,8 +57,24 @@ export async function saveLessonVideo(buffer: Buffer): Promise<string> {
 }
 
 export async function readLessonPdf(storageKey: string): Promise<Buffer> {
+  if (storageKey.startsWith("http://") || storageKey.startsWith("https://")) {
+    const res = await fetch(storageKey);
+    if (!res.ok) throw new Error(`Failed to fetch PDF (${res.status})`);
+    return Buffer.from(await res.arrayBuffer());
+  }
+
   if (isCloudinaryStorageKey(storageKey)) {
     return fetchCloudinaryRaw(publicIdFromStorageKey(storageKey));
+  }
+
+  if (storageKey.includes("/") && !/^[a-f0-9-]+\.pdf$/i.test(storageKey)) {
+    return fetchCloudinaryRaw(storageKey);
+  }
+
+  if (isServerlessFilesystem()) {
+    throw new Error(
+      "This PDF was saved on a local machine and is not available in production. Re-upload the PDF from the instructor course page.",
+    );
   }
 
   if (!/^[a-f0-9-]+\.pdf$/i.test(storageKey)) {
@@ -65,8 +83,20 @@ export async function readLessonPdf(storageKey: string): Promise<Buffer> {
   return readFile(path.join(PDF_DIR, storageKey));
 }
 
-export function lessonPdfProxyUrl(lessonId: string): string {
-  return `/api/lessons/${lessonId}/pdf#toolbar=0&navpanes=0`;
+/** Time-limited signed URL for inline PDF viewing (Cloudinary-backed lessons). */
+export function lessonPdfViewUrl(storageKey: string): string | null {
+  if (isCloudinaryStorageKey(storageKey)) {
+    if (!isCloudinaryEnabled()) return null;
+    return cloudinarySignedRawUrl(publicIdFromStorageKey(storageKey));
+  }
+  if (storageKey.startsWith("http://") || storageKey.startsWith("https://")) {
+    return storageKey;
+  }
+  if (storageKey.includes("/") && !/^[a-f0-9-]+\.pdf$/i.test(storageKey)) {
+    if (!isCloudinaryEnabled()) return null;
+    return cloudinarySignedRawUrl(storageKey);
+  }
+  return null;
 }
 
-export { cloudinaryPdfViewUrl, MEDIA_LIMITS };
+export { cloudinaryPdfViewUrl, cloudinarySignedRawUrl, MEDIA_LIMITS, toCloudinaryStorageKey };

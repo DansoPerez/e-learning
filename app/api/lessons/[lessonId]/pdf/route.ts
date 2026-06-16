@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { getApiUser } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { hasCourseAccess } from "@/lib/services/enrollment";
-import { readLessonPdf } from "@/lib/lesson-pdf-storage";
+import { lessonPdfViewUrl, readLessonPdf } from "@/lib/lesson-pdf-storage";
 
 export async function GET(
   _request: Request,
@@ -32,6 +32,11 @@ export async function GET(
     return NextResponse.json({ error: "Access denied" }, { status: 403 });
   }
 
+  const cloudinaryViewUrl = lessonPdfViewUrl(lesson.pdfStorageKey);
+  if (cloudinaryViewUrl) {
+    return NextResponse.redirect(cloudinaryViewUrl);
+  }
+
   try {
     const buffer = await readLessonPdf(lesson.pdfStorageKey);
     return new NextResponse(new Uint8Array(buffer), {
@@ -43,7 +48,10 @@ export async function GET(
         "X-Content-Type-Options": "nosniff",
       },
     });
-  } catch {
-    return NextResponse.json({ error: "Document unavailable" }, { status: 404 });
+  } catch (err) {
+    console.error("[lesson-pdf] failed:", err);
+    const message =
+      err instanceof Error ? err.message : "Document unavailable";
+    return NextResponse.json({ error: message }, { status: 404 });
   }
 }

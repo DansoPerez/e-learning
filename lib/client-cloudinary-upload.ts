@@ -10,6 +10,7 @@ type SignatureResponse = {
   timestamp?: number;
   signature?: string;
   folder?: string;
+  publicId?: string;
   uploadPath?: string;
 };
 
@@ -58,9 +59,15 @@ export async function uploadLessonFileToCloudinary(
     throw new Error(sig.error ?? "Could not start upload");
   }
 
-  const { cloudName, apiKey, timestamp, signature, folder, uploadPath } = sig;
-  if (!cloudName || !apiKey || !timestamp || !signature || !folder || !uploadPath) {
+  const { cloudName, apiKey, timestamp, signature, folder, publicId, uploadPath } = sig;
+  if (!cloudName || !apiKey || !timestamp || !signature || !uploadPath) {
     throw new Error("Invalid upload signature from server");
+  }
+  if (kind === "pdf" && !publicId) {
+    throw new Error("Invalid PDF upload signature from server");
+  }
+  if (kind === "video" && !folder) {
+    throw new Error("Invalid video upload signature from server");
   }
 
   const body = new FormData();
@@ -68,7 +75,11 @@ export async function uploadLessonFileToCloudinary(
   body.append("api_key", apiKey);
   body.append("timestamp", String(timestamp));
   body.append("signature", signature);
-  body.append("folder", folder);
+  if (kind === "pdf") {
+    body.append("public_id", publicId!);
+  } else {
+    body.append("folder", folder!);
+  }
 
   const uploadRes = await fetch(
     `https://api.cloudinary.com/v1_1/${cloudName}/${uploadPath}`,
