@@ -1,10 +1,17 @@
 import { v2 as cloudinary } from "cloudinary";
 import { readEnv } from "@/lib/env-utils";
 import { MEDIA_LIMITS, VERCEL_UPLOAD_BYTES } from "@/lib/media-limits";
+import {
+  isCloudinaryStorageKey,
+  publicIdFromStorageKey,
+  toCloudinaryStorageKey,
+} from "@/lib/cloudinary-keys";
 
 export { MEDIA_LIMITS, VERCEL_UPLOAD_BYTES };
+export { isCloudinaryStorageKey, publicIdFromStorageKey, toCloudinaryStorageKey };
 
-const CLOUDINARY_PREFIX = "cloudinary:";
+const LESSON_PDF_FOLDER = "bravio/lesson-pdfs";
+const LESSON_VIDEO_FOLDER = "bravio/lesson-videos";
 
 export function getCloudinaryConfig() {
   return {
@@ -34,16 +41,32 @@ function ensureConfigured(): void {
   });
 }
 
-export function toCloudinaryStorageKey(publicId: string): string {
-  return `${CLOUDINARY_PREFIX}${publicId}`;
+export type CloudinaryUploadKind = "pdf" | "video";
+
+export function cloudinaryFolderForKind(kind: CloudinaryUploadKind): string {
+  return kind === "pdf" ? LESSON_PDF_FOLDER : LESSON_VIDEO_FOLDER;
 }
 
-export function isCloudinaryStorageKey(key: string): boolean {
-  return key.startsWith(CLOUDINARY_PREFIX);
-}
+/** Signed params for browser → Cloudinary uploads (file never hits Vercel). */
+export function createSignedUploadParams(kind: CloudinaryUploadKind) {
+  ensureConfigured();
+  const { cloudName, apiKey, apiSecret } = getCloudinaryConfig();
+  if (!cloudName || !apiKey || !apiSecret) {
+    throw new Error("Cloudinary is not configured.");
+  }
 
-export function publicIdFromStorageKey(key: string): string {
-  return key.slice(CLOUDINARY_PREFIX.length);
+  const timestamp = Math.round(Date.now() / 1000);
+  const folder = cloudinaryFolderForKind(kind);
+  const signature = cloudinary.utils.api_sign_request({ timestamp, folder }, apiSecret);
+
+  return {
+    cloudName,
+    apiKey,
+    timestamp,
+    signature,
+    folder,
+    uploadPath: kind === "pdf" ? "raw/upload" : "video/upload",
+  };
 }
 
 export async function uploadToCloudinary(
