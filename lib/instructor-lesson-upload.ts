@@ -30,7 +30,7 @@ export async function saveLessonMediaToCloudinary(
   }
 
   if (buffer.length > MEDIA_LIMITS.pdfBytes) {
-    throw new Error("PDF too large (max 20MB)");
+    throw new Error(`PDF too large (max ${Math.round(MEDIA_LIMITS.pdfBytes / (1024 * 1024))}MB)`);
   }
   const { publicId } = await uploadToCloudinary(buffer, {
     folder: "bravio/lesson-pdfs",

@@ -63,13 +63,14 @@ export async function POST(request: Request) {
   }
 
   const maxBytes = kind === "video" ? MEDIA_LIMITS.videoBytes : MEDIA_LIMITS.pdfBytes;
+  const maxMb = Math.round(maxBytes / (1024 * 1024));
   if (file.size > maxBytes) {
     return NextResponse.json(
       {
         error:
           kind === "video" ?
-            "Video must be 100MB or smaller."
-          : "PDF must be 20MB or smaller.",
+            `Video must be ${maxMb}MB or smaller.`
+          : `PDF must be ${maxMb}MB or smaller.`,
       },
       { status: 413 },
     );

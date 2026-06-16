@@ -19,7 +19,7 @@ function isServerlessFilesystem(): boolean {
 
 export async function saveLessonPdf(buffer: Buffer): Promise<string> {
   if (buffer.length > MEDIA_LIMITS.pdfBytes) {
-    throw new Error("PDF too large (max 20MB)");
+    throw new Error(`PDF too large (max ${Math.round(MEDIA_LIMITS.pdfBytes / (1024 * 1024))}MB)`);
   }
 
   if (isCloudinaryEnabled()) {

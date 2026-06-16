@@ -5,31 +5,9 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { uploadLessonFileToCloudinary } from "@/lib/client-cloudinary-upload";
 import { MEDIA_LIMITS } from "@/lib/media-limits";
 import { Film, FileText, Link2 } from "lucide-react";
-
-async function uploadLessonFile(file: File, kind: "video" | "pdf") {
-  const body = new FormData();
-  body.append("file", file);
-  body.append("kind", kind);
-
-  const res = await fetch("/api/instructor/lesson-media", {
-    method: "POST",
-    body,
-  });
-
-  const data = (await res.json().catch(() => ({}))) as {
-    error?: string;
-    videoUrl?: string;
-    pdfStorageKey?: string;
-  };
-
-  if (!res.ok) {
-    throw new Error(data.error ?? "Upload failed");
-  }
-
-  return data;
-}
 
 export function LessonAddForm({
   moduleId,
@@ -57,14 +35,14 @@ export function LessonAddForm({
     try {
       const videoFile = formData.get("video");
       if (videoFile instanceof File && videoFile.size > 0) {
-        const { videoUrl } = await uploadLessonFile(videoFile, "video");
+        const { videoUrl } = await uploadLessonFileToCloudinary(videoFile, "video");
         if (videoUrl) formData.set("videoUrl", videoUrl);
         formData.delete("video");
       }
 
       const pdfFile = formData.get("pdf");
       if (pdfFile instanceof File && pdfFile.size > 0) {
-        const { pdfStorageKey } = await uploadLessonFile(pdfFile, "pdf");
+        const { pdfStorageKey } = await uploadLessonFileToCloudinary(pdfFile, "pdf");
         if (pdfStorageKey) formData.set("uploadedPdfStorageKey", pdfStorageKey);
         formData.delete("pdf");
       }
@@ -148,7 +126,7 @@ export function LessonAddForm({
         </div>
         <div className="space-y-1.5">
           <Label htmlFor={`lesson-video-file-${moduleId}`}>
-            Or upload video (max {videoMb}MB; on Vercel direct upload ~4.5MB — use URL for larger files)
+            Or upload video (max {videoMb}MB — uploads go directly to Cloudinary)
           </Label>
           <Input
             id={`lesson-video-file-${moduleId}`}
@@ -170,10 +148,15 @@ export function LessonAddForm({
         </div>
         <div className="space-y-1.5">
           <Label htmlFor={`lesson-pdf-${moduleId}`}>PDF (view-only for students)</Label>
-          <Input id={`lesson-pdf-${moduleId}`} name="pdf" type="file" accept="application/pdf,.pdf" />
+          <Input
+            id={`lesson-pdf-${moduleId}`}
+            name="pdf"
+            type="file"
+            accept="application/pdf,.pdf"
+            disabled={!cloudinaryReady}
+          />
           <p className="text-xs text-[var(--foreground-muted)]">
-            Max {pdfMb}MB. On Vercel, direct upload is limited to ~4.5MB — use written content for larger
-            materials.
+            Max {pdfMb}MB. Uploads go directly to Cloudinary (not through Vercel).
           </p>
         </div>
         <div className="space-y-1.5">

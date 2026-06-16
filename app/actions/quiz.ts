@@ -1,6 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { redirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { requireAuth, requireRole } from "@/lib/auth";
 import { hasCourseAccess, recalculateCourseEnrollments, updateCourseProgress } from "@/lib/services/enrollment";
@@ -8,11 +9,16 @@ import { questionSchema, quizSchema } from "@/lib/validations/quiz";
 import { logAudit } from "@/lib/audit-log";
 import { requireApprovedInstructor } from "@/lib/instructor";
 import { assertCanEditCourse, assertQuizInCourse } from "@/lib/course-owner";
+import { rethrowNavigationError } from "@/lib/navigation-errors";
 import {
   createQuizSessionToken,
   verifyQuizSessionToken,
 } from "@/lib/quiz-session";
 import type { QuestionType } from "@/app/generated/prisma/client";
+
+function quizEditPath(courseId: string, quizId: string) {
+  return `/dashboard/instructor/courses/${courseId}/quizzes/${quizId}`;
+}
 
 function normalizeQuizAnswer(value: string, type: QuestionType): string {
   const trimmed = value.trim();
@@ -54,16 +60,25 @@ export async function createQuizAction(
     durationMin: formData.get("durationMin") || undefined,
     passingScore: formData.get("passingScore") ?? 70,
   });
-  if (!parsed.success) return;
+  if (!parsed.success) {
+    redirect(`/dashboard/instructor/courses/${courseId}?error=invalid-quiz`);
+  }
 
-  const quiz = await prisma.quiz.create({
-    data: { courseId, ...parsed.data, durationMin: parsed.data.durationMin ?? null },
-  });
+  try {
+    const quiz = await prisma.quiz.create({
+      data: { courseId, ...parsed.data, durationMin: parsed.data.durationMin ?? null },
+    });
 
-  await recalculateCourseEnrollments(courseId);
-  revalidatePath(`/dashboard/instructor/courses/${courseId}`);
-  revalidatePath(`/dashboard/instructor/courses/${courseId}/quizzes/${quiz.id}`);
-  revalidatePath(`/learn/${course.slug}`);
+    await recalculateCourseEnrollments(courseId);
+    revalidatePath(`/dashboard/instructor/courses/${courseId}`);
+    revalidatePath(quizEditPath(courseId, quiz.id));
+    revalidatePath(`/learn/${course.slug}`);
+    redirect(`${quizEditPath(courseId, quiz.id)}?success=quiz-created`);
+  } catch (err) {
+    rethrowNavigationError(err);
+    console.error("[quiz] createQuizAction failed:", err);
+    redirect(`/dashboard/instructor/courses/${courseId}?error=save-failed`);
+  }
 }
 
 export async function addQuestionAction(
@@ -91,21 +106,35 @@ export async function addQuestionAction(
     correctAnswer: formData.get("correctAnswer"),
     orderIndex: formData.get("orderIndex") ?? 0,
   });
-  if (!parsed.success) return;
+  if (!parsed.success) {
+    const issue = parsed.error.issues[0]?.message ?? "invalid-question";
+    const code =
+      issue.includes("options") ? "invalid-mcq-options"
+      : issue.includes("True/false") ? "invalid-true-false"
+      : "invalid-question";
+    redirect(`${quizEditPath(courseId, quizId)}?error=${encodeURIComponent(code)}`);
+  }
 
-  await prisma.question.create({
-    data: {
-      quizId,
-      question: parsed.data.question,
-      type: parsed.data.type,
-      options: parsed.data.options ?? undefined,
-      correctAnswer: parsed.data.correctAnswer,
-      orderIndex: parsed.data.orderIndex,
-    },
-  });
+  try {
+    await prisma.question.create({
+      data: {
+        quizId,
+        question: parsed.data.question,
+        type: parsed.data.type,
+        options: parsed.data.options ?? undefined,
+        correctAnswer: parsed.data.correctAnswer,
+        orderIndex: parsed.data.orderIndex,
+      },
+    });
 
-  await recalculateCourseEnrollments(courseId);
-  revalidateQuizPaths(courseId, quizId, course.slug);
+    await recalculateCourseEnrollments(courseId);
+    revalidateQuizPaths(courseId, quizId, course.slug);
+    redirect(`${quizEditPath(courseId, quizId)}?success=question-added`);
+  } catch (err) {
+    rethrowNavigationError(err);
+    console.error("[quiz] addQuestionAction failed:", err);
+    redirect(`${quizEditPath(courseId, quizId)}?error=save-failed`);
+  }
 }
 
 export async function updateQuizAction(
@@ -125,14 +154,23 @@ export async function updateQuizAction(
     durationMin: formData.get("durationMin") || undefined,
     passingScore: formData.get("passingScore") ?? 70,
   });
-  if (!parsed.success) return;
+  if (!parsed.success) {
+    redirect(`${quizEditPath(courseId, quizId)}?error=invalid-quiz`);
+  }
 
-  await prisma.quiz.update({
-    where: { id: quizId },
-    data: { ...parsed.data, durationMin: parsed.data.durationMin ?? null },
-  });
+  try {
+    await prisma.quiz.update({
+      where: { id: quizId },
+      data: { ...parsed.data, durationMin: parsed.data.durationMin ?? null },
+    });
 
-  revalidateQuizPaths(courseId, quizId, course.slug);
+    revalidateQuizPaths(courseId, quizId, course.slug);
+    redirect(`${quizEditPath(courseId, quizId)}?success=quiz-updated`);
+  } catch (err) {
+    rethrowNavigationError(err);
+    console.error("[quiz] updateQuizAction failed:", err);
+    redirect(`${quizEditPath(courseId, quizId)}?error=save-failed`);
+  }
 }
 
 export async function deleteQuestionAction(

@@ -15,13 +15,37 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { ArrowLeft } from "lucide-react";
 
+const QUIZ_ERRORS: Record<string, string> = {
+  "invalid-quiz": "Check the quiz title and passing score, then try again.",
+  "invalid-question": "Check the question text and fields, then try again.",
+  "invalid-mcq-options":
+    "Multiple-choice questions need at least two options (one per line), and the correct answer must match one of them exactly.",
+  "invalid-true-false": 'True/false questions need "true" or "false" as the correct answer.',
+  "save-failed":
+    "Could not save your changes. Check Vercel logs and confirm DATABASE_URL is set, then try again.",
+};
+
+const QUIZ_SUCCESS: Record<string, string> = {
+  "quiz-created": "Quiz created.",
+  "quiz-updated": "Quiz settings saved.",
+  "question-added": "Question added.",
+};
+
+function questionOptions(options: unknown): string[] {
+  if (!Array.isArray(options)) return [];
+  return options.filter((option): option is string => typeof option === "string");
+}
+
 export default async function InstructorQuizEditPage({
   params,
+  searchParams,
 }: {
   params: Promise<{ id: string; quizId: string }>;
+  searchParams: Promise<{ error?: string; success?: string }>;
 }) {
   const user = await requireRole("INSTRUCTOR", "ADMIN");
   const { id: courseId, quizId } = await params;
+  const { error, success } = await searchParams;
 
   const course = await prisma.course.findUnique({
     where: { id: courseId },
@@ -39,6 +63,16 @@ export default async function InstructorQuizEditPage({
 
   return (
     <InstructorDashboardWrapper title={quiz.title}>
+      {error ?
+        <p className="mb-6 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800">
+          {QUIZ_ERRORS[error] ?? decodeURIComponent(error)}
+        </p>
+      : null}
+      {success ?
+        <p className="mb-6 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-800">
+          {QUIZ_SUCCESS[success] ?? "Saved."}
+        </p>
+      : null}
       <Link
         href={`/dashboard/instructor/courses/${courseId}`}
         className="mb-6 inline-flex items-center gap-2 text-sm font-semibold text-[var(--primary)] hover:underline"
@@ -104,13 +138,16 @@ export default async function InstructorQuizEditPage({
                   Question {i + 1} · {q.type}
                 </p>
                 <p className="mt-1 font-medium">{q.question}</p>
-                {q.options ?
-                  <ul className="mt-2 list-inside list-disc text-sm text-[var(--foreground-secondary)]">
-                    {(q.options as string[]).map((opt) => (
-                      <li key={opt}>{opt}</li>
-                    ))}
-                  </ul>
-                : null}
+                {(() => {
+                  const opts = questionOptions(q.options);
+                  return opts.length > 0 ?
+                      <ul className="mt-2 list-inside list-disc text-sm text-[var(--foreground-secondary)]">
+                        {opts.map((opt) => (
+                          <li key={opt}>{opt}</li>
+                        ))}
+                      </ul>
+                    : null;
+                })()}
                 <p className="mt-2 text-sm text-emerald-700">
                   Correct: <span className="font-medium">{q.correctAnswer}</span>
                 </p>

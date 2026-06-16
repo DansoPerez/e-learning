@@ -18,6 +18,9 @@ import { EditCourseForm } from "@/components/instructor/edit-course-form";
 import { CourseAnnouncementForm } from "@/components/instructor/course-announcement-form";
 import { LessonAddForm } from "@/components/instructor/lesson-add-form";
 import { isCloudinaryEnabled } from "@/lib/cloudinary";
+import { MEDIA_LIMITS } from "@/lib/media-limits";
+
+const pdfMaxMb = Math.round(MEDIA_LIMITS.pdfBytes / (1024 * 1024));
 
 const LESSON_ERRORS: Record<string, string> = {
   "invalid-module": "Check the module title and order, then try again.",
@@ -26,7 +29,7 @@ const LESSON_ERRORS: Record<string, string> = {
   "invalid-video": "Upload MP4, WebM, or MOV video only.",
   "video-upload":
     "Video upload failed. Add Cloudinary keys on Vercel or paste a YouTube/Vimeo/video URL instead.",
-  "pdf-too-large": "PDF must be 20MB or smaller.",
+  "pdf-too-large": `PDF must be ${pdfMaxMb}MB or smaller.`,
   "invalid-pdf": "Upload a PDF file only.",
   "pdf-upload": "PDF upload failed. Try again or use written lesson content.",
   "pdf-needs-cloudinary":
@@ -36,6 +39,7 @@ const LESSON_ERRORS: Record<string, string> = {
   unauthorized: "You do not have permission to edit this course.",
   "module-not-found": "That module was not found. Refresh the page and try again.",
   "no-content": "Add at least one module and lesson before submitting this course for review.",
+  "invalid-quiz": "Check the quiz title and passing score, then try again.",
 };
 
 const LESSON_SUCCESS: Record<string, string> = {
