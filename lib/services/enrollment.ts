@@ -147,9 +147,18 @@ export async function recalculateCourseEnrollments(courseId: string) {
     select: { userId: true },
   });
 
-  for (const { userId } of enrollments) {
-    await updateCourseProgress(userId, courseId);
-  }
+  await Promise.all(
+    enrollments.map(async ({ userId }) => {
+      try {
+        await updateCourseProgress(userId, courseId);
+      } catch (err) {
+        console.error(
+          `[enrollment] Failed to recalculate progress for user ${userId} in course ${courseId}:`,
+          err,
+        );
+      }
+    }),
+  );
 }
 
 /** Admin comp enrollment: grant access including paid courses. */

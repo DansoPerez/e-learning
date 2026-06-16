@@ -104,8 +104,13 @@ In Vercel → **Settings** → **Environment Variables**, add:
 | `BREVO_API_KEY` | Optional — registration OTP |
 | `BREVO_FROM_EMAIL` | Verified Brevo sender |
 | `GOOGLE_CLIENT_ID` / `GOOGLE_CLIENT_SECRET` | Optional OAuth |
+| `CLOUDINARY_CLOUD_NAME` | Required for lesson video/PDF **file uploads** on Vercel |
+| `CLOUDINARY_API_KEY` | Same |
+| `CLOUDINARY_API_SECRET` | Same |
 
 **Important:** Use a `postgresql://` URL, not MongoDB. Copy without extra quotes in the Vercel UI.
+
+Without Cloudinary on Vercel you can still add lessons using **written content** or **video URLs** (YouTube, Vimeo, etc.).
 
 ### 7. Deploy
 

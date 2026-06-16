@@ -90,7 +90,7 @@ body {
 
 .learn-shell {
   min-height: calc(100dvh - var(--header-height));
-  background: #1c1d1f;
+  background: var(--background);
 }
 
 @media (min-width: 768px) {

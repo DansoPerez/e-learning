@@ -14,6 +14,10 @@ import { randomUUID } from "crypto";
 
 const PDF_DIR = path.join(process.cwd(), "storage", "lesson-pdfs");
 
+function isServerlessFilesystem(): boolean {
+  return process.env.VERCEL === "1" || process.env.AWS_LAMBDA_FUNCTION_NAME !== undefined;
+}
+
 export async function saveLessonPdf(buffer: Buffer): Promise<string> {
   if (buffer.length > MEDIA_LIMITS.pdfBytes) {
     throw new Error("PDF too large (max 20MB)");
@@ -25,6 +29,12 @@ export async function saveLessonPdf(buffer: Buffer): Promise<string> {
       resourceType: "raw",
     });
     return toCloudinaryStorageKey(publicId);
+  }
+
+  if (isServerlessFilesystem()) {
+    throw new Error(
+      "PDF uploads on Vercel require Cloudinary. Add CLOUDINARY_CLOUD_NAME, CLOUDINARY_API_KEY, and CLOUDINARY_API_SECRET to your deployment environment, or use written lesson content instead.",
+    );
   }
 
   await mkdir(PDF_DIR, { recursive: true });
