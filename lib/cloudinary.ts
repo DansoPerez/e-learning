@@ -146,24 +146,23 @@ export function cloudinaryPdfViewUrl(publicId: string): string {
 export async function fetchCloudinaryRaw(publicId: string): Promise<Buffer> {
   ensureConfigured();
 
-  let deliveryUrl = cloudinarySignedRawUrl(publicId);
-  try {
-    const resource = await cloudinary.api.resource(publicId, { resource_type: "raw" });
-    if (typeof resource.secure_url === "string") {
-      deliveryUrl = resource.secure_url;
-    }
-  } catch {
-    // Use signed URL fallback below.
+  const candidates = [publicId];
+  if (!publicId.endsWith(".pdf")) {
+    candidates.push(`${publicId}.pdf`);
   }
 
-  const res = await fetch(deliveryUrl);
-  if (!res.ok) {
-    const signedUrl = cloudinarySignedRawUrl(publicId);
-    const signedRes = await fetch(signedUrl);
-    if (!signedRes.ok) {
-      throw new Error(`Failed to fetch PDF from Cloudinary (${signedRes.status})`);
+  let lastStatus = 0;
+  for (const candidate of candidates) {
+    const signedUrl = cloudinarySignedRawUrl(candidate);
+    const res = await fetch(signedUrl);
+    lastStatus = res.status;
+    if (!res.ok) continue;
+
+    const buffer = Buffer.from(await res.arrayBuffer());
+    if (buffer.length >= 4 && buffer.subarray(0, 4).toString("utf8") === "%PDF") {
+      return buffer;
     }
-    return Buffer.from(await signedRes.arrayBuffer());
   }
-  return Buffer.from(await res.arrayBuffer());
+
+  throw new Error(`Failed to fetch PDF from Cloudinary (${lastStatus || "unknown"})`);
 }
