@@ -1,3 +1,4 @@
+import { redirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import type { Role } from "@/app/generated/prisma/client";
 
@@ -11,9 +12,11 @@ export async function assertCanEditCourse(
     where: { id: courseId },
     select: { id: true, instructorId: true, slug: true },
   });
-  if (!course) throw new Error("Course not found");
+  if (!course) {
+    redirect("/dashboard/instructor/courses?error=course-not-found");
+  }
   if (role !== "ADMIN" && course.instructorId !== userId) {
-    throw new Error("Unauthorized");
+    redirect(`/dashboard/instructor/courses/${courseId}?error=unauthorized`);
   }
   return course;
 }
@@ -24,7 +27,9 @@ export async function assertModuleInCourse(moduleId: string, courseId: string) {
     where: { id: moduleId, courseId },
     select: { id: true },
   });
-  if (!mod) throw new Error("Module not found in this course");
+  if (!mod) {
+    redirect(`/dashboard/instructor/courses/${courseId}?error=module-not-found`);
+  }
 }
 
 /** Ensures quiz belongs to the given course. */
@@ -33,5 +38,7 @@ export async function assertQuizInCourse(quizId: string, courseId: string) {
     where: { id: quizId, courseId },
     select: { id: true },
   });
-  if (!quiz) throw new Error("Quiz not found in this course");
+  if (!quiz) {
+    redirect(`/dashboard/instructor/courses/${courseId}?error=quiz-not-found`);
+  }
 }

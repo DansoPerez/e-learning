@@ -99,7 +99,10 @@ export function LessonAddForm({
           <Label htmlFor={`lesson-pdf-${moduleId}`}>PDF (view-only for students)</Label>
           <Input id={`lesson-pdf-${moduleId}`} name="pdf" type="file" accept="application/pdf" />
           <p className="text-xs text-[var(--foreground-muted)]">
-            Max {pdfMb}MB. Stored on {cloudinaryReady ? "Cloudinary" : "server"} — students read in-browser without downloading.
+            Max {pdfMb}MB.
+            {cloudinaryReady ?
+              " Stored on Cloudinary — students read in-browser without downloading."
+            : " On Vercel, PDF uploads require Cloudinary env vars. Use written content below, or add Cloudinary keys and redeploy."}
           </p>
         </div>
         <div className="space-y-1.5">

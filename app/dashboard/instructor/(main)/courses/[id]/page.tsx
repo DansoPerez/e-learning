@@ -19,14 +19,27 @@ import { CourseAnnouncementForm } from "@/components/instructor/course-announcem
 import { LessonAddForm } from "@/components/instructor/lesson-add-form";
 
 const LESSON_ERRORS: Record<string, string> = {
+  "invalid-module": "Check the module title and order, then try again.",
   "invalid-lesson": "Check the lesson title and fields, then try again.",
   "video-too-large": "Video must be 100MB or smaller.",
   "invalid-video": "Upload MP4, WebM, or MOV video only.",
-  "video-upload": "Video upload failed. Confirm Cloudinary keys in .env or use a video URL.",
+  "video-upload":
+    "Video upload failed. Add Cloudinary keys on Vercel or paste a YouTube/Vimeo/video URL instead.",
   "pdf-too-large": "PDF must be 20MB or smaller.",
   "invalid-pdf": "Upload a PDF file only.",
-  "pdf-upload": "PDF upload failed. Try again or check Cloudinary configuration.",
+  "pdf-upload": "PDF upload failed. Try again or use written lesson content.",
+  "pdf-needs-cloudinary":
+    "PDF uploads on Vercel need Cloudinary. Add CLOUDINARY_CLOUD_NAME, CLOUDINARY_API_KEY, and CLOUDINARY_API_SECRET in Vercel → Settings → Environment Variables, then redeploy. Or use written content / a video URL instead.",
+  "save-failed":
+    "Could not save your changes. Check Vercel logs, confirm DATABASE_URL is set, then try again.",
+  unauthorized: "You do not have permission to edit this course.",
+  "module-not-found": "That module was not found. Refresh the page and try again.",
   "no-content": "Add at least one module and lesson before submitting this course for review.",
+};
+
+const LESSON_SUCCESS: Record<string, string> = {
+  "module-added": "Module added.",
+  "lesson-added": "Lesson added.",
 };
 
 export default async function InstructorCourseEditPage({
@@ -34,11 +47,11 @@ export default async function InstructorCourseEditPage({
   searchParams,
 }: {
   params: Promise<{ id: string }>;
-  searchParams: Promise<{ error?: string }>;
+  searchParams: Promise<{ error?: string; success?: string }>;
 }) {
   const user = await requireRole("INSTRUCTOR", "ADMIN");
   const { id } = await params;
-  const { error } = await searchParams;
+  const { error, success } = await searchParams;
 
   const [course, categories] = await Promise.all([
     prisma.course.findUnique({
@@ -75,6 +88,12 @@ export default async function InstructorCourseEditPage({
       {error && LESSON_ERRORS[error] ?
         <p className="mb-4 rounded-lg bg-amber-50 px-3 py-2 text-sm text-amber-900">
           {LESSON_ERRORS[error]}
+        </p>
+      : null}
+
+      {success && LESSON_SUCCESS[success] ?
+        <p className="mb-4 rounded-lg bg-[var(--success-bg)] px-3 py-2 text-sm text-[var(--success)]">
+          {LESSON_SUCCESS[success]}
         </p>
       : null}
 

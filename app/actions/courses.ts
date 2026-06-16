@@ -152,14 +152,22 @@ export async function addModuleAction(
     title: formData.get("title"),
     orderIndex: formData.get("orderIndex") ?? 0,
   });
-  if (!parsed.success) return;
+  if (!parsed.success) {
+    redirect(`/dashboard/instructor/courses/${courseId}?error=invalid-module`);
+  }
 
-  await prisma.module.create({
-    data: { ...parsed.data, courseId },
-  });
+  try {
+    await prisma.module.create({
+      data: { ...parsed.data, courseId },
+    });
+    await recalculateCourseEnrollments(courseId);
+  } catch (err) {
+    console.error("[courses] addModuleAction failed:", err);
+    redirect(`/dashboard/instructor/courses/${courseId}?error=save-failed`);
+  }
 
-  await recalculateCourseEnrollments(courseId);
   revalidatePath(`/dashboard/instructor/courses/${courseId}`);
+  redirect(`/dashboard/instructor/courses/${courseId}?success=module-added`);
 }
 
 export async function addLessonAction(
@@ -200,7 +208,8 @@ export async function addLessonAction(
     try {
       const buffer = Buffer.from(await videoFile.arrayBuffer());
       videoUrl = await saveLessonVideo(buffer);
-    } catch {
+    } catch (err) {
+      console.error("[courses] video upload failed:", err);
       redirect(`/dashboard/instructor/courses/${courseId}?error=video-upload`);
     }
   }
@@ -211,31 +220,44 @@ export async function addLessonAction(
     if (pdfFile.size > MEDIA_LIMITS.pdfBytes) {
       redirect(`/dashboard/instructor/courses/${courseId}?error=pdf-too-large`);
     }
-    if (pdfFile.type === "application/pdf") {
+    const isPdf =
+      pdfFile.type === "application/pdf" || /\.pdf$/i.test(pdfFile.name);
+    if (isPdf) {
       try {
         const buffer = Buffer.from(await pdfFile.arrayBuffer());
         pdfStorageKey = await saveLessonPdf(buffer);
-      } catch {
-        redirect(`/dashboard/instructor/courses/${courseId}?error=pdf-upload`);
+      } catch (err) {
+        console.error("[courses] pdf upload failed:", err);
+        const needsCloudinary =
+          err instanceof Error && err.message.includes("Cloudinary");
+        redirect(
+          `/dashboard/instructor/courses/${courseId}?error=${needsCloudinary ? "pdf-needs-cloudinary" : "pdf-upload"}`,
+        );
       }
     } else {
       redirect(`/dashboard/instructor/courses/${courseId}?error=invalid-pdf`);
     }
   }
 
-  await prisma.lesson.create({
-    data: {
-      ...parsed.data,
-      moduleId,
-      videoUrl,
-      content: parsed.data.content || null,
-      durationMin: parsed.data.durationMin ?? null,
-      pdfStorageKey,
-    },
-  });
+  try {
+    await prisma.lesson.create({
+      data: {
+        ...parsed.data,
+        moduleId,
+        videoUrl,
+        content: parsed.data.content || null,
+        durationMin: parsed.data.durationMin ?? null,
+        pdfStorageKey,
+      },
+    });
+    await recalculateCourseEnrollments(courseId);
+  } catch (err) {
+    console.error("[courses] addLessonAction failed:", err);
+    redirect(`/dashboard/instructor/courses/${courseId}?error=save-failed`);
+  }
 
-  await recalculateCourseEnrollments(courseId);
   revalidatePath(`/dashboard/instructor/courses/${courseId}`);
+  redirect(`/dashboard/instructor/courses/${courseId}?success=lesson-added`);
 }
 
 export async function enrollCourseAction(courseId: string): Promise<void> {
