@@ -1,5 +1,6 @@
 import { unstable_cache } from "next/cache";
 import { prisma } from "@/lib/prisma";
+import { countDistinctPlatformLearners } from "@/lib/learner-counts";
 
 const courseCardSelect = {
   id: true,
@@ -33,18 +34,20 @@ export const getCachedCategories = unstable_cache(
 
 export const getCachedPlatformStats = unstable_cache(
   async () => {
-    const [row] = await prisma.$queryRaw<
-      [{ published_count: bigint; category_count: bigint; enrollment_count: bigint }]
-    >`
-      SELECT
-        (SELECT COUNT(*)::bigint FROM "Course" WHERE status = 'PUBLISHED') AS published_count,
-        (SELECT COUNT(*)::bigint FROM "Category") AS category_count,
-        (SELECT COUNT(*)::bigint FROM "Enrollment") AS enrollment_count
-    `;
+    const [row, learnerCount] = await Promise.all([
+      prisma.$queryRaw<
+        [{ published_count: bigint; category_count: bigint }]
+      >`
+        SELECT
+          (SELECT COUNT(*)::bigint FROM "Course" WHERE status = 'PUBLISHED') AS published_count,
+          (SELECT COUNT(*)::bigint FROM "Category") AS category_count
+      `,
+      countDistinctPlatformLearners(),
+    ]);
     return {
-      publishedCount: Number(row.published_count),
-      categoryCount: Number(row.category_count),
-      enrollmentCount: Number(row.enrollment_count),
+      publishedCount: Number(row[0].published_count),
+      categoryCount: Number(row[0].category_count),
+      enrollmentCount: learnerCount,
     };
   },
   ["catalog-platform-stats"],

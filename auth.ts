@@ -5,7 +5,7 @@ import Google from "next-auth/providers/google";
 import bcrypt from "bcryptjs";
 import { prisma } from "@/lib/prisma";
 import { loginSchema } from "@/lib/validations/auth";
-import { EMAIL_VERIFICATION_ENABLED } from "@/lib/constants";
+import { isEmailVerificationEnabled } from "@/lib/email-config";
 import { findUserByLoginIdentifier } from "@/lib/user-code";
 import { authConfig } from "@/auth.config";
 import type { Role, UserStatus } from "@/app/generated/prisma/client";
@@ -38,7 +38,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
 
         if (!user?.passwordHash || user.status !== "ACTIVE") return null;
 
-        if (EMAIL_VERIFICATION_ENABLED && !user.emailVerified) return null;
+        if (isEmailVerificationEnabled() && !user.emailVerified) return null;
 
         const valid = await bcrypt.compare(
           parsed.data.password,

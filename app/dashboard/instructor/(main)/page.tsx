@@ -10,12 +10,16 @@ import { DashboardSection } from "@/components/ui/dashboard-section";
 import { Button } from "@/components/ui/button";
 import { instructorCourseGridClass } from "@/lib/course-grid";
 import { formatCurrency } from "@/lib/utils";
+import {
+  countDistinctInstructorLearners,
+  getLearnerCountsByCourseIds,
+} from "@/lib/learner-counts";
 import { BookOpen, DollarSign, Plus, Users, Wallet } from "lucide-react";
 
 export default async function InstructorDashboardPage() {
   const user = await requireRole("INSTRUCTOR", "ADMIN");
 
-  const [profile, courseCount, recentCourses, payments, announcements, enrollments] =
+  const [profile, courseCount, recentCourses, payments, announcements, learnerCount] =
     await Promise.all([
       prisma.instructorProfile.findUnique({ where: { userId: user.id } }),
       prisma.course.count({ where: { instructorId: user.id } }),
@@ -30,7 +34,6 @@ export default async function InstructorDashboardPage() {
           status: true,
           price: true,
           thumbnailUrl: true,
-          _count: { select: { enrollments: true } },
         },
       }),
       prisma.payment.aggregate({
@@ -38,10 +41,12 @@ export default async function InstructorDashboardPage() {
         _sum: { instructorShare: true },
       }),
       getAnnouncementsForUser(user.id, "INSTRUCTOR"),
-      prisma.enrollment.count({
-        where: { course: { instructorId: user.id } },
-      }),
+      countDistinctInstructorLearners(user.id),
     ]);
+
+  const learnerCountsByCourse = await getLearnerCountsByCourseIds(
+    recentCourses.map((c) => c.id),
+  );
 
   const unreadAnnouncements = announcements.filter((a) => !a.read).length;
 
@@ -70,7 +75,7 @@ export default async function InstructorDashboardPage() {
 
       <div className="grid grid-cols-2 gap-3 xl:grid-cols-4">
         <StatCard label="Courses" value={courseCount} icon={BookOpen} />
-        <StatCard label="Learners" value={enrollments} icon={Users} tone="success" />
+        <StatCard label="Learners" value={learnerCount} icon={Users} tone="success" />
         <StatCard
           label="Earnings"
           value={formatCurrency(Number(payments._sum.instructorShare ?? 0))}
@@ -117,7 +122,7 @@ export default async function InstructorDashboardPage() {
                 status={c.status}
                 price={Number(c.price)}
                 thumbnailUrl={c.thumbnailUrl}
-                enrollmentCount={c._count.enrollments}
+                enrollmentCount={learnerCountsByCourse.get(c.id) ?? 0}
               />
             ))}
           </div>

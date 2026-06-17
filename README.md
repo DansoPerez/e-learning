@@ -44,8 +44,21 @@ Copy `.env.example` to `.env` and fill in:
 - `DATABASE_URL` — Supabase PostgreSQL connection string
 - `AUTH_SECRET` — Run `openssl rand -base64 32`
 - `NEXTAUTH_URL` — `http://localhost:3000` for local dev
-- `PAYSTACK_SECRET_KEY` — From Paystack dashboard (test key for dev)
+- `PAYSTACK_SECRET_KEY` — Paystack test/live secret key (paid checkout enables automatically)
+- `RESEND_API_KEY` / `RESEND_FROM_EMAIL` — Resend for OTP registration and password reset
 - `GOOGLE_CLIENT_ID` / `GOOGLE_CLIENT_SECRET` — Optional, for Google login
+
+Verify Paystack after adding your key:
+
+```bash
+npm run paystack:check
+```
+
+Verify Resend after adding your key:
+
+```bash
+npm run resend:check
+```
 
 ### 3. Database
 
@@ -70,9 +83,20 @@ Open [http://localhost:3000](http://localhost:3000).
 | Instructor | instructor@bravio.app | Instructor123! |
 | Student | student@bravio.app | Student123! |
 
-## Paystack webhook
+## Paystack (paid courses)
 
-For local testing, use [ngrok](https://ngrok.com/) and set your Paystack webhook URL to:
+1. Add `PAYSTACK_SECRET_KEY` to `.env` (test key from [Paystack dashboard](https://dashboard.paystack.com/#/settings/developer)).
+2. Run `npm run paystack:check` to confirm the key and callback URL.
+3. Set a course price above **0** (instructor or admin).
+4. Enroll as a student — you are redirected to Paystack checkout, then back to the course.
+
+**Webhook** (recommended for production): register in Paystack → Settings → Webhooks:
+
+```
+https://your-domain.com/api/paystack/webhook
+```
+
+For local testing, use [ngrok](https://ngrok.com/) and point the webhook at:
 
 ```
 https://your-ngrok-url/api/paystack/webhook

@@ -70,7 +70,10 @@ npm run db:push
 
 npm run db:seed
 npm run db:check
+npm run db:rls
 ```
+
+`db:rls` enables Row Level Security on all public tables so Supabase’s Data API cannot read them. Bravio uses Prisma on the server only; the `postgres` connection bypasses RLS, so the app is unaffected.
 
 After seed, you can log in with:
 
@@ -99,10 +102,12 @@ In Vercel → **Settings** → **Environment Variables**, add:
 | `DATABASE_URL` | Supabase **Transaction pooler** URI (`postgresql://…:6543/…?pgbouncer=true`) |
 | `AUTH_SECRET` | `openssl rand -base64 32` |
 | `NEXTAUTH_URL` | Set after first deploy (see step 8) |
-| `PAYSTACK_SECRET_KEY` | From Paystack dashboard |
-| `PAYSTACK_CURRENCY` | `GHS` |
-| `BREVO_API_KEY` | Optional — registration OTP |
-| `BREVO_FROM_EMAIL` | Verified Brevo sender |
+| `PAYSTACK_SECRET_KEY` | Paystack **test** or **live** secret key — paid checkout turns on automatically |
+| `PAYSTACK_CURRENCY` | `GHS` (default) |
+| `PAYMENTS_ENABLED` | Optional — set `false` to force free enrollment even with a key |
+| `RESEND_API_KEY` | Resend API key — enables OTP registration + password reset |
+| `RESEND_FROM_EMAIL` | Verified sender (`onboarding@resend.dev` for testing) |
+| `EMAIL_VERIFICATION_ENABLED` | Optional — set `false` to skip OTP even with Resend configured |
 | `GOOGLE_CLIENT_ID` / `GOOGLE_CLIENT_SECRET` | Optional OAuth |
 | `CLOUDINARY_CLOUD_NAME` | Required for lesson video/PDF **file uploads** on Vercel |
 | `CLOUDINARY_API_KEY` | Same |
@@ -126,7 +131,7 @@ Also update:
 
 | Service | URL |
 |---------|-----|
-| Paystack webhook | `https://YOUR-URL/api/paystack/webhook` |
+| Paystack webhook | `https://YOUR-URL/api/paystack/webhook` (register in Paystack → Settings → Webhooks) |
 | Google OAuth redirect | `https://YOUR-URL/api/auth/callback/google` |
 
 ---

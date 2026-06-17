@@ -13,7 +13,7 @@ import { logAudit } from "@/lib/audit-log";
 import { createNotification } from "@/lib/notifications";
 import { markOffline } from "@/lib/presence";
 import { checkRateLimit, rateLimitKey } from "@/lib/rate-limit";
-import { EMAIL_VERIFICATION_ENABLED } from "@/lib/constants";
+import { isEmailVerificationEnabled } from "@/lib/email-config";
 import { normalizeEmail } from "@/lib/normalize-email";
 
 export type ActionState = {
@@ -88,12 +88,12 @@ async function signInAfterRegister(email: string, password: string): Promise<nev
   redirect(redirectTo);
 }
 
-/** Direct registration (used while EMAIL_VERIFICATION_ENABLED is false) */
+/** Direct registration (used when email verification is disabled) */
 export async function registerAction(
   _prev: ActionState,
   formData: FormData,
 ): Promise<ActionState> {
-  if (EMAIL_VERIFICATION_ENABLED) {
+  if (isEmailVerificationEnabled()) {
     return {
       error: "Email verification is required. Use the registration form to receive a verification code.",
     };
@@ -142,8 +142,7 @@ export async function registerAction(
         passwordHash,
         role: "INSTRUCTOR",
         userCode,
-        // emailVerified: set when EMAIL_VERIFICATION_ENABLED is true
-        emailVerified: EMAIL_VERIFICATION_ENABLED ? undefined : new Date(),
+        emailVerified: isEmailVerificationEnabled() ? undefined : new Date(),
         instructorProfile: {
           create: {
             bio: parsed.data.bio,
@@ -216,7 +215,7 @@ export async function registerAction(
       passwordHash,
       role: "STUDENT",
       userCode,
-      emailVerified: EMAIL_VERIFICATION_ENABLED ? undefined : new Date(),
+      emailVerified: isEmailVerificationEnabled() ? undefined : new Date(),
     },
   });
 
@@ -267,7 +266,7 @@ export async function loginAction(
     return { error: "Your account has been banned." };
   }
 
-  if (EMAIL_VERIFICATION_ENABLED && !userWithProfile.emailVerified) {
+  if (isEmailVerificationEnabled() && !userWithProfile.emailVerified) {
     return {
       error:
         "Please verify your email before signing in. Complete registration with the code we sent you, or register again.",

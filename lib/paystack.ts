@@ -1,6 +1,9 @@
 import { createHmac } from "crypto";
+import { getAppBaseUrl, getPaystackCurrency } from "@/lib/paystack-config";
 
 const PAYSTACK_BASE = "https://api.paystack.co";
+
+export { getPaystackCurrency, isPaymentsEnabled } from "@/lib/paystack-config";
 
 export async function initializePaystackPayment(params: {
   email: string;
@@ -23,9 +26,9 @@ export async function initializePaystackPayment(params: {
       email: params.email,
       amount: Math.round(params.amount * 100),
       reference: params.reference,
-      currency: process.env.PAYSTACK_CURRENCY ?? "GHS",
+      currency: getPaystackCurrency(),
       metadata: params.metadata,
-      callback_url: `${process.env.NEXTAUTH_URL}/courses/payment/callback`,
+      callback_url: `${getAppBaseUrl()}/courses/payment/callback`,
     }),
   });
 

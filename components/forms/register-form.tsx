@@ -10,7 +10,6 @@ import {
   verifyRegistrationOtpAction,
   type RegistrationState,
 } from "@/app/actions/registration";
-import { EMAIL_VERIFICATION_ENABLED } from "@/lib/constants";
 import { PasswordRequirements } from "@/components/auth/password-requirements";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -486,8 +485,12 @@ function SignInLink() {
   );
 }
 
-export function RegisterForm() {
-  if (EMAIL_VERIFICATION_ENABLED) {
+type RegisterFormProps = {
+  emailVerificationEnabled: boolean;
+};
+
+export function RegisterForm({ emailVerificationEnabled }: RegisterFormProps) {
+  if (emailVerificationEnabled) {
     return <RegisterFormWithOtp />;
   }
   return <RegisterFormDirect />;

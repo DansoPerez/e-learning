@@ -2,6 +2,7 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { requireAuth } from "@/lib/auth";
+import { getPaystackCurrency } from "@/lib/paystack-config";
 import { verifyPaystackTransaction } from "@/lib/paystack";
 import { completePayment } from "@/lib/services/payment";
 
@@ -46,7 +47,8 @@ export default async function PaymentCallbackPage({
     if (
       !verified ||
       verified.status !== "success" ||
-      verified.amount !== Math.round(payment.amount * 100)
+      verified.amount !== Math.round(payment.amount * 100) ||
+      verified.currency.toUpperCase() !== getPaystackCurrency().toUpperCase()
     ) {
       return (
         <div className="mx-auto max-w-lg px-4 py-20 text-center">

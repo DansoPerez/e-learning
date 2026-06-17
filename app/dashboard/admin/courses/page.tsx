@@ -14,7 +14,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { formatCurrency } from "@/lib/utils";
-import { PAYMENTS_ENABLED } from "@/lib/constants";
+import { isPaymentsEnabled } from "@/lib/paystack-config";
 
 export default async function AdminCoursesPage() {
   await requireRole("ADMIN");
@@ -27,9 +27,10 @@ export default async function AdminCoursesPage() {
 
   return (
     <DashboardWrapper role="ADMIN" title="Course management">
-      {!PAYMENTS_ENABLED ?
+      {!isPaymentsEnabled() ?
         <p className="mb-4 rounded-lg border border-[var(--border)] bg-[var(--background-subtle)] px-4 py-3 text-sm text-[var(--foreground-muted)]">
-          Payments are disabled — all courses enroll for free. Set prices below so they apply when Paystack is enabled.
+          Paystack is not configured — all courses enroll for free. Add{" "}
+          <code className="text-xs">PAYSTACK_SECRET_KEY</code> to enable paid checkout.
         </p>
       : null}
       <div className="space-y-4">
