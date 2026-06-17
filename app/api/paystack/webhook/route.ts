@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getPaystackCurrency } from "@/lib/paystack-config";
 import { completePayment } from "@/lib/services/payment";
+import { handlePaystackTransferWebhook } from "@/lib/services/withdrawal-payout";
 import { verifyPaystackSignature } from "@/lib/paystack";
 
 export async function POST(request: Request) {
@@ -14,7 +15,12 @@ export async function POST(request: Request) {
 
   const event = JSON.parse(body) as {
     event: string;
-    data: { reference: string; status: string; amount: number; currency?: string };
+    data: {
+      reference: string;
+      status: string;
+      amount: number;
+      currency?: string;
+    };
   };
 
   if (event.event === "charge.success" && event.data.status === "success") {
@@ -32,6 +38,14 @@ export async function POST(request: Request) {
     ) {
       await completePayment(event.data.reference);
     }
+  }
+
+  if (event.event === "transfer.success" || event.event === "transfer.failed") {
+    await handlePaystackTransferWebhook({
+      reference: event.data.reference,
+      status: event.event === "transfer.success" ? "success" : "failed",
+      amount: event.data.amount,
+    });
   }
 
   return NextResponse.json({ received: true });

@@ -4,8 +4,10 @@ import { DashboardWrapper } from "@/components/layout/dashboard-wrapper";
 import {
   approveWithdrawalFormAction,
   completeWithdrawalFormAction,
+  payWithdrawalViaPaystackAction,
   rejectWithdrawalFormAction,
 } from "@/app/actions/admin";
+import { isPaystackPayoutsEnabled } from "@/lib/services/withdrawal-payout";
 import { ActionRow } from "@/components/ui/action-row";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -13,6 +15,7 @@ import { formatCurrency } from "@/lib/utils";
 
 export default async function AdminWithdrawalsPage() {
   await requireRole("ADMIN");
+  const paystackPayouts = isPaystackPayoutsEnabled();
 
   const withdrawals = await prisma.withdrawal.findMany({
     include: { instructor: { select: { name: true, email: true } } },
@@ -33,7 +36,7 @@ export default async function AdminWithdrawalsPage() {
               <p className="mt-1 font-semibold">{formatCurrency(Number(w.amount))}</p>
             </div>
             <Badge className="w-fit">{w.status}</Badge>
-            {w.status === "PENDING" || w.status === "APPROVED" ?
+            {w.status === "PENDING" || w.status === "APPROVED" || w.status === "PROCESSING" ?
               <ActionRow className="w-full sm:w-auto sm:justify-end">
                 {w.status === "PENDING" ?
                   <form action={approveWithdrawalFormAction.bind(null, w.id)}>
@@ -42,12 +45,29 @@ export default async function AdminWithdrawalsPage() {
                     </Button>
                   </form>
                 : null}
-                {w.status === "APPROVED" ?
+                {w.status === "APPROVED" && paystackPayouts ?
+                  <form action={payWithdrawalViaPaystackAction.bind(null, w.id)}>
+                    <Button type="submit" size="sm">
+                      Pay via Paystack
+                    </Button>
+                  </form>
+                : null}
+                {(w.status === "APPROVED" || w.status === "PROCESSING") && !paystackPayouts ?
                   <form action={completeWithdrawalFormAction.bind(null, w.id)}>
                     <Button type="submit" size="sm">
                       Mark paid
                     </Button>
                   </form>
+                : null}
+                {w.status === "APPROVED" && paystackPayouts ?
+                  <form action={completeWithdrawalFormAction.bind(null, w.id)}>
+                    <Button type="submit" size="sm" variant="outline">
+                      Mark paid manually
+                    </Button>
+                  </form>
+                : null}
+                {w.status === "PROCESSING" && paystackPayouts ?
+                  <span className="text-xs text-[var(--foreground-muted)]">Paystack processing…</span>
                 : null}
                 <form action={rejectWithdrawalFormAction.bind(null, w.id)}>
                   <Button type="submit" size="sm" variant="danger">

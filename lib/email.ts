@@ -74,3 +74,63 @@ export async function sendPasswordResetEmail({
     throw new Error(formatResendError(error));
   }
 }
+
+export async function sendWithdrawalRequestAdminEmail({
+  to,
+  instructorName,
+  instructorUserCode,
+  instructorEmail,
+  amountLabel,
+  note,
+  reviewUrl,
+}: {
+  to: string[];
+  instructorName: string;
+  instructorUserCode: string | null;
+  instructorEmail: string;
+  amountLabel: string;
+  note?: string | null;
+  reviewUrl: string;
+}) {
+  if (to.length === 0) return;
+
+  const instructorLabel =
+    instructorUserCode ? `${instructorName} (${instructorUserCode})` : instructorName;
+  const noteBlock =
+    note?.trim() ?
+      `<p style="color: #334155; line-height: 1.5;"><strong>Note from instructor:</strong> ${escapeHtml(note.trim())}</p>`
+    : "";
+
+  const resend = getResendClient();
+  const { error } = await resend.emails.send({
+    from: getResendFromAddress(),
+    to,
+    subject: `${PLATFORM_NAME} — withdrawal request from ${instructorLabel}`,
+    html: `
+      <div style="font-family: system-ui, sans-serif; max-width: 520px; margin: 0 auto; padding: 24px;">
+        <h1 style="color: #0056D2; font-size: 22px; margin-bottom: 8px;">${PLATFORM_NAME}</h1>
+        <p style="color: #334155; line-height: 1.5;">An instructor submitted a withdrawal request that needs your review.</p>
+        <table style="width: 100%; margin: 20px 0; border-collapse: collapse; font-size: 15px;">
+          <tr><td style="padding: 8px 0; color: #64748b;">Instructor</td><td style="padding: 8px 0; font-weight: 600;">${escapeHtml(instructorLabel)}</td></tr>
+          <tr><td style="padding: 8px 0; color: #64748b;">Email</td><td style="padding: 8px 0;">${escapeHtml(instructorEmail)}</td></tr>
+          <tr><td style="padding: 8px 0; color: #64748b;">Amount</td><td style="padding: 8px 0; font-weight: 600;">${escapeHtml(amountLabel)}</td></tr>
+        </table>
+        ${noteBlock}
+        <p style="margin: 24px 0;"><a href="${reviewUrl}" style="background: #0056D2; color: white; padding: 12px 20px; border-radius: 8px; text-decoration: none; font-weight: 600;">Review withdrawal</a></p>
+        <p style="color: #64748b; font-size: 14px;">Approve, reject, or mark as paid after processing the payout externally.</p>
+      </div>
+    `,
+  });
+
+  if (error) {
+    throw new Error(formatResendError(error));
+  }
+}
+
+function escapeHtml(value: string): string {
+  return value
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;");
+}

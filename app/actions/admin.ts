@@ -14,6 +14,10 @@ import {
 } from "@/lib/admin-permissions";
 import { generateUserCode } from "@/lib/user-code";
 import { createNotification } from "@/lib/notifications";
+import {
+  initiateWithdrawalPaystackTransfer,
+  isPaystackPayoutsEnabled,
+} from "@/lib/services/withdrawal-payout";
 import bcrypt from "bcryptjs";
 import { randomBytes } from "crypto";
 import {
@@ -536,6 +540,26 @@ export async function completeWithdrawalFormAction(withdrawalId: string): Promis
   await processWithdrawalAction(withdrawalId, "COMPLETE");
 }
 
+export async function payWithdrawalViaPaystackAction(withdrawalId: string): Promise<void> {
+  const admin = await requireSensitiveAdmin();
+  const result = await initiateWithdrawalPaystackTransfer(withdrawalId);
+
+  await logAudit({
+    actorId: admin.id,
+    action: "WITHDRAWAL_PAYSTACK",
+    targetType: "Withdrawal",
+    targetId: withdrawalId,
+    description:
+      result.status === "completed" ?
+        "Paid instructor via Paystack"
+      : "Paystack transfer initiated (pending confirmation)",
+  });
+
+  revalidatePath("/dashboard/admin/withdrawals");
+  revalidatePath("/dashboard/instructor/withdrawals");
+  revalidatePath("/dashboard/instructor");
+}
+
 export async function rejectWithdrawalFormAction(withdrawalId: string): Promise<void> {
   await processWithdrawalAction(withdrawalId, "REJECT");
 }
@@ -552,34 +576,55 @@ async function processWithdrawalAction(
   if (!withdrawal) return;
 
   if (action === "REJECT") {
-    if (withdrawal.status !== "PENDING" && withdrawal.status !== "APPROVED") {
+    if (
+      withdrawal.status !== "PENDING" &&
+      withdrawal.status !== "APPROVED" &&
+      withdrawal.status !== "PROCESSING"
+    ) {
       throw new Error("This withdrawal cannot be rejected");
     }
-    await prisma.$transaction([
-      prisma.withdrawal.update({
-        where: { id: withdrawalId },
-        data: { status: "REJECTED", adminNote },
-      }),
-      prisma.instructorProfile.update({
-        where: { userId: withdrawal.instructorId },
-        data: { balance: { increment: withdrawal.amount } },
-      }),
-    ]);
+    await prisma.withdrawal.update({
+      where: { id: withdrawalId },
+      data: { status: "REJECTED", adminNote },
+    });
   } else if (action === "APPROVE") {
     if (withdrawal.status !== "PENDING") {
       throw new Error("Only pending withdrawals can be approved");
     }
+
+    const profile = await prisma.instructorProfile.findUnique({
+      where: { userId: withdrawal.instructorId },
+      select: { balance: true },
+    });
+    if (!profile || Number(profile.balance) < withdrawal.amount) {
+      throw new Error("Instructor no longer has sufficient balance for this withdrawal");
+    }
+
     await prisma.withdrawal.update({
       where: { id: withdrawalId },
       data: { status: "APPROVED", adminNote },
     });
   } else if (action === "COMPLETE") {
-    if (withdrawal.status !== "APPROVED") {
+    if (withdrawal.status !== "APPROVED" && withdrawal.status !== "PROCESSING") {
       throw new Error("Only approved withdrawals can be marked complete");
     }
-    await prisma.withdrawal.update({
-      where: { id: withdrawalId },
-      data: { status: "COMPLETED", adminNote },
+
+    await prisma.$transaction(async (tx) => {
+      const deducted = await tx.instructorProfile.updateMany({
+        where: {
+          userId: withdrawal.instructorId,
+          balance: { gte: withdrawal.amount },
+        },
+        data: { balance: { decrement: withdrawal.amount } },
+      });
+      if (deducted.count === 0) {
+        throw new Error("Instructor no longer has sufficient balance to complete this payout");
+      }
+
+      await tx.withdrawal.update({
+        where: { id: withdrawalId },
+        data: { status: "COMPLETED", adminNote },
+      });
     });
   }
 
@@ -592,6 +637,8 @@ async function processWithdrawalAction(
   });
 
   revalidatePath("/dashboard/admin/withdrawals");
+  revalidatePath("/dashboard/instructor/withdrawals");
+  revalidatePath("/dashboard/instructor");
 }
 
 export async function updateCommissionAction(rate: number): Promise<void> {
