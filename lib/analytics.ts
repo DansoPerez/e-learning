@@ -1,5 +1,11 @@
 import { prisma } from "@/lib/prisma";
 import { onlineSinceDate } from "@/lib/presence-utils";
+import {
+  countDistinctInstructorLearners,
+  countDistinctPlatformLearners,
+  getLearnerCountsByCourseIds,
+  learnerUserWhere,
+} from "@/lib/learner-counts";
 
 export async function getAdminAnalytics() {
   const since = onlineSinceDate();
@@ -9,6 +15,7 @@ export async function getAdminAnalytics() {
     activeUsers,
     publishedCourses,
     totalEnrollments,
+    distinctLearners,
     revenue,
     quizAttempts,
     pendingInstructors,
@@ -22,6 +29,7 @@ export async function getAdminAnalytics() {
     }),
     prisma.course.count({ where: { status: "PUBLISHED" } }),
     prisma.enrollment.count(),
+    countDistinctPlatformLearners(),
     prisma.payment.aggregate({
       where: { status: "SUCCESS" },
       _sum: { amount: true, platformShare: true, instructorShare: true },
@@ -51,15 +59,27 @@ export async function getAdminAnalytics() {
     quizStats.reduce((sum, g) => sum + (g._avg.score ?? 0) * g._count.id, 0) /
     Math.max(1, quizAttempts);
 
-  const topCourses = [...topCoursesRaw].sort(
-    (a, b) => b._count.enrollments - a._count.enrollments,
-  ).slice(0, 8);
+  const topCourses = [...topCoursesRaw]
+    .slice(0, 50);
+
+  const learnerCountsByCourse = await getLearnerCountsByCourseIds(
+    topCourses.map((c) => c.id),
+  );
+
+  const topCoursesByLearners = topCourses
+    .map((c) => ({
+      ...c,
+      learnerCount: learnerCountsByCourse.get(c.id) ?? 0,
+    }))
+    .sort((a, b) => b.learnerCount - a.learnerCount)
+    .slice(0, 8);
 
   return {
     totalUsers,
     activeUsers,
     publishedCourses,
     totalEnrollments,
+    distinctLearners,
     revenue: {
       total: Number(revenue._sum.amount ?? 0),
       platform: Number(revenue._sum.platformShare ?? 0),
@@ -71,7 +91,7 @@ export async function getAdminAnalytics() {
     quizAvgScore: Math.round(avgScore),
     pendingInstructors,
     pendingCourses,
-    topCourses,
+    topCourses: topCoursesByLearners,
   };
 }
 
@@ -90,13 +110,18 @@ export async function getInstructorAnalytics(instructorId: string) {
 
   const courseIds = courses.map((c) => c.id);
 
-  const [payments, enrollments, attempts, studentProgress] = await Promise.all([
+  const [payments, enrollments, attempts, studentProgress, learnerCountsByCourse, distinctLearners] =
+    await Promise.all([
     prisma.payment.aggregate({
       where: { courseId: { in: courseIds }, status: "SUCCESS" },
       _sum: { instructorShare: true },
     }),
     prisma.enrollment.findMany({
-      where: { courseId: { in: courseIds } },
+      where: {
+        courseId: { in: courseIds },
+        user: learnerUserWhere,
+        userId: { not: instructorId },
+      },
       include: {
         user: { select: { id: true, name: true, email: true } },
         course: { select: { title: true } },
@@ -115,10 +140,16 @@ export async function getInstructorAnalytics(instructorId: string) {
     }),
     prisma.enrollment.groupBy({
       by: ["courseId"],
-      where: { courseId: { in: courseIds } },
+      where: {
+        courseId: { in: courseIds },
+        user: learnerUserWhere,
+        userId: { not: instructorId },
+      },
       _avg: { progressPercent: true },
       _count: { id: true },
     }),
+    getLearnerCountsByCourseIds(courseIds),
+    countDistinctInstructorLearners(instructorId),
   ]);
 
   const progressByCourse = new Map(
@@ -134,10 +165,11 @@ export async function getInstructorAnalytics(instructorId: string) {
   return {
     courses: courses.map((c) => ({
       ...c,
-      enrollments: c._count.enrollments,
+      enrollments: learnerCountsByCourse.get(c.id) ?? 0,
       quizzes: c._count.quizzes,
       avgProgress: progressByCourse.get(c.id)?.avgProgress ?? 0,
     })),
+    distinctLearners,
     totalEarnings: Number(payments._sum.instructorShare ?? 0),
     recentEnrollments: enrollments,
     recentQuizAttempts: attempts,

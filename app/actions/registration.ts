@@ -1,6 +1,6 @@
 /**
- * Brevo OTP email verification for registration.
- * Disabled when EMAIL_VERIFICATION_ENABLED is false — use registerAction in auth.ts instead.
+ * Resend OTP email verification for registration.
+ * Disabled when Resend is not configured — use registerAction in auth.ts instead.
  */
 "use server";
 
@@ -26,7 +26,7 @@ import {
   verifyRegistrationOtp,
   type PendingRegistrationMetadata,
 } from "@/lib/email-verification";
-import { EMAIL_VERIFICATION_ENABLED } from "@/lib/constants";
+import { isEmailVerificationEnabled } from "@/lib/email-config";
 import { checkRateLimit, rateLimitKey } from "@/lib/rate-limit";
 
 export type RegistrationState = {
@@ -133,7 +133,7 @@ export async function sendRegistrationOtpAction(
   _prev: RegistrationState,
   formData: FormData,
 ): Promise<RegistrationState> {
-  if (!EMAIL_VERIFICATION_ENABLED) {
+  if (!isEmailVerificationEnabled()) {
     return { error: "Email verification is not enabled on this site." };
   }
 
@@ -188,16 +188,20 @@ export async function sendRegistrationOtpAction(
     await createRegistrationOtp(email, metadata);
   } catch (err) {
     const message = err instanceof Error ? err.message : "Could not send verification email";
-    if (message.includes("BREVO_API_KEY") || message.includes("BREVO_FROM_EMAIL")) {
+    if (message.includes("RESEND_API_KEY") || message.includes("RESEND_FROM_EMAIL")) {
       return {
-        error: "Email service is not configured. Add BREVO_API_KEY and BREVO_FROM_EMAIL to your environment.",
+        error: "Email service is not configured. Add RESEND_API_KEY and RESEND_FROM_EMAIL to your environment.",
         values: registrationFormValues(formData),
       };
     }
-    if (message.toLowerCase().includes("sender") && message.toLowerCase().includes("valid")) {
+    if (
+      message.toLowerCase().includes("domain") ||
+      message.toLowerCase().includes("verify") ||
+      message.toLowerCase().includes("sender")
+    ) {
       return {
         error:
-          "The sender email is not verified in Brevo. Add and verify it under Brevo → Senders & IP → Senders, then set BREVO_FROM_EMAIL.",
+          "The sender domain is not verified in Resend. Add your domain under Resend → Domains, or use onboarding@resend.dev for testing.",
         values: registrationFormValues(formData),
       };
     }
@@ -215,7 +219,7 @@ export async function resendRegistrationOtpAction(
   _prev: RegistrationState,
   formData: FormData,
 ): Promise<RegistrationState> {
-  if (!EMAIL_VERIFICATION_ENABLED) {
+  if (!isEmailVerificationEnabled()) {
     return { error: "Email verification is not enabled on this site." };
   }
 
@@ -253,7 +257,7 @@ export async function verifyRegistrationOtpAction(
   _prev: RegistrationState,
   formData: FormData,
 ): Promise<RegistrationState> {
-  if (!EMAIL_VERIFICATION_ENABLED) {
+  if (!isEmailVerificationEnabled()) {
     return { error: "Email verification is not enabled on this site." };
   }
 

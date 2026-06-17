@@ -1,14 +1,14 @@
 import { randomUUID } from "crypto";
 import { chargesForCourse } from "@/lib/course-pricing";
-import { PAYMENTS_ENABLED } from "@/lib/constants";
+import { isPaymentsEnabled } from "@/lib/paystack-config";
 import { prisma } from "@/lib/prisma";
 import { initializePaystackPayment } from "@/lib/paystack";
 import { getPlatformCommission } from "@/lib/settings";
 import { enrollInFreeCourse, ensureEnrollment } from "@/lib/services/enrollment";
 
 export async function initiateCoursePayment(userId: string, courseId: string) {
-  if (!PAYMENTS_ENABLED) {
-    throw new Error("Payments are not enabled");
+  if (!isPaymentsEnabled()) {
+    throw new Error("Payments are not enabled — set PAYSTACK_SECRET_KEY in your environment");
   }
 
   const [user, course, existingPayment] = await Promise.all([

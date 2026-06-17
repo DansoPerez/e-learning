@@ -19,6 +19,10 @@ export default async function InstructorAnalyticsPage() {
       <div className="grid gap-4 sm:grid-cols-3">
         <StatCard label="Your courses" value={data.courses.length} />
         <StatCard
+          label="Unique learners"
+          value={data.distinctLearners}
+        />
+        <StatCard
           label="Total enrollments"
           value={data.courses.reduce((s, c) => s + c.enrollments, 0)}
         />
@@ -39,7 +43,7 @@ export default async function InstructorAnalyticsPage() {
                   </div>
                   <dl className="mt-3 grid grid-cols-2 gap-3 text-sm">
                     <div>
-                      <dt className="text-[var(--foreground-muted)]">Enrollments</dt>
+                      <dt className="text-[var(--foreground-muted)]">Learners</dt>
                       <dd className="font-semibold">{c.enrollments}</dd>
                     </div>
                     <div>
@@ -60,7 +64,7 @@ export default async function InstructorAnalyticsPage() {
                   <tr className="border-b text-[var(--foreground-muted)]">
                     <th className="p-2">Course</th>
                     <th className="p-2">Status</th>
-                    <th className="p-2">Enrollments</th>
+                    <th className="p-2">Learners</th>
                     <th className="p-2">Avg progress</th>
                     <th className="p-2">Quizzes</th>
                   </tr>

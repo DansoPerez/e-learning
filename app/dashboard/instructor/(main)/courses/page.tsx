@@ -6,6 +6,7 @@ import { InstructorCourseCard } from "@/components/instructor/instructor-course-
 import { DashboardSection } from "@/components/ui/dashboard-section";
 import { Button } from "@/components/ui/button";
 import { instructorCourseGridClass } from "@/lib/course-grid";
+import { getLearnerCountsByCourseIds } from "@/lib/learner-counts";
 import { BookOpen, Plus } from "lucide-react";
 
 export default async function InstructorCoursesPage() {
@@ -21,9 +22,10 @@ export default async function InstructorCoursesPage() {
       status: true,
       price: true,
       thumbnailUrl: true,
-      _count: { select: { enrollments: true } },
     },
   });
+
+  const learnerCountsByCourse = await getLearnerCountsByCourseIds(courses.map((c) => c.id));
 
   const published = courses.filter((c) => c.status === "PUBLISHED").length;
   const draft = courses.length - published;
@@ -67,7 +69,7 @@ export default async function InstructorCoursesPage() {
                 status={c.status}
                 price={Number(c.price)}
                 thumbnailUrl={c.thumbnailUrl}
-                enrollmentCount={c._count.enrollments}
+                enrollmentCount={learnerCountsByCourse.get(c.id) ?? 0}
               />
             ))}
           </div>

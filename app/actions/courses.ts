@@ -316,14 +316,20 @@ export async function enrollCourseAction(courseId: string): Promise<void> {
   }
 
   if (chargesForCourse(Number(course.price))) {
-    const result = await initiateCoursePayment(user.id, courseId);
-    if (result.type === "paid") {
-      redirect(result.authorizationUrl);
-    }
-    if (result.type === "already_owned") {
-      revalidatePath(`/courses/${course.slug}`);
-      revalidatePath("/dashboard/student");
-      redirect(`/learn/${course.slug}`);
+    try {
+      const result = await initiateCoursePayment(user.id, courseId);
+      if (result.type === "paid") {
+        redirect(result.authorizationUrl);
+      }
+      if (result.type === "already_owned") {
+        revalidatePath(`/courses/${course.slug}`);
+        revalidatePath("/dashboard/student");
+        redirect(`/learn/${course.slug}`);
+      }
+    } catch (err) {
+      rethrowNavigationError(err);
+      console.error("[courses] enrollCourseAction payment failed:", err);
+      redirect(`/courses/${course.slug}?error=payment-failed`);
     }
   }
 

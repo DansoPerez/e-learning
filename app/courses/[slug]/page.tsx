@@ -9,14 +9,18 @@ import { CourseReviews } from "@/components/courses/course-reviews";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { studentEnrollLabel, studentPriceLabel } from "@/lib/course-pricing";
+import { countCourseLearners } from "@/lib/learner-counts";
 import { CheckCircle2, Star } from "lucide-react";
 
 export default async function CourseDetailPage({
   params,
+  searchParams,
 }: {
   params: Promise<{ slug: string }>;
+  searchParams: Promise<{ error?: string }>;
 }) {
   const { slug } = await params;
+  const { error } = await searchParams;
   const user = await getSessionUser();
 
   const course = await prisma.course.findUnique({
@@ -44,13 +48,14 @@ export default async function CourseDetailPage({
         },
         orderBy: { createdAt: "desc" },
       },
-      _count: { select: { enrollments: true } },
     },
   });
 
   if (!course || (course.status !== "PUBLISHED" && course.instructorId !== user?.id)) {
     notFound();
   }
+
+  const learnerCount = await countCourseLearners(course.id, course.instructorId);
 
   const enrolled = user ? await hasCourseAccess(user.id, course.id) : false;
   const storedPrice = Number(course.price);
@@ -68,6 +73,13 @@ export default async function CourseDetailPage({
     courseId: course.id,
     isInstructorOwner,
   });
+
+  const enrollError =
+    error === "payment-failed" ?
+      "We could not start checkout. Check that Paystack is configured, or try again."
+    : error === "unavailable" ?
+      "This course is not available for enrollment."
+    : null;
 
   const enrollBox = (
     <div className="surface-card-elevated overflow-hidden">
@@ -90,13 +102,18 @@ export default async function CourseDetailPage({
           </li>
           <li className="flex items-center gap-2">
             <CheckCircle2 className="h-4 w-4 shrink-0 text-[var(--primary)]" />
-            {course._count.enrollments} already enrolled
+            {learnerCount} already enrolled
           </li>
           <li className="flex items-center gap-2">
             <CheckCircle2 className="h-4 w-4 shrink-0 text-[var(--primary)]" />
             Learn at your own pace
           </li>
         </ul>
+        {enrollError ?
+          <p className="mt-4 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-800">
+            {enrollError}
+          </p>
+        : null}
         <div className="mt-5">
           {enrolled ?
             <Link href={accessCta.href} className="block">
@@ -174,7 +191,7 @@ export default async function CourseDetailPage({
                 <span>({reviewCount})</span>
               </span>
             : null}
-            <span>{course._count.enrollments} learners enrolled</span>
+            <span>{learnerCount} learners enrolled</span>
           </div>
         </div>
       </div>

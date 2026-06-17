@@ -21,6 +21,7 @@ export default async function AdminAnalyticsPage() {
         <StatCard label="Active users" value={data.activeUsers} hint={`of ${data.totalUsers} total`} />
         <StatCard label="Published courses" value={data.publishedCourses} />
         <StatCard label="Total enrollments" value={data.totalEnrollments} />
+        <StatCard label="Unique learners" value={data.distinctLearners} />
         <StatCard
           label="Platform revenue"
           value={formatCurrency(data.revenue.platform)}
@@ -40,7 +41,7 @@ export default async function AdminAnalyticsPage() {
       </div>
 
       <section className="surface-card mt-8 p-6">
-        <h2 className="mb-4 font-bold text-[var(--foreground)]">Top courses by enrollments</h2>
+        <h2 className="mb-4 font-bold text-[var(--foreground)]">Top courses by learners</h2>
         {data.topCourses.length === 0 ?
           <p className="text-sm text-[var(--foreground-muted)]">No published courses yet.</p>
         : <ul className="space-y-2">
@@ -52,7 +53,7 @@ export default async function AdminAnalyticsPage() {
                 <div>
                   <p className="font-semibold">{c.title}</p>
                   <p className="text-xs text-[var(--foreground-muted)]">
-                    {c._count.enrollments} enrollments · {c._count.reviews} reviews
+                    {c.learnerCount} learner{c.learnerCount === 1 ? "" : "s"} · {c._count.reviews} reviews
                   </p>
                 </div>
                 <Link

@@ -54,8 +54,8 @@ export async function requestPasswordResetAction(
       },
     });
 
-    const baseUrl = process.env.NEXTAUTH_URL ?? "http://localhost:3000";
-    const resetUrl = `${baseUrl}/reset-password?token=${rawToken}&email=${encodeURIComponent(email)}`;
+    const baseUrl = process.env.NEXTAUTH_URL?.trim() || process.env.AUTH_URL?.trim() || "http://localhost:3000";
+    const resetUrl = `${baseUrl.replace(/\/$/, "")}/reset-password?token=${rawToken}&email=${encodeURIComponent(email)}`;
 
     try {
       await sendPasswordResetEmail({
@@ -67,7 +67,7 @@ export async function requestPasswordResetAction(
       await prisma.passwordResetToken.deleteMany({ where: { email } });
       return {
         error:
-          "Could not send reset email. Check BREVO_API_KEY and BREVO_FROM_EMAIL, or ask an admin to reset your password.",
+          "Could not send reset email. Check RESEND_API_KEY and RESEND_FROM_EMAIL, or ask an admin to reset your password.",
       };
     }
   }

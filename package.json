@@ -13,6 +13,9 @@
     "db:migrate:deploy": "prisma migrate deploy",
     "db:check": "npx tsx scripts/check-db.ts",
     "db:seed": "npx tsx prisma/seed.ts",
+    "db:rls": "npx tsx scripts/apply-supabase-rls.ts",
+    "paystack:check": "npx tsx scripts/check-paystack.ts",
+    "resend:check": "npx tsx scripts/check-resend.ts",
     "db:studio": "prisma studio",
     "postinstall": "prisma generate"
   },
@@ -31,6 +34,7 @@
     "react": "19.2.4",
     "react-dom": "19.2.4",
     "react-hook-form": "^7.76.0",
+    "resend": "^6.12.4",
     "tailwind-merge": "^3.6.0",
     "zod": "^4.4.3"
   },
