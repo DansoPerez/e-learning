@@ -16,6 +16,11 @@ export function isEmailVerificationEnabled(): boolean {
   return isEmailConfigured();
 }
 
+/** Inboxes that should receive operational admin alerts (withdrawals, etc.). */
+export function getAdminNotificationInbox(): string | undefined {
+  return process.env.ADMIN_NOTIFICATION_EMAIL?.trim() || undefined;
+}
+
 /** Resend `from` field — `Name <email@domain.com>`. */
 export function getResendFromAddress(): string {
   const fromEmail = process.env.RESEND_FROM_EMAIL?.trim();

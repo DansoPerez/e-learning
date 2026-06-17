@@ -9,18 +9,21 @@ function getAppUrl(): string {
   return base.replace(/\/$/, "");
 }
 
-async function getSensitiveAdminRecipients() {
+async function getAdminUsersForAlerts() {
   return prisma.user.findMany({
-    where: {
-      role: "ADMIN",
-      status: "ACTIVE",
-      OR: [
-        { isSuperAdmin: true },
-        { adminSensitiveApproved: true, adminSensitiveSuspended: false },
-      ],
-    },
+    where: { role: "ADMIN", status: "ACTIVE" },
     select: { id: true, email: true },
   });
+}
+
+async function getWithdrawalNotificationEmails(admins: { email: string }[]): Promise<string[]> {
+  const emails = new Set<string>();
+  const inbox = process.env.ADMIN_NOTIFICATION_EMAIL?.trim();
+  if (inbox) emails.add(inbox);
+  for (const admin of admins) {
+    if (admin.email) emails.add(admin.email);
+  }
+  return [...emails];
 }
 
 export async function createNotification(params: {
@@ -124,7 +127,7 @@ export async function notifyAdminsOfWithdrawalRequest(params: {
   amount: number;
   note?: string | null;
 }) {
-  const admins = await getSensitiveAdminRecipients();
+  const admins = await getAdminUsersForAlerts();
   const amountLabel = formatCurrency(params.amount, getPaystackCurrency());
   const instructorLabel =
     params.instructorUserCode ?
@@ -142,26 +145,47 @@ export async function notifyAdminsOfWithdrawalRequest(params: {
     });
   }
 
-  if (!isEmailConfigured()) return;
+  if (!isEmailConfigured()) {
+    console.warn(
+      "[notifications] RESEND_API_KEY / RESEND_FROM_EMAIL not set — withdrawal email skipped",
+    );
+    return;
+  }
 
-  const emails = new Set(admins.map((admin) => admin.email).filter(Boolean));
-  const extraInbox = process.env.ADMIN_NOTIFICATION_EMAIL?.trim();
-  if (extraInbox) emails.add(extraInbox);
+  const emails = await getWithdrawalNotificationEmails(admins);
+  if (emails.length === 0) {
+    console.warn("[notifications] No admin email addresses for withdrawal alert");
+    return;
+  }
 
-  if (emails.size === 0) return;
+  const reviewUrl = `${getAppUrl()}/dashboard/admin/withdrawals`;
+  const payload = {
+    instructorName: params.instructorName,
+    instructorUserCode: params.instructorUserCode,
+    instructorEmail: params.instructorEmail,
+    amountLabel,
+    note: params.note,
+    reviewUrl,
+  };
 
-  try {
-    await sendWithdrawalRequestAdminEmail({
-      to: [...emails],
-      instructorName: params.instructorName,
-      instructorUserCode: params.instructorUserCode,
-      instructorEmail: params.instructorEmail,
-      amountLabel,
-      note: params.note,
-      reviewUrl: `${getAppUrl()}/dashboard/admin/withdrawals`,
-    });
-  } catch (error) {
-    console.error("[notifications] Failed to email admins about withdrawal:", error);
+  let sentCount = 0;
+  for (const email of emails) {
+    try {
+      await sendWithdrawalRequestAdminEmail({ to: [email], ...payload });
+      sentCount += 1;
+    } catch (error) {
+      console.error(
+        `[notifications] Withdrawal email failed for ${email}:`,
+        error instanceof Error ? error.message : error,
+      );
+    }
+  }
+
+  if (sentCount === 0) {
+    console.error(
+      "[notifications] Withdrawal alert: no emails delivered. " +
+        "With Resend test sender (onboarding@resend.dev), only your Resend account email can receive mail — set ADMIN_NOTIFICATION_EMAIL to that address.",
+    );
   }
 }
 

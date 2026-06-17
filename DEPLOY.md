@@ -107,6 +107,7 @@ In Vercel → **Settings** → **Environment Variables**, add:
 | `PAYMENTS_ENABLED` | Optional — set `false` to force free enrollment even with a key |
 | `RESEND_API_KEY` | Resend API key — enables OTP registration + password reset |
 | `RESEND_FROM_EMAIL` | Verified sender (`onboarding@resend.dev` for testing) |
+| `ADMIN_NOTIFICATION_EMAIL` | Your email for withdrawal alerts (required with test sender) |
 | `EMAIL_VERIFICATION_ENABLED` | Optional — set `false` to skip OTP even with Resend configured |
 | `GOOGLE_CLIENT_ID` / `GOOGLE_CLIENT_SECRET` | Optional OAuth |
 | `CLOUDINARY_CLOUD_NAME` | Required for lesson video/PDF **file uploads** on Vercel |
@@ -132,6 +133,8 @@ Also update:
 | Service | URL |
 |---------|-----|
 | Paystack webhook | `https://YOUR-URL/api/paystack/webhook` (register in Paystack → Settings → Webhooks) |
+
+**Instructor payouts:** Paystack **Transfers** (Pay via Paystack) need a **Registered** business account — Starter plans can collect course payments but cannot send third-party payouts. Use **Mark paid manually** on Starter, or upgrade at [Paystack Dashboard → Settings → Business](https://dashboard.paystack.com).
 | Google OAuth redirect | `https://YOUR-URL/api/auth/callback/google` |
 
 ---

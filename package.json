@@ -16,6 +16,7 @@
     "db:rls": "npx tsx scripts/apply-supabase-rls.ts",
     "paystack:check": "npx tsx scripts/check-paystack.ts",
     "resend:check": "npx tsx scripts/check-resend.ts",
+    "email:withdrawal-test": "npx tsx scripts/test-withdrawal-email.ts",
     "db:studio": "prisma studio",
     "postinstall": "prisma generate"
   },

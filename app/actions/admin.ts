@@ -1,7 +1,7 @@
 "use server";
 
-import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
+import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/prisma";
 import { requireRole } from "@/lib/auth";
 import { logAudit } from "@/lib/audit-log";
@@ -18,6 +18,7 @@ import {
   initiateWithdrawalPaystackTransfer,
   isPaystackPayoutsEnabled,
 } from "@/lib/services/withdrawal-payout";
+import { paystackPayoutErrorCode } from "@/lib/paystack-payout-errors";
 import bcrypt from "bcryptjs";
 import { randomBytes } from "crypto";
 import {
@@ -542,22 +543,29 @@ export async function completeWithdrawalFormAction(withdrawalId: string): Promis
 
 export async function payWithdrawalViaPaystackAction(withdrawalId: string): Promise<void> {
   const admin = await requireSensitiveAdmin();
-  const result = await initiateWithdrawalPaystackTransfer(withdrawalId);
 
-  await logAudit({
-    actorId: admin.id,
-    action: "WITHDRAWAL_PAYSTACK",
-    targetType: "Withdrawal",
-    targetId: withdrawalId,
-    description:
-      result.status === "completed" ?
-        "Paid instructor via Paystack"
-      : "Paystack transfer initiated (pending confirmation)",
-  });
+  try {
+    const result = await initiateWithdrawalPaystackTransfer(withdrawalId);
 
-  revalidatePath("/dashboard/admin/withdrawals");
-  revalidatePath("/dashboard/instructor/withdrawals");
-  revalidatePath("/dashboard/instructor");
+    await logAudit({
+      actorId: admin.id,
+      action: "WITHDRAWAL_PAYSTACK",
+      targetType: "Withdrawal",
+      targetId: withdrawalId,
+      description:
+        result.status === "completed" ?
+          "Paid instructor via Paystack"
+        : "Paystack transfer initiated (pending confirmation)",
+    });
+
+    revalidatePath("/dashboard/admin/withdrawals");
+    revalidatePath("/dashboard/instructor/withdrawals");
+    revalidatePath("/dashboard/instructor");
+    redirect("/dashboard/admin/withdrawals?success=paystack");
+  } catch (error) {
+    const code = paystackPayoutErrorCode(error);
+    redirect(`/dashboard/admin/withdrawals?error=${encodeURIComponent(code)}`);
+  }
 }
 
 export async function rejectWithdrawalFormAction(withdrawalId: string): Promise<void> {
