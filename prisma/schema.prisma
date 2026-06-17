@@ -186,6 +186,7 @@ model InstructorProfile {
   earningsFrozen         Boolean          @default(false)
   balance                Float            @default(0)
   payoutType             String?
+  payoutCountry          String?
   payoutAccountNumber    String?
   payoutBankCode         String?
   paystackRecipientCode  String?

@@ -1,5 +1,11 @@
 import { prisma } from "@/lib/prisma";
 import {
+  defaultPayoutCountryCode,
+  getCurrencyForPayoutCountry,
+  normalizePayoutType,
+  resolvePaystackRecipientType,
+} from "@/lib/payout-countries";
+import {
   buildWithdrawalTransferReference,
   createPaystackTransferRecipient,
   initiatePaystackTransfer,
@@ -14,12 +20,14 @@ export function isPaystackPayoutsEnabled(): boolean {
 }
 
 export function hasPayoutDetails(profile: {
+  payoutCountry: string | null;
   payoutType: string | null;
   payoutAccountNumber: string | null;
   payoutBankCode: string | null;
 }): boolean {
   return Boolean(
-    profile.payoutType &&
+    profile.payoutCountry?.trim() &&
+      profile.payoutType &&
       profile.payoutAccountNumber?.trim() &&
       profile.payoutBankCode?.trim(),
   );
@@ -28,7 +36,7 @@ export function hasPayoutDetails(profile: {
 async function ensurePaystackRecipient(
   instructorId: string,
   instructorName: string,
-): Promise<string> {
+): Promise<{ recipientCode: string; currency: string }> {
   const profile = await prisma.instructorProfile.findUnique({
     where: { userId: instructorId },
   });
@@ -36,15 +44,20 @@ async function ensurePaystackRecipient(
     throw new Error("Instructor has not saved payout details");
   }
 
+  const countryCode = profile.payoutCountry ?? defaultPayoutCountryCode();
+  const currency = getCurrencyForPayoutCountry(countryCode);
+  const payoutType = normalizePayoutType(profile.payoutType);
+
   if (profile.paystackRecipientCode) {
-    return profile.paystackRecipientCode;
+    return { recipientCode: profile.paystackRecipientCode, currency };
   }
 
   const recipientCode = await createPaystackTransferRecipient({
-    type: profile.payoutType === "ghipss" ? "ghipss" : "mobile_money",
+    type: resolvePaystackRecipientType(countryCode, payoutType),
     name: instructorName,
     accountNumber: profile.payoutAccountNumber!.trim(),
     bankCode: profile.payoutBankCode!.trim(),
+    currency,
   });
 
   await prisma.instructorProfile.update({
@@ -52,7 +65,7 @@ async function ensurePaystackRecipient(
     data: { paystackRecipientCode: recipientCode },
   });
 
-  return recipientCode;
+  return { recipientCode, currency };
 }
 
 /** Initiate Paystack transfer for an approved withdrawal. */
@@ -72,7 +85,7 @@ export async function initiateWithdrawalPaystackTransfer(withdrawalId: string) {
     throw new Error("Only approved withdrawals can be paid via Paystack");
   }
 
-  const recipientCode = await ensurePaystackRecipient(
+  const { recipientCode, currency } = await ensurePaystackRecipient(
     withdrawal.instructorId,
     withdrawal.instructor.name ?? "Instructor",
   );
@@ -85,6 +98,7 @@ export async function initiateWithdrawalPaystackTransfer(withdrawalId: string) {
     amount: withdrawal.amount,
     reference,
     reason: `Bravio instructor withdrawal`,
+    currency,
   });
 
   if (isPaystackTransferSuccessful(transfer.status)) {

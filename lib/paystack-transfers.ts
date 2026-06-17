@@ -1,7 +1,12 @@
 import { randomUUID } from "crypto";
-import { getPaystackCurrency } from "@/lib/paystack-config";
+import {
+  getCurrencyForPayoutCountry,
+  type PaystackBankRecipientType,
+} from "@/lib/payout-countries";
 
 const PAYSTACK_BASE = "https://api.paystack.co";
+
+export type PaystackRecipientType = "mobile_money" | PaystackBankRecipientType;
 
 function getSecretKey(): string {
   const secretKey = process.env.PAYSTACK_SECRET_KEY?.trim();
@@ -43,16 +48,16 @@ export type PaystackBankOption = {
   code: string;
 };
 
-export async function listPaystackMobileMoneyProviders(): Promise<PaystackBankOption[]> {
-  const currency = getPaystackCurrency();
+export async function listPaystackMobileMoneyProviders(
+  currency: string,
+): Promise<PaystackBankOption[]> {
   const body = await paystackRequest<PaystackBankOption[]>(
     `/bank?currency=${encodeURIComponent(currency)}&type=mobile_money`,
   );
   return body.data ?? [];
 }
 
-export async function listPaystackBanks(): Promise<PaystackBankOption[]> {
-  const currency = getPaystackCurrency();
+export async function listPaystackBanks(currency: string): Promise<PaystackBankOption[]> {
   const body = await paystackRequest<PaystackBankOption[]>(
     `/bank?currency=${encodeURIComponent(currency)}`,
   );
@@ -60,10 +65,11 @@ export async function listPaystackBanks(): Promise<PaystackBankOption[]> {
 }
 
 export async function createPaystackTransferRecipient(params: {
-  type: "mobile_money" | "ghipss";
+  type: PaystackRecipientType;
   name: string;
   accountNumber: string;
   bankCode: string;
+  currency: string;
 }): Promise<string> {
   const body = await paystackRequest<{ recipient_code: string }>("/transferrecipient", {
     method: "POST",
@@ -72,7 +78,7 @@ export async function createPaystackTransferRecipient(params: {
       name: params.name,
       account_number: params.accountNumber,
       bank_code: params.bankCode,
-      currency: getPaystackCurrency(),
+      currency: params.currency,
     }),
   });
 
@@ -94,6 +100,7 @@ export async function initiatePaystackTransfer(params: {
   amount: number;
   reference: string;
   reason: string;
+  currency: string;
 }): Promise<PaystackTransferResult> {
   const body = await paystackRequest<{
     reference: string;
@@ -107,7 +114,7 @@ export async function initiatePaystackTransfer(params: {
       recipient: params.recipientCode,
       reference: params.reference,
       reason: params.reason,
-      currency: getPaystackCurrency(),
+      currency: params.currency,
     }),
   });
 

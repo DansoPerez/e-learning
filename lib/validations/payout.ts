@@ -1,22 +1,28 @@
 import { z } from "zod";
+import { getPayoutCountry } from "@/lib/payout-countries";
 
-export const payoutDetailsSchema = z.discriminatedUnion("payoutType", [
-  z.object({
-    payoutType: z.literal("mobile_money"),
-    payoutAccountNumber: z
-      .string()
-      .trim()
-      .min(9, "Enter a valid mobile money number")
-      .max(15),
-    payoutBankCode: z.string().trim().min(2, "Select a mobile money provider"),
-  }),
-  z.object({
-    payoutType: z.literal("ghipss"),
-    payoutAccountNumber: z
-      .string()
-      .trim()
-      .min(8, "Enter a valid bank account number")
-      .max(20),
-    payoutBankCode: z.string().trim().min(2, "Select a bank"),
-  }),
-]);
+const payoutCountrySchema = z
+  .string()
+  .trim()
+  .toUpperCase()
+  .refine((code) => Boolean(getPayoutCountry(code)), "Select a valid country");
+
+export const payoutDetailsSchema = z
+  .object({
+    payoutCountry: payoutCountrySchema,
+    payoutType: z.enum(["mobile_money", "bank"]),
+    payoutAccountNumber: z.string().trim().min(8, "Enter a valid account number").max(20),
+    payoutBankCode: z.string().trim().min(2, "Select a provider or bank"),
+  })
+  .superRefine((data, ctx) => {
+    const country = getPayoutCountry(data.payoutCountry);
+    if (!country) return;
+
+    if (data.payoutType === "mobile_money" && !country.supportsMobileMoney) {
+      ctx.addIssue({
+        code: "custom",
+        message: "Mobile money is not available for the selected country",
+        path: ["payoutType"],
+      });
+    }
+  });

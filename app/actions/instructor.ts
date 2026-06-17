@@ -134,9 +134,10 @@ export async function savePayoutDetailsAction(
 ): Promise<ActionState> {
   const user = await requireRole("INSTRUCTOR");
 
-  const payoutType = String(formData.get("payoutType") ?? "mobile_money");
   const parsed = payoutDetailsSchema.safeParse({
-    payoutType,
+    payoutCountry: formData.get("payoutCountry"),
+    payoutType:
+      formData.get("payoutType") === "ghipss" ? "bank" : formData.get("payoutType"),
     payoutAccountNumber: formData.get("payoutAccountNumber"),
     payoutBankCode: formData.get("payoutBankCode"),
   });
@@ -148,6 +149,7 @@ export async function savePayoutDetailsAction(
   await prisma.instructorProfile.update({
     where: { userId: user.id },
     data: {
+      payoutCountry: parsed.data.payoutCountry,
       payoutType: parsed.data.payoutType,
       payoutAccountNumber: parsed.data.payoutAccountNumber,
       payoutBankCode: parsed.data.payoutBankCode,
