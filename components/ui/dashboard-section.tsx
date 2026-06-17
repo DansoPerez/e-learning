@@ -73,20 +73,22 @@ export function QuickActionGrid({
   items: { href: string; label: string; icon: ReactNode; description?: string }[];
 }) {
   return (
-    <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+    <div className="grid grid-cols-2 gap-2.5 sm:gap-3 xl:grid-cols-4">
       {items.map((item) => (
         <a
           key={item.href}
           href={item.href}
-          className="group flex items-start gap-3 rounded-sm border border-[var(--border)] bg-white p-4 shadow-[var(--shadow-sm)] transition-all hover:-translate-y-0.5 hover:border-[var(--primary-muted)] hover:shadow-[var(--shadow-md)]"
+          className="group flex min-h-[5.5rem] flex-col gap-2 rounded-sm border border-[var(--border)] bg-white p-3 shadow-[var(--shadow-sm)] transition-all hover:-translate-y-0.5 hover:border-[var(--primary-muted)] hover:shadow-[var(--shadow-md)] sm:min-h-0 sm:flex-row sm:items-start sm:gap-3 sm:p-4"
         >
-          <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[var(--primary-light)] text-[var(--primary)] transition-colors group-hover:bg-[var(--primary)] group-hover:text-white">
+          <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-[var(--primary-light)] text-[var(--primary)] transition-colors group-hover:bg-[var(--primary)] group-hover:text-white sm:h-10 sm:w-10 sm:rounded-xl [&_svg]:h-4 [&_svg]:w-4 sm:[&_svg]:h-5 sm:[&_svg]:w-5">
             {item.icon}
           </span>
           <span className="min-w-0">
-            <span className="block font-semibold text-[var(--foreground)]">{item.label}</span>
+            <span className="block text-sm font-semibold leading-tight text-[var(--foreground)] sm:text-base">
+              {item.label}
+            </span>
             {item.description ?
-              <span className="mt-0.5 block text-xs text-[var(--foreground-muted)]">
+              <span className="mt-0.5 line-clamp-2 block text-[11px] leading-snug text-[var(--foreground-muted)] sm:text-xs">
                 {item.description}
               </span>
             : null}
