@@ -5,6 +5,10 @@ import { redirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { requireAuth, requireRole } from "@/lib/auth";
 import { instructorApplicationSchema, withdrawalSchema } from "@/lib/validations/course";
+import { notifyAdminsOfWithdrawalRequest } from "@/lib/notifications";
+import { getAvailableWithdrawalBalance } from "@/lib/withdrawal-balance";
+import { payoutDetailsSchema } from "@/lib/validations/payout";
+import { hasPayoutDetails, isPaystackPayoutsEnabled } from "@/lib/services/withdrawal-payout";
 
 export type ActionState = { error?: string; success?: boolean };
 
@@ -73,8 +77,10 @@ export async function requestWithdrawalAction(
     return { error: parsed.error.issues[0]?.message ?? "Invalid amount" };
   }
 
+  let withdrawalId: string;
+
   try {
-    await prisma.$transaction(async (tx) => {
+    const withdrawal = await prisma.$transaction(async (tx) => {
       const profile = await tx.instructorProfile.findUnique({
         where: { userId: user.id },
       });
@@ -85,19 +91,16 @@ export async function requestWithdrawalAction(
       if (profile.earningsFrozen) {
         throw new Error("Your earnings are frozen. Contact support.");
       }
-      if (parsed.data.amount > Number(profile.balance)) {
-        throw new Error("Insufficient balance");
+      if (isPaystackPayoutsEnabled() && !hasPayoutDetails(profile)) {
+        throw new Error("Save your mobile money or bank payout details before requesting a withdrawal");
       }
 
-      const deducted = await tx.instructorProfile.updateMany({
-        where: { userId: user.id, balance: { gte: parsed.data.amount } },
-        data: { balance: { decrement: parsed.data.amount } },
-      });
-      if (deducted.count === 0) {
-        throw new Error("Insufficient balance");
+      const available = await getAvailableWithdrawalBalance(user.id, tx);
+      if (parsed.data.amount > available) {
+        throw new Error("Insufficient available balance");
       }
 
-      await tx.withdrawal.create({
+      return tx.withdrawal.create({
         data: {
           instructorId: user.id,
           amount: parsed.data.amount,
@@ -105,11 +108,52 @@ export async function requestWithdrawalAction(
         },
       });
     });
+    withdrawalId = withdrawal.id;
   } catch (error) {
     return {
       error: error instanceof Error ? error.message : "Withdrawal request failed",
     };
   }
+
+  await notifyAdminsOfWithdrawalRequest({
+    withdrawalId,
+    instructorName: user.name ?? "Instructor",
+    instructorUserCode: user.userCode ?? null,
+    instructorEmail: user.email,
+    amount: parsed.data.amount,
+    note: parsed.data.note,
+  });
+
+  revalidatePath("/dashboard/instructor/withdrawals");
+  return { success: true };
+}
+
+export async function savePayoutDetailsAction(
+  _prev: ActionState,
+  formData: FormData,
+): Promise<ActionState> {
+  const user = await requireRole("INSTRUCTOR");
+
+  const payoutType = String(formData.get("payoutType") ?? "mobile_money");
+  const parsed = payoutDetailsSchema.safeParse({
+    payoutType,
+    payoutAccountNumber: formData.get("payoutAccountNumber"),
+    payoutBankCode: formData.get("payoutBankCode"),
+  });
+
+  if (!parsed.success) {
+    return { error: parsed.error.issues[0]?.message ?? "Invalid payout details" };
+  }
+
+  await prisma.instructorProfile.update({
+    where: { userId: user.id },
+    data: {
+      payoutType: parsed.data.payoutType,
+      payoutAccountNumber: parsed.data.payoutAccountNumber,
+      payoutBankCode: parsed.data.payoutBankCode,
+      paystackRecipientCode: null,
+    },
+  });
 
   revalidatePath("/dashboard/instructor/withdrawals");
   return { success: true };

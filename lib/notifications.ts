@@ -1,5 +1,27 @@
 import { prisma } from "@/lib/prisma";
+import { isEmailConfigured, sendWithdrawalRequestAdminEmail } from "@/lib/email";
+import { getPaystackCurrency } from "@/lib/paystack-config";
+import { formatCurrency } from "@/lib/utils";
 import type { NotificationType, Prisma } from "@/app/generated/prisma/client";
+
+function getAppUrl(): string {
+  const base = process.env.NEXTAUTH_URL?.trim() || process.env.AUTH_URL?.trim() || "http://localhost:3000";
+  return base.replace(/\/$/, "");
+}
+
+async function getSensitiveAdminRecipients() {
+  return prisma.user.findMany({
+    where: {
+      role: "ADMIN",
+      status: "ACTIVE",
+      OR: [
+        { isSuperAdmin: true },
+        { adminSensitiveApproved: true, adminSensitiveSuspended: false },
+      ],
+    },
+    select: { id: true, email: true },
+  });
+}
 
 export async function createNotification(params: {
   userId: string;
@@ -91,6 +113,55 @@ export async function notifyReviewReply(
       link: `/courses/${courseSlug}`,
       metadata: { reviewId },
     });
+  }
+}
+
+export async function notifyAdminsOfWithdrawalRequest(params: {
+  withdrawalId: string;
+  instructorName: string;
+  instructorUserCode: string | null;
+  instructorEmail: string;
+  amount: number;
+  note?: string | null;
+}) {
+  const admins = await getSensitiveAdminRecipients();
+  const amountLabel = formatCurrency(params.amount, getPaystackCurrency());
+  const instructorLabel =
+    params.instructorUserCode ?
+      `${params.instructorName} (${params.instructorUserCode})`
+    : params.instructorName;
+
+  for (const admin of admins) {
+    await createNotification({
+      userId: admin.id,
+      type: "WITHDRAWAL",
+      title: "New withdrawal request",
+      body: `${instructorLabel} requested ${amountLabel}`,
+      link: "/dashboard/admin/withdrawals",
+      metadata: { withdrawalId: params.withdrawalId },
+    });
+  }
+
+  if (!isEmailConfigured()) return;
+
+  const emails = new Set(admins.map((admin) => admin.email).filter(Boolean));
+  const extraInbox = process.env.ADMIN_NOTIFICATION_EMAIL?.trim();
+  if (extraInbox) emails.add(extraInbox);
+
+  if (emails.size === 0) return;
+
+  try {
+    await sendWithdrawalRequestAdminEmail({
+      to: [...emails],
+      instructorName: params.instructorName,
+      instructorUserCode: params.instructorUserCode,
+      instructorEmail: params.instructorEmail,
+      amountLabel,
+      note: params.note,
+      reviewUrl: `${getAppUrl()}/dashboard/admin/withdrawals`,
+    });
+  } catch (error) {
+    console.error("[notifications] Failed to email admins about withdrawal:", error);
   }
 }
 
