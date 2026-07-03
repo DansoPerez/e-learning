@@ -1,4 +1,3 @@
-import { Prisma } from "@/app/generated/prisma/client";
 import { prisma } from "@/lib/prisma";
 
 /** Active students only — excludes instructors, admins, and suspended accounts. */
@@ -23,31 +22,35 @@ export async function countCourseLearners(
 
 /** Unique active students with at least one enrollment platform-wide. */
 export async function countDistinctPlatformLearners(): Promise<number> {
-  const [row] = await prisma.$queryRaw<[{ count: bigint }]>`
-    SELECT COUNT(DISTINCT e."userId")::bigint AS count
-    FROM "Enrollment" e
-    INNER JOIN "User" u ON u.id = e."userId"
-    WHERE u.role = 'STUDENT'::"Role"
-      AND u.status = 'ACTIVE'::"UserStatus"
-  `;
-  return Number(row?.count ?? 0);
+  const groups = await prisma.enrollment.groupBy({
+    by: ["userId"],
+    where: { user: learnerUserWhere },
+  });
+  return groups.length;
 }
 
 /** Unique active students across all of an instructor's courses (excludes self-enrollment). */
 export async function countDistinctInstructorLearners(
   instructorId: string,
 ): Promise<number> {
-  const [row] = await prisma.$queryRaw<[{ count: bigint }]>`
-    SELECT COUNT(DISTINCT e."userId")::bigint AS count
-    FROM "Enrollment" e
-    INNER JOIN "User" u ON u.id = e."userId"
-    INNER JOIN "Course" c ON c.id = e."courseId"
-    WHERE c."instructorId" = ${instructorId}
-      AND u.role = 'STUDENT'::"Role"
-      AND u.status = 'ACTIVE'::"UserStatus"
-      AND e."userId" <> c."instructorId"
-  `;
-  return Number(row?.count ?? 0);
+  const enrollments = await prisma.enrollment.findMany({
+    where: {
+      course: { instructorId },
+      user: learnerUserWhere,
+    },
+    select: {
+      userId: true,
+      course: { select: { instructorId: true } },
+    },
+  });
+
+  const learnerIds = new Set<string>();
+  for (const enrollment of enrollments) {
+    if (enrollment.userId !== enrollment.course.instructorId) {
+      learnerIds.add(enrollment.userId);
+    }
+  }
+  return learnerIds.size;
 }
 
 /** Per-course learner counts for many courses in one query. */
@@ -58,20 +61,24 @@ export async function getLearnerCountsByCourseIds(
   for (const id of courseIds) counts.set(id, 0);
   if (courseIds.length === 0) return counts;
 
-  const rows = await prisma.$queryRaw<Array<{ courseId: string; learnerCount: bigint }>>`
-    SELECT e."courseId" AS "courseId", COUNT(*)::bigint AS "learnerCount"
-    FROM "Enrollment" e
-    INNER JOIN "User" u ON u.id = e."userId"
-    INNER JOIN "Course" c ON c.id = e."courseId"
-    WHERE e."courseId" IN (${Prisma.join(courseIds)})
-      AND u.role = 'STUDENT'::"Role"
-      AND u.status = 'ACTIVE'::"UserStatus"
-      AND e."userId" <> c."instructorId"
-    GROUP BY e."courseId"
-  `;
+  const courses = await prisma.course.findMany({
+    where: { id: { in: courseIds } },
+    select: { id: true, instructorId: true },
+  });
+  const instructorByCourse = new Map(courses.map((c) => [c.id, c.instructorId]));
 
-  for (const row of rows) {
-    counts.set(row.courseId, Number(row.learnerCount));
+  const enrollments = await prisma.enrollment.findMany({
+    where: {
+      courseId: { in: courseIds },
+      user: learnerUserWhere,
+    },
+    select: { courseId: true, userId: true },
+  });
+
+  for (const enrollment of enrollments) {
+    if (enrollment.userId === instructorByCourse.get(enrollment.courseId)) continue;
+    counts.set(enrollment.courseId, (counts.get(enrollment.courseId) ?? 0) + 1);
   }
+
   return counts;
 }
