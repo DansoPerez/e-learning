@@ -1,8 +1,9 @@
+"use server";
+
 /**
  * Resend OTP email verification for registration.
- * Disabled when Resend is not configured — use registerAction in auth.ts instead.
+ * Disabled when email verification is off — use registerAction in auth.ts instead.
  */
-"use server";
 
 import bcrypt from "bcryptjs";
 import { redirect } from "next/navigation";
