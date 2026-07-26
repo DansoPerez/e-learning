@@ -105,8 +105,8 @@ In Vercel → **Settings** → **Environment Variables**, add:
 | `PAYSTACK_SECRET_KEY` | Paystack **test** or **live** secret key — paid checkout turns on automatically |
 | `PAYSTACK_CURRENCY` | `GHS` (default) |
 | `PAYMENTS_ENABLED` | Optional — set `false` to force free enrollment even with a key |
-| `RESEND_API_KEY` | Resend API key — OTP registration + password reset |
-| `RESEND_FROM_EMAIL` | Verified sender (`onboarding@resend.dev` for testing) |
+| `SMTP_HOST` / `SMTP_USER` / `SMTP_PASS` | Gmail SMTP (preferred, no domain) — `smtp.gmail.com` + App Password |
+| `RESEND_API_KEY` / `RESEND_FROM_EMAIL` | Optional Resend fallback if SMTP is not set |
 | `EMAIL_VERIFICATION_ENABLED` | `true` — require OTP before new accounts can sign in |
 | `ADMIN_NOTIFICATION_EMAIL` | Your email for withdrawal alerts (required with test sender) |
 | `GOOGLE_CLIENT_ID` / `GOOGLE_CLIENT_SECRET` | Optional OAuth |

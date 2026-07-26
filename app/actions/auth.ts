@@ -10,7 +10,7 @@ import { AuthError } from "next-auth";
 import { dashboardPathForRole } from "@/lib/auth";
 import { generateUserCode, findUserByLoginIdentifier } from "@/lib/user-code";
 import { logAudit } from "@/lib/audit-log";
-import { createNotification } from "@/lib/notifications";
+import { notifyAdminsOfInstructorApplication, notifyAdminsOfNewStudent } from "@/lib/notifications";
 import { markOffline } from "@/lib/presence";
 import { checkRateLimit, rateLimitKey } from "@/lib/rate-limit";
 import { isEmailVerificationEnabled } from "@/lib/email-config";
@@ -164,19 +164,13 @@ export async function registerAction(
       description: `Instructor registered (${userCode}), pending approval`,
     });
 
-    const superAdmins = await prisma.user.findMany({
-      where: { role: "ADMIN", isSuperAdmin: true, status: "ACTIVE" },
-      select: { id: true },
+    await notifyAdminsOfInstructorApplication({
+      instructorId: instructor.id,
+      instructorName: parsed.data.name,
+      instructorUserCode: userCode,
+      instructorEmail: email,
+      expertise: parsed.data.expertise,
     });
-    for (const sa of superAdmins) {
-      await createNotification({
-        userId: sa.id,
-        type: "INSTRUCTOR_PENDING",
-        title: "New instructor application",
-        body: `${parsed.data.name} (${userCode}) applied to teach`,
-        link: "/dashboard/admin/instructors",
-      });
-    }
 
     return signInAfterRegister(email, parsed.data.password);
   }
@@ -225,6 +219,13 @@ export async function registerAction(
     targetType: "User",
     targetId: student.id,
     description: `Student registered (${userCode})`,
+  });
+
+  await notifyAdminsOfNewStudent({
+    studentId: student.id,
+    studentName: parsed.data.name,
+    studentUserCode: userCode,
+    studentEmail: email,
   });
 
   return signInAfterRegister(email, parsed.data.password);

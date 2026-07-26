@@ -45,7 +45,8 @@ Copy `.env.example` to `.env` and fill in:
 - `AUTH_SECRET` — Run `openssl rand -base64 32`
 - `NEXTAUTH_URL` — `http://localhost:3000` for local dev
 - `PAYSTACK_SECRET_KEY` — Paystack test/live secret key (paid checkout enables automatically)
-- `RESEND_API_KEY` / `RESEND_FROM_EMAIL` — Resend for OTP registration and password reset
+- `SMTP_HOST` / `SMTP_USER` / `SMTP_PASS` — Gmail SMTP for OTP registration and password reset (no domain needed)
+- `RESEND_API_KEY` / `RESEND_FROM_EMAIL` — optional Resend fallback if SMTP is not set
 - `GOOGLE_CLIENT_ID` / `GOOGLE_CLIENT_SECRET` — Optional, for Google login
 
 Verify Paystack after adding your key:

@@ -9,7 +9,7 @@ import { getAppBaseUrl } from "../lib/paystack-config";
 
 async function main() {
   if (!isEmailConfigured()) {
-    console.error("❌ Set RESEND_API_KEY and RESEND_FROM_EMAIL in .env");
+    console.error("❌ Set SMTP_* (Gmail) or RESEND_* in .env");
     process.exit(1);
   }
 

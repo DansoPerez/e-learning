@@ -67,7 +67,7 @@ export async function requestPasswordResetAction(
       await prisma.passwordResetToken.deleteMany({ where: { email } });
       return {
         error:
-          "Could not send reset email. Check RESEND_API_KEY and RESEND_FROM_EMAIL, or ask an admin to reset your password.",
+          "Could not send reset email. Check SMTP_* (Gmail) or RESEND_* settings, or ask an admin to reset your password.",
       };
     }
   }

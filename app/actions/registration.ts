@@ -19,7 +19,7 @@ import { AuthError } from "next-auth";
 import { dashboardPathForRole } from "@/lib/auth";
 import { generateUserCode } from "@/lib/user-code";
 import { logAudit } from "@/lib/audit-log";
-import { createNotification } from "@/lib/notifications";
+import { notifyAdminsOfInstructorApplication, notifyAdminsOfNewStudent } from "@/lib/notifications";
 import { normalizeEmail } from "@/lib/normalize-email";
 import {
   createRegistrationOtp,
@@ -189,9 +189,26 @@ export async function sendRegistrationOtpAction(
     await createRegistrationOtp(email, metadata);
   } catch (err) {
     const message = err instanceof Error ? err.message : "Could not send verification email";
-    if (message.includes("RESEND_API_KEY") || message.includes("RESEND_FROM_EMAIL")) {
+    if (
+      message.includes("Email is not configured") ||
+      message.includes("SMTP_HOST") ||
+      message.includes("RESEND_API_KEY") ||
+      message.includes("RESEND_FROM_EMAIL")
+    ) {
       return {
-        error: "Email service is not configured. Add RESEND_API_KEY and RESEND_FROM_EMAIL to your environment.",
+        error:
+          "Email service is not configured. Add Gmail SMTP (SMTP_HOST, SMTP_USER, SMTP_PASS) or Resend (RESEND_API_KEY, RESEND_FROM_EMAIL) to your environment.",
+        values: registrationFormValues(formData),
+      };
+    }
+    if (
+      message.toLowerCase().includes("invalid login") ||
+      message.toLowerCase().includes("username and password not accepted") ||
+      message.toLowerCase().includes("application-specific password")
+    ) {
+      return {
+        error:
+          "Gmail rejected the login. Use an App Password (not your normal password) and make sure 2-Step Verification is on.",
         values: registrationFormValues(formData),
       };
     }
@@ -202,7 +219,7 @@ export async function sendRegistrationOtpAction(
     ) {
       return {
         error:
-          "The sender domain is not verified in Resend. Add your domain under Resend → Domains, or use onboarding@resend.dev for testing.",
+          "The sender is not allowed. For Gmail, SMTP_FROM must be your Gmail address. For Resend, verify your domain or use onboarding@resend.dev for testing.",
         values: registrationFormValues(formData),
       };
     }
@@ -349,19 +366,13 @@ export async function verifyRegistrationOtpAction(
       description: `Instructor registered (${userCode}), pending approval`,
     });
 
-    const superAdmins = await prisma.user.findMany({
-      where: { role: "ADMIN", isSuperAdmin: true, status: "ACTIVE" },
-      select: { id: true },
+    await notifyAdminsOfInstructorApplication({
+      instructorId: instructor.id,
+      instructorName: metadata.name,
+      instructorUserCode: userCode,
+      instructorEmail: email,
+      expertise: metadata.instructor.expertise,
     });
-    for (const sa of superAdmins) {
-      await createNotification({
-        userId: sa.id,
-        type: "INSTRUCTOR_PENDING",
-        title: "New instructor application",
-        body: `${metadata.name} (${userCode}) applied to teach`,
-        link: "/dashboard/admin/instructors",
-      });
-    }
   } else {
     const student = await prisma.user.create({
       data: {
@@ -380,6 +391,13 @@ export async function verifyRegistrationOtpAction(
       targetType: "User",
       targetId: student.id,
       description: `Student registered (${userCode})`,
+    });
+
+    await notifyAdminsOfNewStudent({
+      studentId: student.id,
+      studentName: metadata.name,
+      studentUserCode: userCode,
+      studentEmail: email,
     });
   }
 

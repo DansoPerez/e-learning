@@ -1,11 +1,19 @@
 import { prisma } from "@/lib/prisma";
-import { isEmailConfigured, sendWithdrawalRequestAdminEmail } from "@/lib/email";
+import {
+  isEmailConfigured,
+  sendInstructorPendingAdminEmail,
+  sendNewStudentAdminEmail,
+  sendPurchaseSuccessEmail,
+  sendWithdrawalRequestAdminEmail,
+} from "@/lib/email";
 import { getPaystackCurrency } from "@/lib/paystack-config";
 import { formatCurrency } from "@/lib/utils";
+import { getWelcomeSuggestedCourses } from "@/lib/welcome-offer";
 import type { NotificationType, Prisma } from "@/app/generated/prisma/client";
 
 function getAppUrl(): string {
-  const base = process.env.NEXTAUTH_URL?.trim() || process.env.AUTH_URL?.trim() || "http://localhost:3000";
+  const base =
+    process.env.NEXTAUTH_URL?.trim() || process.env.AUTH_URL?.trim() || "http://localhost:3000";
   return base.replace(/\/$/, "");
 }
 
@@ -16,7 +24,8 @@ async function getAdminUsersForAlerts() {
   });
 }
 
-async function getWithdrawalNotificationEmails(admins: { email: string }[]): Promise<string[]> {
+/** ADMIN_NOTIFICATION_EMAIL plus every active admin account email. */
+async function getAdminAlertEmails(admins: { email: string }[]): Promise<string[]> {
   const emails = new Set<string>();
   const inbox = process.env.ADMIN_NOTIFICATION_EMAIL?.trim();
   if (inbox) emails.add(inbox);
@@ -24,6 +33,38 @@ async function getWithdrawalNotificationEmails(admins: { email: string }[]): Pro
     if (admin.email) emails.add(admin.email);
   }
   return [...emails];
+}
+
+async function sendAdminEmails(
+  emails: string[],
+  sendOne: (email: string) => Promise<void>,
+  label: string,
+) {
+  if (!isEmailConfigured()) {
+    console.warn(`[notifications] Email not configured — ${label} email skipped`);
+    return;
+  }
+  if (emails.length === 0) {
+    console.warn(`[notifications] No admin email addresses for ${label}`);
+    return;
+  }
+
+  let sentCount = 0;
+  for (const email of emails) {
+    try {
+      await sendOne(email);
+      sentCount += 1;
+    } catch (error) {
+      console.error(
+        `[notifications] ${label} email failed for ${email}:`,
+        error instanceof Error ? error.message : error,
+      );
+    }
+  }
+
+  if (sentCount === 0) {
+    console.error(`[notifications] ${label}: no emails delivered.`);
+  }
 }
 
 export async function createNotification(params: {
@@ -119,6 +160,84 @@ export async function notifyReviewReply(
   }
 }
 
+export async function notifyAdminsOfNewStudent(params: {
+  studentId: string;
+  studentName: string;
+  studentUserCode: string | null;
+  studentEmail: string;
+}) {
+  const admins = await getAdminUsersForAlerts();
+  const label =
+    params.studentUserCode ?
+      `${params.studentName} (${params.studentUserCode})`
+    : params.studentName;
+
+  for (const admin of admins) {
+    await createNotification({
+      userId: admin.id,
+      type: "SYSTEM",
+      title: "New student registered",
+      body: `${label} joined Bravio`,
+      link: "/dashboard/admin/users",
+      metadata: { studentId: params.studentId },
+    });
+  }
+
+  const emails = await getAdminAlertEmails(admins);
+  await sendAdminEmails(
+    emails,
+    (email) =>
+      sendNewStudentAdminEmail({
+        to: [email],
+        studentName: params.studentName,
+        studentUserCode: params.studentUserCode,
+        studentEmail: params.studentEmail,
+        reviewUrl: `${getAppUrl()}/dashboard/admin/users`,
+      }),
+    "new student",
+  );
+}
+
+export async function notifyAdminsOfInstructorApplication(params: {
+  instructorId: string;
+  instructorName: string;
+  instructorUserCode: string | null;
+  instructorEmail: string;
+  expertise?: string | null;
+}) {
+  const admins = await getAdminUsersForAlerts();
+  const label =
+    params.instructorUserCode ?
+      `${params.instructorName} (${params.instructorUserCode})`
+    : params.instructorName;
+
+  for (const admin of admins) {
+    await createNotification({
+      userId: admin.id,
+      type: "INSTRUCTOR_PENDING",
+      title: "New instructor application",
+      body: `${label} applied to teach`,
+      link: "/dashboard/admin/instructors",
+      metadata: { instructorId: params.instructorId },
+    });
+  }
+
+  const emails = await getAdminAlertEmails(admins);
+  await sendAdminEmails(
+    emails,
+    (email) =>
+      sendInstructorPendingAdminEmail({
+        to: [email],
+        instructorName: params.instructorName,
+        instructorUserCode: params.instructorUserCode,
+        instructorEmail: params.instructorEmail,
+        expertise: params.expertise,
+        reviewUrl: `${getAppUrl()}/dashboard/admin/instructors`,
+      }),
+    "instructor application",
+  );
+}
+
 export async function notifyAdminsOfWithdrawalRequest(params: {
   withdrawalId: string;
   instructorName: string;
@@ -145,19 +264,7 @@ export async function notifyAdminsOfWithdrawalRequest(params: {
     });
   }
 
-  if (!isEmailConfigured()) {
-    console.warn(
-      "[notifications] RESEND_API_KEY / RESEND_FROM_EMAIL not set — withdrawal email skipped",
-    );
-    return;
-  }
-
-  const emails = await getWithdrawalNotificationEmails(admins);
-  if (emails.length === 0) {
-    console.warn("[notifications] No admin email addresses for withdrawal alert");
-    return;
-  }
-
+  const emails = await getAdminAlertEmails(admins);
   const reviewUrl = `${getAppUrl()}/dashboard/admin/withdrawals`;
   const payload = {
     instructorName: params.instructorName,
@@ -168,23 +275,68 @@ export async function notifyAdminsOfWithdrawalRequest(params: {
     reviewUrl,
   };
 
-  let sentCount = 0;
-  for (const email of emails) {
-    try {
-      await sendWithdrawalRequestAdminEmail({ to: [email], ...payload });
-      sentCount += 1;
-    } catch (error) {
-      console.error(
-        `[notifications] Withdrawal email failed for ${email}:`,
-        error instanceof Error ? error.message : error,
-      );
-    }
+  await sendAdminEmails(
+    emails,
+    (email) => sendWithdrawalRequestAdminEmail({ to: [email], ...payload }),
+    "withdrawal",
+  );
+}
+
+export async function notifyStudentOfSuccessfulPurchase(params: {
+  userId: string;
+  courseId: string;
+  courseTitle: string;
+  courseSlug: string;
+  amount: number;
+}) {
+  const user = await prisma.user.findUnique({
+    where: { id: params.userId },
+    select: { email: true, name: true },
+  });
+  if (!user?.email) return;
+
+  const amountLabel = formatCurrency(params.amount, getPaystackCurrency());
+  const learnUrl = `${getAppUrl()}/learn/${params.courseSlug}`;
+
+  await createNotification({
+    userId: params.userId,
+    type: "SYSTEM",
+    title: "Purchase successful",
+    body: `You now have access to ${params.courseTitle}`,
+    link: `/learn/${params.courseSlug}`,
+    metadata: { courseId: params.courseId },
+  });
+
+  if (!isEmailConfigured()) {
+    console.warn("[notifications] Email not configured — purchase email skipped");
+    return;
   }
 
-  if (sentCount === 0) {
+  const { percent, courses } = await getWelcomeSuggestedCourses(
+    params.userId,
+    params.courseId,
+    getAppUrl(),
+  );
+
+  try {
+    await sendPurchaseSuccessEmail({
+      to: user.email,
+      studentName: user.name ?? "Learner",
+      courseTitle: params.courseTitle,
+      amountLabel,
+      learnUrl,
+      welcomeDiscountPercent: percent,
+      suggestions: courses.map((course) => ({
+        title: course.title,
+        url: course.url,
+        priceLabel: course.priceLabel,
+        discountedLabel: course.discountedLabel,
+      })),
+    });
+  } catch (error) {
     console.error(
-      "[notifications] Withdrawal alert: no emails delivered. " +
-        "With Resend test sender (onboarding@resend.dev), only your Resend account email can receive mail — set ADMIN_NOTIFICATION_EMAIL to that address.",
+      "[notifications] Purchase email failed:",
+      error instanceof Error ? error.message : error,
     );
   }
 }

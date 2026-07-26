@@ -5,6 +5,12 @@ import { prisma } from "@/lib/prisma";
 import { initializePaystackPayment } from "@/lib/paystack";
 import { getPlatformCommission } from "@/lib/settings";
 import { enrollInFreeCourse, ensureEnrollment } from "@/lib/services/enrollment";
+import { notifyStudentOfSuccessfulPurchase } from "@/lib/notifications";
+import {
+  applyWelcomeDiscount,
+  getWelcomeDiscountPercent,
+  isWelcomeDiscountEligible,
+} from "@/lib/welcome-offer";
 
 export async function initiateCoursePayment(userId: string, courseId: string) {
   if (!isPaymentsEnabled()) {
@@ -24,8 +30,8 @@ export async function initiateCoursePayment(userId: string, courseId: string) {
     throw new Error("Course is not available for purchase");
   }
 
-  const amount = Number(course.price);
-  if (!chargesForCourse(amount)) {
+  const catalogPrice = Number(course.price);
+  if (!chargesForCourse(catalogPrice)) {
     await enrollInFreeCourse(userId, courseId);
     return { type: "free" as const };
   }
@@ -35,18 +41,42 @@ export async function initiateCoursePayment(userId: string, courseId: string) {
     return { type: "already_owned" as const };
   }
 
+  const welcomeEligible = await isWelcomeDiscountEligible(userId);
+  const discountPercent = welcomeEligible ? getWelcomeDiscountPercent() : 0;
+  const amount =
+    discountPercent > 0 ? applyWelcomeDiscount(catalogPrice, discountPercent) : catalogPrice;
+
   const pendingPayment = await prisma.payment.findFirst({
     where: { userId, courseId, status: "PENDING" },
     orderBy: { createdAt: "desc" },
   });
 
   if (pendingPayment) {
+    // Refresh pending amount if welcome pricing changed since it was created.
+    if (Number(pendingPayment.amount) !== amount) {
+      const commission = await getPlatformCommission();
+      await prisma.payment.update({
+        where: { id: pendingPayment.id },
+        data: {
+          amount,
+          platformShare: amount * commission,
+          instructorShare: amount - amount * commission,
+        },
+      });
+    }
+
     try {
       const paystack = await initializePaystackPayment({
         email: user.email,
         amount,
         reference: pendingPayment.reference,
-        metadata: { courseId, userId, paymentId: pendingPayment.id },
+        metadata: {
+          courseId,
+          userId,
+          paymentId: pendingPayment.id,
+          catalogPrice,
+          welcomeDiscountPercent: discountPercent,
+        },
       });
       return {
         type: "paid" as const,
@@ -83,7 +113,13 @@ export async function initiateCoursePayment(userId: string, courseId: string) {
       email: user.email,
       amount,
       reference: payment.reference,
-      metadata: { courseId, userId, paymentId: payment.id },
+      metadata: {
+        courseId,
+        userId,
+        paymentId: payment.id,
+        catalogPrice,
+        welcomeDiscountPercent: discountPercent,
+      },
     });
 
     return {
@@ -131,21 +167,21 @@ export async function completePayment(reference: string) {
     where: { reference },
     include: {
       course: {
-        select: { instructorId: true, title: true },
+        select: { instructorId: true, title: true, slug: true },
       },
     },
   });
 
   if (!payment || payment.status === "SUCCESS") return payment;
 
-  return prisma.$transaction(async (tx) => {
+  const completed = await prisma.$transaction(async (tx) => {
     const updated = await tx.payment.updateMany({
       where: { id: payment.id, status: "PENDING" },
       data: { status: "SUCCESS" },
     });
 
     if (updated.count === 0) {
-      return tx.payment.findUnique({ where: { reference } });
+      return null;
     }
 
     await tx.enrollment.upsert({
@@ -184,6 +220,38 @@ export async function completePayment(reference: string) {
       });
     }
 
-    return tx.payment.findUnique({ where: { reference } });
+    return tx.payment.findUnique({
+      where: { reference },
+      include: {
+        course: { select: { instructorId: true, title: true, slug: true } },
+      },
+    });
   });
+
+  if (completed?.course) {
+    try {
+      await notifyStudentOfSuccessfulPurchase({
+        userId: completed.userId,
+        courseId: completed.courseId,
+        courseTitle: completed.course.title,
+        courseSlug: completed.course.slug,
+        amount: Number(completed.amount),
+      });
+    } catch (error) {
+      console.error(
+        "[payment] Purchase notification failed:",
+        error instanceof Error ? error.message : error,
+      );
+    }
+  }
+
+  return (
+    completed ??
+    prisma.payment.findUnique({
+      where: { reference },
+      include: {
+        course: { select: { instructorId: true, title: true, slug: true } },
+      },
+    })
+  );
 }
