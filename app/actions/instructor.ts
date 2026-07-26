@@ -5,7 +5,10 @@ import { redirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { requireAuth, requireRole } from "@/lib/auth";
 import { instructorApplicationSchema, withdrawalSchema } from "@/lib/validations/course";
-import { notifyAdminsOfWithdrawalRequest } from "@/lib/notifications";
+import {
+  notifyAdminsOfInstructorApplication,
+  notifyAdminsOfWithdrawalRequest,
+} from "@/lib/notifications";
 import { getAvailableWithdrawalBalance } from "@/lib/withdrawal-balance";
 import { payoutDetailsSchema } from "@/lib/validations/payout";
 import { hasPayoutDetails, isPaystackPayoutsEnabled } from "@/lib/services/withdrawal-payout";
@@ -58,6 +61,14 @@ export async function applyInstructorAction(
       data: { role: "INSTRUCTOR" },
     });
   }
+
+  await notifyAdminsOfInstructorApplication({
+    instructorId: user.id,
+    instructorName: user.name?.trim() || user.email,
+    instructorUserCode: user.userCode ?? null,
+    instructorEmail: user.email,
+    expertise: parsed.data.expertise,
+  });
 
   revalidatePath("/dashboard/instructor");
   redirect("/dashboard/instructor/pending");

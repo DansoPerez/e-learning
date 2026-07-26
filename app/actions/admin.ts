@@ -13,7 +13,7 @@ import {
   requireSuperAdmin,
 } from "@/lib/admin-permissions";
 import { generateUserCode } from "@/lib/user-code";
-import { createNotification } from "@/lib/notifications";
+import { notifyInstructorOfApproval } from "@/lib/notifications";
 import {
   initiateWithdrawalPaystackTransfer,
   isPaystackPayoutsEnabled,
@@ -49,13 +49,7 @@ export async function approveInstructorAction(userId: string): Promise<void> {
     data: { status: "APPROVED", rejectionReason: null },
   });
 
-  await createNotification({
-    userId,
-    type: "INSTRUCTOR_PENDING",
-    title: "Instructor application approved",
-    body: "You can now access the instructor dashboard.",
-    link: "/dashboard/instructor",
-  });
+  await notifyInstructorOfApproval({ instructorId: userId });
 
   await logAudit({
     actorId: admin.id,

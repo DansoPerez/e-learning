@@ -1,6 +1,7 @@
 import { prisma } from "@/lib/prisma";
 import {
   isEmailConfigured,
+  sendInstructorApprovedWelcomeEmail,
   sendInstructorPendingAdminEmail,
   sendNewStudentAdminEmail,
   sendPurchaseSuccessEmail,
@@ -238,6 +239,46 @@ export async function notifyAdminsOfInstructorApplication(params: {
   );
 }
 
+export async function notifyInstructorOfApproval(params: {
+  instructorId: string;
+}) {
+  const instructor = await prisma.user.findUnique({
+    where: { id: params.instructorId },
+    select: { email: true, name: true },
+  });
+  if (!instructor?.email) return;
+
+  const dashboardUrl = `${getAppUrl()}/dashboard/instructor`;
+  const createCourseUrl = `${getAppUrl()}/dashboard/instructor/courses/new`;
+
+  await createNotification({
+    userId: params.instructorId,
+    type: "SYSTEM",
+    title: "Instructor application approved",
+    body: "Welcome! You can now access the instructor dashboard and create courses.",
+    link: "/dashboard/instructor",
+  });
+
+  if (!isEmailConfigured()) {
+    console.warn("[notifications] Email not configured — instructor welcome email skipped");
+    return;
+  }
+
+  try {
+    await sendInstructorApprovedWelcomeEmail({
+      to: instructor.email,
+      instructorName: instructor.name ?? "Instructor",
+      dashboardUrl,
+      createCourseUrl,
+    });
+  } catch (error) {
+    console.error(
+      "[notifications] Instructor welcome email failed:",
+      error instanceof Error ? error.message : error,
+    );
+  }
+}
+
 export async function notifyAdminsOfWithdrawalRequest(params: {
   withdrawalId: string;
   instructorName: string;
@@ -298,10 +339,20 @@ export async function notifyStudentOfSuccessfulPurchase(params: {
   const amountLabel = formatCurrency(params.amount, getPaystackCurrency());
   const learnUrl = `${getAppUrl()}/learn/${params.courseSlug}`;
 
+  const priorSuccessCount = await prisma.payment.count({
+    where: {
+      userId: params.userId,
+      status: "SUCCESS",
+      reference: { not: { startsWith: "comp_" } },
+    },
+  });
+  // This purchase is already SUCCESS when notification runs.
+  const isFirstPurchase = priorSuccessCount <= 1;
+
   await createNotification({
     userId: params.userId,
     type: "SYSTEM",
-    title: "Purchase successful",
+    title: isFirstPurchase ? "Welcome — purchase successful" : "Purchase successful",
     body: `You now have access to ${params.courseTitle}`,
     link: `/learn/${params.courseSlug}`,
     metadata: { courseId: params.courseId },
@@ -325,7 +376,8 @@ export async function notifyStudentOfSuccessfulPurchase(params: {
       courseTitle: params.courseTitle,
       amountLabel,
       learnUrl,
-      welcomeDiscountPercent: percent,
+      welcomeDiscountPercent: isFirstPurchase ? percent : 0,
+      isFirstPurchase,
       suggestions: courses.map((course) => ({
         title: course.title,
         url: course.url,

@@ -235,6 +235,46 @@ export async function sendInstructorPendingAdminEmail({
   });
 }
 
+export async function sendInstructorApprovedWelcomeEmail({
+  to,
+  instructorName,
+  dashboardUrl,
+  createCourseUrl,
+}: {
+  to: string;
+  instructorName: string;
+  dashboardUrl: string;
+  createCourseUrl: string;
+}) {
+  const firstName = instructorName.trim().split(/\s+/)[0] || "there";
+
+  await sendMail({
+    to,
+    subject: `${PLATFORM_NAME} — welcome! Your instructor account is approved`,
+    html: `
+      <div style="font-family: system-ui, sans-serif; max-width: 560px; margin: 0 auto; padding: 24px;">
+        <h1 style="color: #0056D2; font-size: 22px; margin-bottom: 8px;">${PLATFORM_NAME}</h1>
+        <p style="color: #334155; line-height: 1.5;">Hi ${escapeHtml(firstName)},</p>
+        <p style="color: #334155; line-height: 1.5;">
+          Great news — your instructor application was <strong>approved</strong>.
+          You can now create courses, teach students, and earn on ${PLATFORM_NAME}.
+        </p>
+        <p style="color: #334155; line-height: 1.5; margin: 20px 0 8px;">Get started:</p>
+        <ol style="color: #334155; line-height: 1.6; padding-left: 20px; margin: 0 0 24px;">
+          <li>Open your teaching dashboard</li>
+          <li>Create your first course (modules, lessons, quizzes)</li>
+          <li>Submit it for review, then go live when approved</li>
+        </ol>
+        <p style="margin: 24px 0;">
+          <a href="${escapeHtml(dashboardUrl)}" style="background: #0056D2; color: white; padding: 12px 20px; border-radius: 8px; text-decoration: none; font-weight: 600; margin-right: 10px;">Open teaching home</a>
+          <a href="${escapeHtml(createCourseUrl)}" style="color: #0056D2; font-weight: 600; text-decoration: none;">Create a course →</a>
+        </p>
+        <p style="color: #64748b; font-size: 13px; margin-top: 28px;">Welcome to the teaching community — we are glad you are here.</p>
+      </div>
+    `,
+  });
+}
+
 export async function sendPurchaseSuccessEmail({
   to,
   studentName,
@@ -243,6 +283,7 @@ export async function sendPurchaseSuccessEmail({
   learnUrl,
   welcomeDiscountPercent,
   suggestions,
+  isFirstPurchase = false,
 }: {
   to: string;
   studentName: string;
@@ -256,15 +297,19 @@ export async function sendPurchaseSuccessEmail({
     priceLabel: string;
     discountedLabel: string;
   }>;
+  isFirstPurchase?: boolean;
 }) {
   const firstName = studentName.trim().split(/\s+/)[0] || "there";
+  const showWelcomeOffer =
+    isFirstPurchase && suggestions.length > 0 && welcomeDiscountPercent > 0;
+
   const suggestionBlock =
-    suggestions.length > 0 && welcomeDiscountPercent > 0 ?
+    showWelcomeOffer ?
       `
         <hr style="border: none; border-top: 1px solid #e2e8f0; margin: 28px 0;" />
         <h2 style="color: #0f172a; font-size: 18px; margin: 0 0 8px;">Welcome offer — ${welcomeDiscountPercent}% off your next courses</h2>
         <p style="color: #334155; line-height: 1.5; margin: 0 0 16px;">
-          Thanks for learning with ${PLATFORM_NAME}. For a limited time, these recommended courses are available at a welcome discount when you check out:
+          Thanks for making your first purchase on ${PLATFORM_NAME}. For a limited time, these recommended courses are available at a welcome discount when you check out:
         </p>
         <table style="width: 100%; border-collapse: collapse; font-size: 15px;">
           ${suggestions
@@ -302,17 +347,24 @@ export async function sendPurchaseSuccessEmail({
       `
     : "";
 
+  const intro =
+    isFirstPurchase ?
+      `Welcome to ${PLATFORM_NAME}! Your first payment was successful. You now have full access to <strong>${escapeHtml(courseTitle)}</strong>.`
+    : `Your payment was successful. You now have full access to <strong>${escapeHtml(courseTitle)}</strong>.`;
+
+  const subject =
+    isFirstPurchase ?
+      `${PLATFORM_NAME} — welcome! Payment confirmed for ${courseTitle}`
+    : `${PLATFORM_NAME} — payment confirmed for ${courseTitle}`;
+
   await sendMail({
     to,
-    subject: `${PLATFORM_NAME} — payment confirmed for ${courseTitle}`,
+    subject,
     html: `
       <div style="font-family: system-ui, sans-serif; max-width: 560px; margin: 0 auto; padding: 24px;">
         <h1 style="color: #0056D2; font-size: 22px; margin-bottom: 8px;">${PLATFORM_NAME}</h1>
         <p style="color: #334155; line-height: 1.5;">Hi ${escapeHtml(firstName)},</p>
-        <p style="color: #334155; line-height: 1.5;">
-          Your payment was successful. You now have full access to
-          <strong>${escapeHtml(courseTitle)}</strong>.
-        </p>
+        <p style="color: #334155; line-height: 1.5;">${intro}</p>
         <table style="width: 100%; margin: 20px 0; border-collapse: collapse; font-size: 15px;">
           <tr><td style="padding: 8px 0; color: #64748b;">Course</td><td style="padding: 8px 0; font-weight: 600;">${escapeHtml(courseTitle)}</td></tr>
           <tr><td style="padding: 8px 0; color: #64748b;">Amount paid</td><td style="padding: 8px 0; font-weight: 600;">${escapeHtml(amountLabel)}</td></tr>
@@ -321,7 +373,7 @@ export async function sendPurchaseSuccessEmail({
           <a href="${escapeHtml(learnUrl)}" style="background: #0056D2; color: white; padding: 12px 20px; border-radius: 8px; text-decoration: none; font-weight: 600;">Start learning</a>
         </p>
         ${suggestionBlock}
-        <p style="color: #64748b; font-size: 13px; margin-top: 28px;">Welcome aboard — we are glad you are here.</p>
+        <p style="color: #64748b; font-size: 13px; margin-top: 28px;">${isFirstPurchase ? "Welcome aboard — we are glad you are here." : "Happy learning."}</p>
       </div>
     `,
   });
