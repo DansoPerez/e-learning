@@ -116,7 +116,8 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
           }
           token.refreshedAt = Date.now();
         } catch {
-          // Schema out of sync (run `npx prisma db push`) — keep existing token claims
+          // Keep existing token claims if DB is briefly unavailable
+          token.refreshedAt = Date.now();
         }
       }
 

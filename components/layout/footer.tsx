@@ -12,7 +12,7 @@ import {
 } from "@/lib/site-nav";
 import type { Session } from "next-auth";
 
-export function Footer({ initialSession }: { initialSession: Session | null }) {
+export function Footer({ initialSession }: { initialSession?: Session | null }) {
   const { isAuthenticated, role } = useAppSession(initialSession);
   const year = new Date().getFullYear();
   const isInstructor = role === "INSTRUCTOR";

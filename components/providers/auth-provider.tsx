@@ -9,7 +9,8 @@ export function AuthProvider({
   session,
 }: {
   children: React.ReactNode;
-  session: Session | null;
+  /** Omit to avoid blocking the root layout — SessionProvider fetches client-side. */
+  session?: Session | null;
 }) {
   return (
     <SessionProvider session={session} refetchOnWindowFocus={false} refetchInterval={0}>

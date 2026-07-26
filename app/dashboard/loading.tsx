@@ -1,5 +1,9 @@
 import { DashboardLoadingSkeleton } from "@/components/ui/loading";
 
 export default function Loading() {
-  return <DashboardLoadingSkeleton />;
+  return (
+    <div className="min-h-[60vh] bg-[var(--background)]">
+      <DashboardLoadingSkeleton />
+    </div>
+  );
 }

@@ -1,5 +1,9 @@
 import { CourseDetailLoadingSkeleton } from "@/components/ui/loading";
 
 export default function Loading() {
-  return <CourseDetailLoadingSkeleton />;
+  return (
+    <div className="min-h-[60vh] bg-[var(--background)]">
+      <CourseDetailLoadingSkeleton />
+    </div>
+  );
 }

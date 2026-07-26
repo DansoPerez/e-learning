@@ -1,7 +1,4 @@
-import { getServerSession } from "@/lib/session";
 import Link from "next/link";
-import { Suspense } from "react";
-import { prisma } from "@/lib/prisma";
 import { CourseCard } from "@/components/courses/course-card";
 import { HomeClosingCta, HomeHeroCta } from "@/components/home/home-hero-cta";
 import {
@@ -14,7 +11,6 @@ import { Award, BookOpen, Globe, Layers, Shield, Users } from "lucide-react";
 import { courseCatalogGridClass } from "@/lib/course-grid";
 
 export default async function HomePage() {
-  const session = await getServerSession();
   const [featured, stats, categories] = await Promise.all([
     getCachedFeaturedCourses(),
     getCachedPlatformStats(),
@@ -35,7 +31,7 @@ export default async function HomePage() {
               Start, switch, or advance your career with thousands of courses from
               verified instructors.
             </p>
-            <HomeHeroCta initialSession={session} />
+            <HomeHeroCta />
           </div>
         </div>
       </section>
@@ -163,9 +159,7 @@ export default async function HomePage() {
 
       <section className="hero-mesh py-14 sm:py-16">
         <div className="page-container relative text-center">
-          <Suspense fallback={null}>
-            <HomeClosingCta initialSession={session} />
-          </Suspense>
+          <HomeClosingCta />
         </div>
       </section>
     </div>

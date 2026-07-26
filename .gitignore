@@ -41,6 +41,7 @@ yarn-error.log*
 
 # third-party HTML templates (may contain embedded API keys)
 .reference/
+public/webuni/
 
 # vercel
 .vercel

@@ -63,7 +63,7 @@ export function PageLoading({ className }: { className?: string }) {
   return (
     <div
       className={cn(
-        "loading-fade-up flex min-h-[50vh] flex-col items-center justify-center py-20",
+        "loading-fade-up flex min-h-[60vh] flex-col items-center justify-center bg-[var(--background)] py-20",
         className,
       )}
     >

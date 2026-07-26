@@ -1,8 +1,9 @@
 import type { Metadata, Viewport } from "next";
+import { Suspense } from "react";
 import { Source_Sans_3, JetBrains_Mono } from "next/font/google";
-import { getServerSession } from "@/lib/session";
-import { Header } from "@/components/layout/header";
+import { SiteHeader } from "@/components/layout/site-header";
 import { ConditionalFooter } from "@/components/layout/conditional-footer";
+import { NavigationProgress } from "@/components/layout/navigation-progress";
 import { AuthProvider } from "@/components/providers/auth-provider";
 import { PLATFORM_NAME } from "@/lib/constants";
 import "./globals.css";
@@ -33,20 +34,25 @@ export const metadata: Metadata = {
     "A secure e-learning marketplace connecting students and instructors.",
 };
 
-export default async function RootLayout({
+export default function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  const session = await getServerSession();
-
   return (
-    <html lang="en" className={`${sourceSans.variable} ${jetbrainsMono.variable} h-full light`} style={{ colorScheme: "light" }}>
+    <html
+      lang="en"
+      className={`${sourceSans.variable} ${jetbrainsMono.variable} h-full light`}
+      style={{ colorScheme: "light" }}
+    >
       <body className="flex min-h-full flex-col antialiased">
-        <AuthProvider session={session}>
-          <Header initialSession={session} />
+        <AuthProvider>
+          <Suspense fallback={null}>
+            <NavigationProgress />
+          </Suspense>
+          <SiteHeader />
           <main className="min-w-0 flex-1">{children}</main>
-          <ConditionalFooter initialSession={session} />
+          <ConditionalFooter />
         </AuthProvider>
       </body>
     </html>

@@ -8,11 +8,12 @@ export function isEmailConfigured(): boolean {
 }
 
 /**
- * OTP registration flow is on when Resend is configured.
- * Set EMAIL_VERIFICATION_ENABLED=false to skip OTP even with a key (e.g. staging).
+ * OTP registration is enabled when Resend is configured.
+ * Set EMAIL_VERIFICATION_ENABLED=true to force it on, or =false to disable even with Resend keys.
  */
 export function isEmailVerificationEnabled(): boolean {
   if (process.env.EMAIL_VERIFICATION_ENABLED === "false") return false;
+  if (process.env.EMAIL_VERIFICATION_ENABLED === "true") return true;
   return isEmailConfigured();
 }
 

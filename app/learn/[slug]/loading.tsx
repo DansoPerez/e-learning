@@ -1,5 +1,9 @@
 import { LearnLoadingSkeleton } from "@/components/ui/loading";
 
 export default function Loading() {
-  return <LearnLoadingSkeleton />;
+  return (
+    <div className="min-h-[60vh] bg-[var(--background)]">
+      <LearnLoadingSkeleton />
+    </div>
+  );
 }
