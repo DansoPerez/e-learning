@@ -293,7 +293,6 @@ export async function submitQuizAttemptAction(
   if (course) {
     revalidatePath(`/learn/${course.slug}`);
     revalidatePath(`/dashboard/student`);
-    revalidatePath(`/dashboard/student/courses`);
   }
 
   return { score, passed, total: quiz.questions.length };

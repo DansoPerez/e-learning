@@ -45,7 +45,6 @@ export async function markLessonCompleteAction(
 
   revalidatePath(`/learn/${courseSlug}`);
   revalidatePath("/dashboard/student");
-  revalidatePath("/dashboard/student/courses");
 }
 
 export async function trackLessonViewAction(

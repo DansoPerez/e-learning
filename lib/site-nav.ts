@@ -96,7 +96,6 @@ const STUDENT_SECTIONS: NavSection[] = [
     label: "Learner",
     items: [
       { href: "/dashboard/student", label: "My Learning" },
-      { href: "/dashboard/student/courses", label: "My courses" },
       { href: "/courses", label: "Explore" },
       { href: "/dashboard/student/messages", label: "Messages" },
     ],

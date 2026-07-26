@@ -1,4 +1,3 @@
-import Link from "next/link";
 import { prisma } from "@/lib/prisma";
 import { requireRole } from "@/lib/auth";
 import { getAnnouncementsForUser } from "@/lib/announcements";
@@ -7,7 +6,6 @@ import { AnnouncementPanel } from "@/components/announcements/announcement-panel
 import { DashboardSection } from "@/components/ui/dashboard-section";
 import { MyLearningTabs } from "@/components/learning/my-learning-tabs";
 import { EnrolledCourseRow } from "@/components/learning/enrolled-course-card";
-import { Button } from "@/components/ui/button";
 
 const enrollmentSelect = {
   id: true,
@@ -47,16 +45,7 @@ export default async function StudentDashboardPage() {
   return (
     <DashboardWrapper role="STUDENT" title="My Learning">
       {continueEnrollments.length > 0 ?
-        <DashboardSection
-          title="Pick up where you left off"
-          action={
-            <Link href="/dashboard/student/courses">
-              <Button variant="outline" size="sm">
-                View all
-              </Button>
-            </Link>
-          }
-        >
+        <DashboardSection title="Pick up where you left off">
           <div className="space-y-3">
             {continueEnrollments.map((e) => (
               <EnrolledCourseRow

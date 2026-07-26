@@ -10,9 +10,9 @@ const markSizes = {
 } as const;
 
 const iconSizes = {
-  xs: "h-[17px] w-[17px]",
-  sm: "h-[19px] w-[19px]",
-  md: "h-[21px] w-[21px]",
+  xs: "h-[18px] w-[18px]",
+  sm: "h-5 w-5",
+  md: "h-[22px] w-[22px]",
   lg: "h-6 w-6",
   xl: "h-8 w-8",
 } as const;
@@ -28,9 +28,8 @@ const textSizes = {
 type LogoSize = keyof typeof markSizes;
 
 /**
- * Bravio mark — rising skill path that still reads as a “B”.
- * Stem + three ascending bars (modules / progress) + gold achievement spark.
- * Not a stock book icon; unique to the brand.
+ * Bravio mark — custom open “B” monogram (doorway into learning) with a gold
+ * forward chevron in the gap. Path-drawn, not a font glyph or stock icon.
  */
 export function BravioLogoMark({
   className,
@@ -48,17 +47,16 @@ export function BravioLogoMark({
       className={cn(iconSizes[size], className)}
       aria-hidden
     >
-      {/* Stem */}
-      <rect x="6" y="5" width="4.5" height="22" rx="1" fill="currentColor" />
-      {/* Ascending skill bars — form the B’s open side */}
-      <rect x="12.5" y="20.5" width="7" height="4" rx="1" fill="currentColor" />
-      <rect x="12.5" y="14" width="10.5" height="4" rx="1" fill="currentColor" />
-      <rect x="12.5" y="7.5" width="14" height="4" rx="1" fill="currentColor" />
-      {/* Achievement spark */}
+      <path
+        fill="currentColor"
+        fillRule="evenodd"
+        clipRule="evenodd"
+        d="M7 4h9.2c3.85 0 6.55 2.15 6.55 5.35 0 2.05-1.1 3.55-2.85 4.4 2.25.85 3.7 2.7 3.7 5.2 0 3.85-3.2 6.05-7.55 6.05H7V4Zm4.35 3.55v5.05h4.55c1.7 0 2.7-.9 2.7-2.45s-1-2.6-2.7-2.6h-4.55Zm0 8.35V21.1h5.2c2.15 0 3.4-1.15 3.4-2.95s-1.25-2.25-3.4-2.25h-5.2Z"
+      />
       {withAccent ?
         <path
-          d="M26.2 5.2 27.15 7.05 29.2 7.4 27.7 8.85 27.95 10.9 26.2 9.9 24.45 10.9 24.7 8.85 23.2 7.4 25.25 7.05 26.2 5.2Z"
           fill="var(--accent, #f2b705)"
+          d="M24.2 14.1 28.4 16.35 24.2 18.6v-2.05l2.15-.9-2.15-.9v-1.65Z"
         />
       : null}
     </svg>
@@ -77,14 +75,13 @@ export function BravioWordmark({
   return (
     <span
       className={cn(
-        "font-extrabold tracking-[-0.045em]",
+        "font-extrabold tracking-[-0.04em]",
         textSizes[size],
         inverse ? "text-white" : "text-[var(--foreground)]",
         className,
       )}
     >
-      Brav
-      <span className={inverse ? "text-white" : "text-[var(--primary)]"}>io</span>
+      {PLATFORM_NAME}
     </span>
   );
 }
@@ -115,21 +112,21 @@ export function BravioLogo({
     variant === "flat" ?
       cn(
         markSizes[size],
-        "flex items-center justify-center rounded-[0.4rem] bg-[var(--primary-light)] text-[var(--primary)]",
+        "flex items-center justify-center rounded-[0.45rem] bg-[var(--primary-light)] text-[var(--primary)]",
       )
     : variant === "onPrimary" ?
       cn(
         markSizes[size],
-        "flex items-center justify-center rounded-[0.4rem] bg-white/15 text-white ring-1 ring-inset ring-white/20",
+        "flex items-center justify-center rounded-[0.45rem] bg-white/15 text-white ring-1 ring-inset ring-white/20",
       )
     : variant === "inverse" ?
       cn(
         markSizes[size],
-        "flex items-center justify-center rounded-[0.4rem] bg-white text-[var(--primary)] shadow-sm",
+        "flex items-center justify-center rounded-[0.45rem] bg-white text-[var(--primary)] shadow-sm",
       )
     : cn(
         markSizes[size],
-        "flex items-center justify-center rounded-[0.4rem] bg-[var(--primary)] text-white shadow-[var(--shadow-primary)]",
+        "flex items-center justify-center rounded-[0.45rem] bg-[var(--primary)] text-white shadow-[var(--shadow-primary)]",
       );
 
   return (
