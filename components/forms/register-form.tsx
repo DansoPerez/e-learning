@@ -17,7 +17,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { SelfieCapture } from "@/components/instructor/selfie-capture";
-import { BookOpen } from "lucide-react";
+import { BravioLogo } from "@/components/brand/bravio-logo";
 
 const initial: ActionState = {};
 const otpInitial: RegistrationState = {};
@@ -49,10 +49,7 @@ function AuthShell({
     <div className="mx-auto grid w-full max-w-4xl overflow-hidden rounded-[var(--radius)] border border-[var(--border)] bg-white shadow-[var(--shadow-lg)] lg:grid-cols-2">
       <div className="hidden flex-col justify-between bg-[var(--primary)] p-10 text-white lg:flex">
         <div>
-          <div className="flex items-center gap-2 text-xl font-bold">
-            <BookOpen className="h-7 w-7" />
-            Bravio
-          </div>
+          <BravioLogo size="lg" variant="onPrimary" />
           <p className="mt-8 text-2xl font-bold leading-snug">{title}</p>
           <p className="mt-3 text-blue-100">{subtitle}</p>
         </div>

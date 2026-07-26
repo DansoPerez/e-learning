@@ -4,13 +4,13 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import type { Session } from "next-auth";
 import { useAppSession } from "@/lib/use-app-session";
-import { PLATFORM_NAME } from "@/lib/constants";
 import { publicHeaderLinks } from "@/lib/site-nav";
 import { dashboardPathForRole } from "@/lib/dashboard-nav";
 import { Button } from "@/components/ui/button";
 import { CourseSearch } from "@/components/layout/course-search";
 import { NotificationBell } from "@/components/notifications/notification-bell";
 import { UserMenu } from "@/components/layout/user-menu";
+import { BravioLogo } from "@/components/brand/bravio-logo";
 import { cn } from "@/lib/utils";
 
 function navTabClass(active: boolean) {
@@ -77,9 +77,8 @@ export function HeaderNav({ initialSession }: { initialSession: Session | null }
             href={isAuthenticated ? dashboardPathForRole(role) : "/"}
             className="flex shrink-0 items-center"
           >
-            <span className="text-xl font-bold tracking-tight text-[var(--primary)] sm:text-2xl">
-              {PLATFORM_NAME}
-            </span>
+            <BravioLogo size="sm" variant="bare" className="sm:hidden" />
+            <BravioLogo size="md" variant="bare" className="hidden sm:inline-flex" />
           </Link>
 
           {isAppShell && isAuthenticated ?

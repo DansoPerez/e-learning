@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useAppSession } from "@/lib/use-app-session";
 import { PLATFORM_NAME } from "@/lib/constants";
+import { BravioLogo } from "@/components/brand/bravio-logo";
 import {
   EXPLORE_COURSES_LINK,
   TEACH_LINK,
@@ -22,8 +23,8 @@ export function Footer({ initialSession }: { initialSession?: Session | null }) 
       <div className="page-container py-10 sm:py-12">
         <div className="grid gap-8 sm:grid-cols-2 lg:grid-cols-4">
           <div className="sm:col-span-2 lg:col-span-1">
-            <Link href="/" className="text-xl font-bold text-[var(--primary)]">
-              {PLATFORM_NAME}
+            <Link href="/" className="inline-flex">
+              <BravioLogo size="md" variant="bare" />
             </Link>
             <p className="mt-4 max-w-xs text-sm leading-relaxed text-[var(--foreground-muted)]">
               Professional online courses for students and instructors worldwide.

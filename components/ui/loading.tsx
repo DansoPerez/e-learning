@@ -1,4 +1,5 @@
-import { BookOpen } from "lucide-react";
+import { BravioLogoMark, BravioWordmark } from "@/components/brand/bravio-logo";
+import { PLATFORM_NAME } from "@/lib/constants";
 import { cn } from "@/lib/utils";
 
 export function Skeleton({
@@ -21,38 +22,50 @@ export function Skeleton({
   );
 }
 
-export function BrandLoader({ className }: { className?: string }) {
+export function BrandLoader({
+  className,
+  label = "Loading",
+}: {
+  className?: string;
+  label?: string;
+}) {
   return (
     <div
       role="status"
-      aria-label="Loading"
-      className={cn("relative flex flex-col items-center gap-4", className)}
+      aria-label={label}
+      className={cn("relative flex flex-col items-center gap-5", className)}
     >
-      <span className="sr-only">Loading</span>
-      <div className="relative flex h-14 w-14 items-center justify-center">
+      <span className="sr-only">{label}</span>
+
+      <div className="relative flex h-[4.5rem] w-[4.5rem] items-center justify-center">
+        {/* Orbit ring */}
         <span
           aria-hidden
-          className="loading-spin absolute inset-0 rounded-full border-2 border-[var(--primary-light)] border-t-[var(--primary)]"
+          className="loading-orbit absolute inset-0 rounded-full border-2 border-[var(--primary-light)] border-t-[var(--primary)] border-r-[var(--accent)]"
         />
+        {/* Soft pulse halo */}
         <span
           aria-hidden
-          className="loading-breathe flex h-10 w-10 items-center justify-center rounded-xl bg-[var(--primary)] text-white shadow-[0_4px_14px_rgba(0,86,210,0.25)]"
+          className="loading-halo absolute inset-2 rounded-full bg-[var(--primary-light)]"
+        />
+        {/* Brand mark */}
+        <span
+          aria-hidden
+          className="loading-mark-pop relative z-[1] flex h-12 w-12 items-center justify-center rounded-[0.55rem] bg-[var(--primary)] text-white shadow-[0_8px_24px_rgba(0,86,210,0.28)]"
         >
-          <BookOpen className="h-5 w-5" strokeWidth={1.75} />
+          <BravioLogoMark size="md" withAccent />
         </span>
       </div>
-      <div className="flex flex-col items-center gap-1.5">
-        <span className="text-sm font-medium tracking-tight text-[var(--foreground-secondary)]">
-          Loading
+
+      <div className="flex flex-col items-center gap-2">
+        <span className="pointer-events-none inline-flex items-center gap-2" aria-hidden>
+          <BravioWordmark size="sm" />
         </span>
-        <span className="flex gap-1" aria-hidden>
-          {[0, 1, 2].map((i) => (
-            <span
-              key={i}
-              className="loading-breathe h-1 w-1 rounded-full bg-[var(--primary)]"
-              style={{ animationDelay: `${i * 180}ms` }}
-            />
-          ))}
+        <span className="text-xs font-medium tracking-wide text-[var(--foreground-muted)]">
+          {label}
+          <span className="loading-ellipsis" aria-hidden>
+            …
+          </span>
         </span>
       </div>
     </div>
@@ -63,11 +76,19 @@ export function PageLoading({ className }: { className?: string }) {
   return (
     <div
       className={cn(
-        "loading-fade-up flex min-h-[60vh] flex-col items-center justify-center bg-[var(--background)] py-20",
+        "loading-fade-up relative flex min-h-[60vh] flex-col items-center justify-center overflow-hidden bg-[var(--background)] py-20",
         className,
       )}
     >
-      <BrandLoader />
+      <div
+        aria-hidden
+        className="pointer-events-none absolute inset-0 opacity-70"
+        style={{
+          background:
+            "radial-gradient(ellipse 55% 40% at 50% 42%, var(--primary-light) 0%, transparent 70%)",
+        }}
+      />
+      <BrandLoader label={`Preparing ${PLATFORM_NAME}`} />
     </div>
   );
 }
@@ -97,7 +118,7 @@ function CourseCardSkeleton({ delay = 0 }: { delay?: number }) {
 function StatCardSkeleton({ delay = 0 }: { delay?: number }) {
   return (
     <div
-      className="loading-fade-up rounded-[var(--radius)] border border-[var(--border)] border-l-4 border-l-[var(--primary-light)] bg-white p-5 shadow-[var(--shadow-sm)]"
+      className="loading-fade-up rounded-[var(--radius)] border border-[var(--border)] border-l-4 border-l-[var(--primary)] bg-white p-5 shadow-[var(--shadow-sm)]"
       style={{ animationDelay: `${delay}ms` }}
     >
       <Skeleton className="h-3 w-24" />
@@ -239,8 +260,8 @@ export function LearnLoadingSkeleton() {
           >
             <div className="absolute inset-0 loading-shimmer opacity-60" />
             <div className="absolute inset-0 flex items-center justify-center">
-              <div className="flex h-14 w-14 items-center justify-center rounded-full bg-white/90 shadow-[var(--shadow-md)]">
-                <div className="ml-1 h-0 w-0 border-y-[8px] border-l-[14px] border-y-transparent border-l-[var(--primary)]" />
+              <div className="flex h-14 w-14 items-center justify-center rounded-[0.55rem] bg-[var(--primary)] text-white shadow-[var(--shadow-md)]">
+                <BravioLogoMark size="md" withAccent={false} />
               </div>
             </div>
           </div>

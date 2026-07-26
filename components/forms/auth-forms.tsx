@@ -8,6 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { GoogleSignInButton } from "@/components/auth/google-sign-in-button";
+import { BravioLogo } from "@/components/brand/bravio-logo";
 
 const initial: ActionState = {};
 
@@ -24,7 +25,7 @@ function AuthShell({
     <div className="mx-auto grid w-full max-w-4xl overflow-hidden rounded-[var(--radius-lg)] border border-[var(--border)] bg-white shadow-[var(--shadow-lg)] lg:grid-cols-2">
       <div className="relative hidden flex-col justify-between overflow-hidden bg-gradient-to-br from-[#0056d2] to-[#00419e] p-10 text-white lg:flex">
         <div className="relative">
-          <div className="text-xl font-bold text-white">Bravio</div>
+          <BravioLogo size="lg" variant="onPrimary" />
           <p className="mt-8 text-2xl font-bold leading-snug">{title}</p>
           <p className="mt-3 text-blue-100">{subtitle}</p>
         </div>

@@ -10,11 +10,11 @@ const markSizes = {
 } as const;
 
 const iconSizes = {
-  xs: "h-4 w-4",
-  sm: "h-[18px] w-[18px]",
-  md: "h-5 w-5",
+  xs: "h-[17px] w-[17px]",
+  sm: "h-[19px] w-[19px]",
+  md: "h-[21px] w-[21px]",
   lg: "h-6 w-6",
-  xl: "h-7 w-7",
+  xl: "h-8 w-8",
 } as const;
 
 const textSizes = {
@@ -27,15 +27,40 @@ const textSizes = {
 
 type LogoSize = keyof typeof markSizes;
 
-export function BravioLogoMark({ className, size = "md" }: { className?: string; size?: LogoSize }) {
+/**
+ * Bravio mark — rising skill path that still reads as a “B”.
+ * Stem + three ascending bars (modules / progress) + gold achievement spark.
+ * Not a stock book icon; unique to the brand.
+ */
+export function BravioLogoMark({
+  className,
+  size = "md",
+  withAccent = true,
+}: {
+  className?: string;
+  size?: LogoSize;
+  withAccent?: boolean;
+}) {
   return (
-    <svg viewBox="0 0 24 24" fill="none" className={cn(iconSizes[size], className)} aria-hidden>
-      <path
-        fillRule="evenodd"
-        clipRule="evenodd"
-        d="M7 4.5H12.1C15.1 4.5 17.2 6.3 17.2 8.7C17.2 10.4 16.2 11.7 14.6 12.3C16.4 12.8 17.7 14.4 17.7 16.6C17.7 19.6 15.1 21.5 11.7 21.5H7V4.5ZM10.1 7.3V10.8H11.6C12.9 10.8 13.7 10.1 13.7 9.05C13.7 7.95 12.9 7.3 11.6 7.3H10.1ZM10.1 13.4V18.7H12C13.6 18.7 14.7 17.7 14.7 16.05C14.7 14.4 13.6 13.4 12 13.4H10.1Z"
-        fill="currentColor"
-      />
+    <svg
+      viewBox="0 0 32 32"
+      fill="none"
+      className={cn(iconSizes[size], className)}
+      aria-hidden
+    >
+      {/* Stem */}
+      <rect x="6" y="5" width="4.5" height="22" rx="1" fill="currentColor" />
+      {/* Ascending skill bars — form the B’s open side */}
+      <rect x="12.5" y="20.5" width="7" height="4" rx="1" fill="currentColor" />
+      <rect x="12.5" y="14" width="10.5" height="4" rx="1" fill="currentColor" />
+      <rect x="12.5" y="7.5" width="14" height="4" rx="1" fill="currentColor" />
+      {/* Achievement spark */}
+      {withAccent ?
+        <path
+          d="M26.2 5.2 27.15 7.05 29.2 7.4 27.7 8.85 27.95 10.9 26.2 9.9 24.45 10.9 24.7 8.85 23.2 7.4 25.25 7.05 26.2 5.2Z"
+          fill="var(--accent, #f2b705)"
+        />
+      : null}
     </svg>
   );
 }
@@ -50,8 +75,16 @@ export function BravioWordmark({
   inverse?: boolean;
 }) {
   return (
-    <span className={cn("font-bold tracking-tight", textSizes[size], inverse ? "text-white" : "text-[var(--foreground)]", className)}>
-      Bravio
+    <span
+      className={cn(
+        "font-extrabold tracking-[-0.045em]",
+        textSizes[size],
+        inverse ? "text-white" : "text-[var(--foreground)]",
+        className,
+      )}
+    >
+      Brav
+      <span className={inverse ? "text-white" : "text-[var(--primary)]"}>io</span>
     </span>
   );
 }
@@ -64,22 +97,45 @@ export function BravioLogo({
 }: {
   showText?: boolean;
   size?: LogoSize;
-  variant?: "default" | "inverse" | "onPrimary" | "flat";
+  variant?: "default" | "inverse" | "onPrimary" | "flat" | "bare";
   className?: string;
 }) {
+  if (variant === "bare") {
+    return (
+      <span className={cn("inline-flex items-center gap-2.5", className)} aria-label={PLATFORM_NAME}>
+        <span className={cn("flex items-center justify-center text-[var(--primary)]", markSizes[size])}>
+          <BravioLogoMark size={size} />
+        </span>
+        {showText ? <BravioWordmark size={size} /> : null}
+      </span>
+    );
+  }
+
   const markBox =
     variant === "flat" ?
-      cn(markSizes[size], "flex items-center justify-center bg-[var(--primary-light)] text-[var(--primary)]")
+      cn(
+        markSizes[size],
+        "flex items-center justify-center rounded-[0.4rem] bg-[var(--primary-light)] text-[var(--primary)]",
+      )
     : variant === "onPrimary" ?
-      cn(markSizes[size], "flex items-center justify-center bg-white/15 text-white ring-1 ring-inset ring-white/25")
+      cn(
+        markSizes[size],
+        "flex items-center justify-center rounded-[0.4rem] bg-white/15 text-white ring-1 ring-inset ring-white/20",
+      )
     : variant === "inverse" ?
-      cn(markSizes[size], "flex items-center justify-center bg-white text-[var(--primary)]")
-    : cn(markSizes[size], "flex items-center justify-center bg-[var(--primary)] text-white");
+      cn(
+        markSizes[size],
+        "flex items-center justify-center rounded-[0.4rem] bg-white text-[var(--primary)] shadow-sm",
+      )
+    : cn(
+        markSizes[size],
+        "flex items-center justify-center rounded-[0.4rem] bg-[var(--primary)] text-white shadow-[var(--shadow-primary)]",
+      );
 
   return (
-    <span className={cn("inline-flex items-center gap-2", className)} aria-label={PLATFORM_NAME}>
+    <span className={cn("inline-flex items-center gap-2.5", className)} aria-label={PLATFORM_NAME}>
       <span className={markBox}>
-        <BravioLogoMark size={size} />
+        <BravioLogoMark size={size} withAccent={variant !== "inverse"} />
       </span>
       {showText ?
         <BravioWordmark size={size} inverse={variant === "inverse" || variant === "onPrimary"} />
