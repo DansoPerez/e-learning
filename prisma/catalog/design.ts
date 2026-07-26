@@ -4,10 +4,11 @@ export const DESIGN_COURSES: SeedCourse[] = [
   {
     title: "UI/UX Design Fundamentals",
     category: "Design",
+    price: 299,
     featured: true,
     thumbnailUrl: ytThumb("c9Wg6Cb_YlU"),
     description:
-      "Design interfaces that people can actually use. Learn user research, information architecture, wireframing, usability heuristics, accessibility and visual hierarchy — then run a real usability test and redesign a product based on what you find.",
+      "A professional UX design programme. Learn research, information architecture, wireframing, usability heuristics, accessibility and visual hierarchy — with University of Washington design guides, Stanford design-thinking readings, quizzes and a real usability redesign project.",
     modules: [
       {
         title: "Understanding the People You Design For",
@@ -16,6 +17,7 @@ export const DESIGN_COURSES: SeedCourse[] = [
             title: "What UX design really involves",
             durationMin: 90,
             videoUrl: yt("kbZejnPXyLM"),
+            pdfUrl: PDFS.stanfordDesignThinking,
             content: `User experience design is the practice of making something useful, usable and worth using. Visual polish is the last ten percent, not the job.
 
 The stages of a typical project:
@@ -352,9 +354,10 @@ How to submit: publish the case study and share the link along with the prototyp
   {
     title: "Figma and Design Systems for Product Teams",
     category: "Design",
+    price: 349,
     thumbnailUrl: ytThumb("jwCmIBJ8Jtc"),
     description:
-      "Master the tool product teams actually use. Learn frames, auto layout, components, variants and styles, build a complete responsive website design, then assemble a reusable design system and hand it off to developers cleanly.",
+      "A professional Figma programme for product teams. Master frames, auto layout, components, variants and styles, design a responsive multi-page site, then ship a reusable design system with clean developer handoff — including quizzes and portfolio projects.",
     modules: [
       {
         title: "Figma Foundations",

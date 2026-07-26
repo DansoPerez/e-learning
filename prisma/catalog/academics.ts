@@ -4,9 +4,10 @@ export const ACADEMIC_COURSES: SeedCourse[] = [
   {
     title: "Academic Writing and Research Methods",
     category: "Academics",
+    price: 199,
     thumbnailUrl: ytThumb("vtIzMaLkCaM"),
     description:
-      "Write papers that get read and marked well. Covers argument and thesis construction, literature searching and reviewing, qualitative and quantitative methods, research ethics, citation and referencing, and revision — applied to a full research paper of your own.",
+      "A professional academic-writing programme. Build argument and thesis, search and review literature, choose methods ethically, and cite correctly — with university writing guides from BTU, OvGU, Manchester and Glasgow, plus a full research-paper capstone.",
     modules: [
       {
         title: "Writing That Earns a Reader",
@@ -32,6 +33,7 @@ The attached guide covers the formal mechanics: structure, workflow and requirem
           {
             title: "Thesis, argument and paragraph structure",
             durationMin: 45,
+            videoUrl: yt("6OLPL5p0fMg"),
             pdfUrl: PDFS.academicStyleGuide,
             content: `An academic paper is an argument, and every part of it should serve that argument.
 
@@ -156,6 +158,7 @@ Ethics is not paperwork. Informed consent, the right to withdraw, anonymity, sec
             title: "Citation, referencing and academic integrity",
             durationMin: 25,
             videoUrl: yt("9pbUoNa5tyY"),
+            pdfUrl: PDFS.manchesterReferencing,
             content: `Citation exists so a reader can verify your claims and trace an idea to its origin. Everything else follows from that purpose.
 
 Cite whenever you use someone else's idea, data, argument, structure or words, whether quoted or paraphrased. The only exception is common knowledge within your field, and when unsure, cite.
@@ -383,9 +386,10 @@ How to submit: share the paper as a PDF along with your data collection instrume
   {
     title: "Statistics and Data Literacy for Students",
     category: "Academics",
+    price: 249,
     thumbnailUrl: ytThumb("xxpc-HPKN28"),
     description:
-      "Understand the statistics behind coursework, dissertations and the news. Covers descriptive statistics, probability, distributions, sampling, confidence intervals, hypothesis testing and regression, plus practical analysis in spreadsheets and how to spot misleading charts.",
+      "A professional statistics-literacy programme. Master descriptive stats, sampling, confidence intervals, hypothesis tests and regression — with Georgia Tech, Rutgers and York College (CUNY) course readings, spreadsheet practice and a statistical-report capstone.",
     modules: [
       {
         title: "Describing Data",
@@ -394,7 +398,7 @@ How to submit: share the paper as a PDF along with your data collection instrume
             title: "A full university course in statistics",
             durationMin: 300,
             videoUrl: yt("xxpc-HPKN28"),
-            pdfUrl: PDFS.thinkStats,
+            pdfUrl: PDFS.gatechStatistics,
             content: `The reference lesson for the whole course. Work through it in sections over several weeks rather than attempting it in one sitting.
 
 The order of ideas, and why each matters:
@@ -418,6 +422,8 @@ The attached book, Think Stats, teaches the same material through Python code. I
           {
             title: "Summarising data honestly",
             durationMin: 35,
+            videoUrl: yt("xxpc-HPKN28"),
+            pdfUrl: PDFS.yorkStatsWriting,
             content: `Before any test, describe your data properly. Most analytical mistakes are made before a single test is run.
 
 Always compute and always look at:
@@ -469,6 +475,8 @@ Two errors to keep in mind: a Type I error rejects a true null hypothesis (a fal
           {
             title: "Choosing the right test",
             durationMin: 40,
+            videoUrl: yt("0oc49DyA3hU"),
+            pdfUrl: PDFS.rutgersStatistics,
             content: `A decision guide you can return to for coursework and dissertations.
 
 Comparing means:
@@ -494,6 +502,8 @@ If assumptions fail, use the non-parametric equivalent rather than proceeding an
           {
             title: "Correlation, regression and causation",
             durationMin: 40,
+            videoUrl: yt("xxpc-HPKN28"),
+            pdfUrl: PDFS.thinkStats,
             content: `Regression is the workhorse of applied statistics, and it is routinely over-interpreted.
 
 Correlation, denoted r, runs from -1 to 1 and measures only the strength of a linear relationship. A perfect U-shaped relationship has a correlation near zero. Always look at the scatter plot.

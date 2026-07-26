@@ -4,10 +4,11 @@ export const PROGRAMMING_COURSES: SeedCourse[] = [
   {
     title: "Modern Web Development: HTML, CSS and JavaScript",
     category: "Programming",
+    price: 299,
     featured: true,
     thumbnailUrl: ytThumb("PkZNo7MFNFg"),
     description:
-      "Build and publish real websites from scratch. You will learn semantic HTML, modern CSS layout with Flexbox and Grid, responsive design, JavaScript fundamentals, DOM scripting and fetching live data from APIs — then ship three portfolio projects with Git and free hosting.",
+      "A professional web-development programme. Learn semantic HTML, modern CSS with Flexbox and Grid, responsive design, JavaScript, DOM scripting and APIs — with Stanford CS142 lecture readings, quizzes, and three portfolio projects you can ship with Git.",
     modules: [
       {
         title: "How the Web Actually Works",
@@ -66,6 +67,7 @@ The attached PDF is the official VS Code keyboard shortcut reference. Learn five
             title: "HTML foundations: elements, attributes and structure",
             durationMin: 90,
             videoUrl: yt("kUMe1FH4CHE"),
+            pdfUrl: PDFS.stanfordHtml,
             content: `HTML describes meaning and structure, not appearance. Every page is a tree of elements.
 
 Core ideas to take from this tutorial:
@@ -142,6 +144,7 @@ This W3C introduction explains the standards behind these rules and who they ser
             title: "CSS fundamentals: selectors, cascade and the box model",
             durationMin: 25,
             videoUrl: yt("1PnVor36_40"),
+            pdfUrl: PDFS.stanfordCss,
             content: `CSS has three ideas that explain almost everything confusing about it.
 
 1. Selectors and specificity. When two rules target the same element, the more specific one wins. An id beats a class, a class beats an element tag. When specificity ties, the rule written later wins. This is the cascade.
@@ -605,10 +608,11 @@ How to submit: push to GitHub, deploy, then post the repository link and the liv
   {
     title: "Python Programming: From Zero to Automation",
     category: "Programming",
+    price: 299,
     featured: true,
     thumbnailUrl: ytThumb("rfscVS0vtbw"),
     description:
-      "Learn Python properly, then put it to work. Covers syntax, data structures, functions, files, error handling and object-oriented programming, and finishes with automation scripts that rename files, scrape data, call APIs and generate reports you can run every day.",
+      "A professional Python programme from first syntax to working automation. Covers data structures, functions, files, OOP and APIs, with university textbooks (Think Python and Python for Everybody), graded quizzes and three workplace automation projects.",
     modules: [
       {
         title: "Getting Started with Python",
@@ -617,6 +621,7 @@ How to submit: push to GitHub, deploy, then post the repository link and the liv
             title: "Installing Python and choosing your tools",
             durationMin: 25,
             videoUrl: yt("YYXdXT2l-Gg"),
+            pdfUrl: PDFS.pythonForEverybody,
             content: `Get the environment right once and you will never think about it again.
 
 Steps:
@@ -1047,9 +1052,11 @@ How to submit: push to GitHub and share the repository link along with a short n
   {
     title: "React and Next.js: Build Production Web Apps",
     category: "Programming",
+    price: 399,
+    featured: true,
     thumbnailUrl: ytThumb("bMknfKXIFA8"),
     description:
-      "Move from static pages to real applications. Learn React components, state and hooks, add type safety with TypeScript, then build a full-stack app with the Next.js App Router — routing, server components, data fetching, forms, APIs and deployment.",
+      "A professional full-stack React programme. Master components, hooks and TypeScript, then build and deploy production apps with the Next.js App Router — routing, server components, APIs, forms and deployment — with quizzes and three shippable projects.",
     modules: [
       {
         title: "Thinking in Components",

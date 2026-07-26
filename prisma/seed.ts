@@ -188,6 +188,7 @@ async function main() {
         title: item.title,
         description: item.description,
         thumbnailUrl: item.thumbnailUrl ?? null,
+        price: item.price,
         status: "PUBLISHED",
         featured: item.featured ?? false,
         categoryId: categoryIds.get(item.category),
@@ -199,7 +200,7 @@ async function main() {
         slug,
         description: item.description,
         thumbnailUrl: item.thumbnailUrl ?? null,
-        price: 0,
+        price: item.price,
         status: "PUBLISHED",
         featured: item.featured ?? false,
       },
@@ -226,6 +227,9 @@ async function main() {
   console.log("\nSeed complete.");
   console.log(
     `Courses: ${COURSE_CATALOG.length} published across ${COURSE_CATEGORIES.length} categories.`,
+  );
+  console.log(
+    `Prices (GHS): ${COURSE_CATALOG.map((c) => c.price).join(", ")}`,
   );
   console.log(`Lessons: ${lessonCount} (${videoCount} with video, ${pdfCount} with a PDF).`);
   console.log(`Quizzes: ${quizCount} · Questions: ${questionCount}.`);

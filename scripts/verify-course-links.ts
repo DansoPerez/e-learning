@@ -113,7 +113,11 @@ async function checkImage(url: string, label: string): Promise<CheckResult> {
 async function check(url: string, label: string): Promise<CheckResult> {
   try {
     if (youtubeId(url)) return await checkYouTube(url, label);
-    if (url.toLowerCase().includes(".pdf")) return await checkPdf(url, label);
+    // Lesson PDFs may be served from university document portals without a .pdf
+    // extension (for example Manchester's display.aspx links).
+    if (/\.pdf($|\?)/i.test(url) || /\bpdf\b/i.test(label)) {
+      return await checkPdf(url, label);
+    }
     return await checkImage(url, label);
   } catch (err) {
     return { url, label, ok: false, detail: err instanceof Error ? err.message : String(err) };

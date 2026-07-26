@@ -4,10 +4,11 @@ export const DATA_SCIENCE_COURSES: SeedCourse[] = [
   {
     title: "Data Analysis with Python: NumPy, Pandas and Visualisation",
     category: "Data Science",
+    price: 349,
     featured: true,
     thumbnailUrl: ytThumb("r-uOLxNrNk8"),
     description:
-      "Turn raw spreadsheets and messy exports into decisions. Learn NumPy arrays, Pandas data frames, cleaning strategies, grouping and joins, and how to communicate findings with clear charts — finishing with a full exploratory analysis of a real public dataset.",
+      "A professional data-analysis programme. Learn NumPy, Pandas, cleaning, grouping and joins, and clear charting — with University of Toronto data-science readings, cheat sheets, quizzes and a full exploratory analysis of a public dataset.",
     modules: [
       {
         title: "Setting Up for Analysis",
@@ -16,6 +17,7 @@ export const DATA_SCIENCE_COURSES: SeedCourse[] = [
             title: "The analyst's toolkit and workflow",
             durationMin: 30,
             videoUrl: yt("HW29067qVWk"),
+            pdfUrl: PDFS.torontoDataScience,
             content: `Data analysis has a repeatable shape. Learn the shape and every project becomes less intimidating.
 
 The workflow:
@@ -381,9 +383,10 @@ How to submit: share the repository link and a two-paragraph summary of your mos
   {
     title: "SQL for Data Analytics",
     category: "Data Science",
+    price: 279,
     thumbnailUrl: ytThumb("HXV3zeQKqGY"),
     description:
-      "SQL is the most requested skill in data job adverts, and it outlives every framework. Learn querying, filtering, joins, aggregation, subqueries, window functions and query performance, then build a reporting layer on a real relational database.",
+      "A professional SQL analytics programme. Master querying, joins, aggregation, window functions and performance — with Carnegie Mellon database lecture notes, graded quizzes and a reporting layer built on a real relational schema.",
     modules: [
       {
         title: "Querying Fundamentals",
@@ -392,7 +395,7 @@ How to submit: share the repository link and a two-paragraph summary of your mos
             title: "Relational databases and your first queries",
             durationMin: 200,
             videoUrl: yt("HXV3zeQKqGY"),
-            pdfUrl: PDFS.sqlCheatSheet,
+            pdfUrl: PDFS.cmuDatabaseIntro,
             content: `A relational database stores data in tables with defined columns and relationships between them. SQL is how you ask it questions.
 
 The clause order you write:
@@ -418,6 +421,8 @@ The attached cheat sheet covers the syntax you will look up most often.`,
           {
             title: "Filtering, sorting and useful functions",
             durationMin: 40,
+            videoUrl: yt("7S_tz1z_5bA"),
+            pdfUrl: PDFS.sqlCheatSheet,
             content: `Precision in the WHERE clause is most of the craft.
 
 Operators worth knowing:
@@ -551,6 +556,7 @@ Style rules that make SQL maintainable:
           {
             title: "Indexes, execution plans and performance",
             durationMin: 40,
+            videoUrl: yt("HXV3zeQKqGY"),
             content: `A query that takes four minutes on a million rows will take forty on ten million. Understanding why is a career-defining skill.
 
 Indexes. An index is a sorted structure that lets the database find rows without scanning the whole table. Index the columns you filter and join on. Every index speeds up reads and slows down writes, so do not index everything.
@@ -754,9 +760,11 @@ How to submit: share the repository and a screenshot or link to the final report
   {
     title: "Machine Learning Foundations with Python",
     category: "Data Science",
+    price: 449,
+    featured: true,
     thumbnailUrl: ytThumb("i_LwzRVP7bg"),
     description:
-      "Build models that actually generalise. Covers supervised learning, train and test discipline, regression and classification, honest evaluation metrics, overfitting and regularisation, feature engineering and a first look at neural networks — with scikit-learn throughout.",
+      "A professional machine-learning programme. Build models that generalise: supervised learning, train/test discipline, regression and classification, honest metrics, regularisation and a first look at neural nets — with Stanford CS229 lecture notes and scikit-learn projects.",
     modules: [
       {
         title: "What Machine Learning Is and Is Not",
@@ -765,6 +773,7 @@ How to submit: share the repository and a screenshot or link to the final report
             title: "Machine learning for everybody",
             durationMin: 220,
             videoUrl: yt("i_LwzRVP7bg"),
+            pdfUrl: PDFS.stanfordMlNotes,
             content: `A complete, practical introduction with code. This is the backbone of the module.
 
 The core idea: instead of writing rules by hand, you show an algorithm examples and it infers the rules. That is powerful, and it is also why machine learning fails in ways ordinary software does not — the rules are learned from data, so bad data produces confidently wrong models.

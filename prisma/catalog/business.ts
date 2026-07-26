@@ -4,10 +4,11 @@ export const BUSINESS_COURSES: SeedCourse[] = [
   {
     title: "Startup Foundations: From Idea to First Customers",
     category: "Business",
+    price: 249,
     featured: true,
     thumbnailUrl: ytThumb("CBYhVcO4WgI", "sddefault"),
     description:
-      "Learn how new businesses are actually built, taught through the material Y Combinator and Stanford use. Covers finding a real problem, talking to users, business models, building a minimum viable product, early traction and pitching — ending with a validated business case of your own.",
+      "A professional founder programme built from Stanford and Y Combinator teaching. Find a real problem, talk to users, model the business, ship an MVP, win early traction and pitch — with the Business Model Canvas and design-thinking readings included.",
     modules: [
       {
         title: "Ideas Worth Pursuing",
@@ -16,6 +17,7 @@ export const BUSINESS_COURSES: SeedCourse[] = [
             title: "How to start a startup",
             durationMin: 50,
             videoUrl: yt("CBYhVcO4WgI"),
+            pdfUrl: PDFS.stanfordDesignThinking,
             content: `The opening lecture of the Stanford and Y Combinator course, delivered by Sam Altman and Dustin Moskovitz.
 
 The framework it sets out: a startup needs a great idea, a great product, a great team and great execution. All four are necessary; none is sufficient.
@@ -411,9 +413,10 @@ How to submit: share the written case and the deck, and deliver the pitch to at 
   {
     title: "Business Finance, Accounting and Valuation",
     category: "Business",
+    price: 349,
     thumbnailUrl: ytThumb("yYX4bvQSqbo"),
     description:
-      "Read the numbers that decide whether a business survives. Covers double-entry bookkeeping, the three financial statements, cash flow versus profit, pricing and unit economics, budgeting in spreadsheets, and an introduction to how businesses are valued.",
+      "A professional finance programme for founders and managers. Master bookkeeping, the three statements, cash versus profit, pricing and unit economics, spreadsheet modelling and valuation — with quizzes and an investment-memo capstone.",
     modules: [
       {
         title: "The Language of Accounting",
@@ -743,10 +746,11 @@ How to submit: share the memo and the underlying model, and be prepared to defen
   {
     title: "SEO and Digital Marketing Foundations",
     category: "Marketing",
+    price: 249,
     featured: true,
     thumbnailUrl: ytThumb("xsVTqzratPs"),
     description:
-      "Get found and get chosen. Learn how search engines rank pages, how to do keyword research, on-page and technical SEO, link building, content strategy, email and social channels, and how to measure what actually drives customers rather than vanity traffic.",
+      "A professional digital-marketing programme. Learn how search engines rank pages, keyword research, on-page and technical SEO, content strategy, email and social channels, and measurement that drives customers — with audits, quizzes and a full marketing plan.",
     modules: [
       {
         title: "How Search Works",

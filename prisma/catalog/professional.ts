@@ -4,9 +4,10 @@ export const PROFESSIONAL_COURSES: SeedCourse[] = [
   {
     title: "Cybersecurity Essentials for Work and Everyday Life",
     category: "Other",
+    price: 299,
     thumbnailUrl: ytThumb("bPVaOlJ6ln0"),
     description:
-      "Protect yourself, your money and your organisation. Learn how attacks actually work, how to build password and authentication habits that hold, how encryption and networks protect data, how to recognise phishing and social engineering, and how to respond when something goes wrong.",
+      "A professional cybersecurity programme for professionals and teams. Learn how attacks work, password and MFA hygiene, encryption, phishing defence and incident response — with NIST framework readings, quizzes and a security-assessment capstone.",
     modules: [
       {
         title: "Threats and How They Work",
@@ -390,9 +391,10 @@ How to submit: share the redacted report and note which recommendation the organ
   {
     title: "Agile Project Management with Scrum and Kanban",
     category: "Other",
+    price: 279,
     thumbnailUrl: ytThumb("502ILHjX9EE"),
     description:
-      "Deliver projects that finish. Covers the project lifecycle, scope, estimation and risk, then goes deep on agile practice: Scrum roles and events, product backlogs and user stories, Kanban and flow, metrics that matter and the delivery pipeline that supports them.",
+      "A professional agile delivery programme. Deliver projects that finish: project lifecycle, estimation and risk, Scrum roles and events, Kanban and flow metrics, and continuous delivery — with the official Scrum Guide, quizzes and an end-to-end capstone.",
     modules: [
       {
         title: "Project Management Foundations",

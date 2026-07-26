@@ -4,9 +4,10 @@ export const PERSONAL_DEVELOPMENT_COURSES: SeedCourse[] = [
   {
     title: "Focus, Habits and Learning How to Learn",
     category: "Personal Development",
+    price: 199,
     thumbnailUrl: ytThumb("O96fE1E-rf8"),
     description:
-      "Evidence-based techniques for learning faster and finishing what you start. Covers how memory actually works, spaced repetition and active recall, defeating procrastination, habit design, deep work, sleep and energy — applied to a subject you are learning right now.",
+      "A professional learning-skills programme. Apply evidence-based memory techniques, spaced repetition, habit design, deep work and energy management — with University of Glasgow study readings, quizzes and a personal productivity system you build yourself.",
     modules: [
       {
         title: "How Learning Works",
@@ -15,6 +16,7 @@ export const PERSONAL_DEVELOPMENT_COURSES: SeedCourse[] = [
             title: "Learning how to learn",
             durationMin: 20,
             videoUrl: yt("O96fE1E-rf8"),
+            pdfUrl: PDFS.glasgowWriting,
             content: `Barbara Oakley failed mathematics at school and later became an engineering professor. Her explanation of how learning works is the foundation of this course.
 
 The central idea is two modes of thinking:
@@ -402,10 +404,11 @@ How to submit: share the written system and a two-week log showing it in use.`,
   {
     title: "Public Speaking and Persuasive Communication",
     category: "Personal Development",
+    price: 229,
     featured: true,
     thumbnailUrl: ytThumb("eIho2S0ZahI"),
     description:
-      "Speak so that people listen, remember and act. Learn vocal technique, talk structure, slide design, managing nerves and reading a room — then apply the same skills to interviews and job applications, finishing with a recorded talk you are proud of.",
+      "A professional communication programme. Master vocal technique, talk structure, slide design, nerves and reading a room — then apply the same skills to interviews and applications, with the Harvard resume guide and a recorded talk as your capstone.",
     modules: [
       {
         title: "The Fundamentals of Being Heard",
