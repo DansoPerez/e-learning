@@ -2,6 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { cn } from "@/lib/utils";
+import { signalNavigationStart } from "@/lib/navigation-loading";
 
 type Category = {
   id: string;
@@ -31,6 +32,7 @@ export function CourseCategoryFilter({
   }
 
   function onChange(e: React.ChangeEvent<HTMLSelectElement>) {
+    signalNavigationStart();
     router.push(buildUrl(e.target.value));
   }
 

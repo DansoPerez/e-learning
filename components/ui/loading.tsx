@@ -51,9 +51,9 @@ export function BrandLoader({
         {/* Brand mark */}
         <span
           aria-hidden
-          className="loading-mark-pop relative z-[1] flex h-12 w-12 items-center justify-center rounded-[0.55rem] bg-[var(--primary)] text-white shadow-[0_8px_24px_rgba(0,86,210,0.28)]"
+          className="loading-mark-pop relative z-[1] flex h-12 w-12 items-center justify-center rounded-[0.55rem] bg-white shadow-[0_8px_24px_rgba(15,23,42,0.14)] ring-1 ring-[var(--border)]"
         >
-          <BravioLogoMark size="md" withAccent />
+          <BravioLogoMark size="md" />
         </span>
       </div>
 
@@ -260,8 +260,8 @@ export function LearnLoadingSkeleton() {
           >
             <div className="absolute inset-0 loading-shimmer opacity-60" />
             <div className="absolute inset-0 flex items-center justify-center">
-              <div className="flex h-14 w-14 items-center justify-center rounded-[0.55rem] bg-[var(--primary)] text-white shadow-[var(--shadow-md)]">
-                <BravioLogoMark size="md" withAccent={false} />
+              <div className="flex h-14 w-14 items-center justify-center rounded-[0.55rem] bg-white shadow-[var(--shadow-md)] ring-1 ring-[var(--border)]">
+                <BravioLogoMark size="md" />
               </div>
             </div>
           </div>

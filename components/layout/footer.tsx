@@ -24,7 +24,7 @@ export function Footer({ initialSession }: { initialSession?: Session | null }) 
         <div className="grid gap-8 sm:grid-cols-2 lg:grid-cols-4">
           <div className="sm:col-span-2 lg:col-span-1">
             <Link href="/" className="inline-flex">
-              <BravioLogo size="md" variant="bare" />
+              <BravioLogo size="md" variant="bare" withTagline />
             </Link>
             <p className="mt-4 max-w-xs text-sm leading-relaxed text-[var(--foreground-muted)]">
               Professional online courses for students and instructors worldwide.

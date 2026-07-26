@@ -4,6 +4,7 @@ import { useRouter } from "next/navigation";
 import { FormEvent, useState } from "react";
 import { Search } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { signalNavigationStart } from "@/lib/navigation-loading";
 
 type CourseSearchProps = {
   defaultValue?: string;
@@ -26,6 +27,7 @@ export function CourseSearch({
   function onSubmit(e: FormEvent) {
     e.preventDefault();
     const q = query.trim();
+    signalNavigationStart();
     router.push(q ? `/courses?q=${encodeURIComponent(q)}` : "/courses");
   }
 

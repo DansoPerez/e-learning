@@ -1,9 +1,5 @@
-import { CoursesLoadingSkeleton } from "@/components/ui/loading";
+import { PageLoading } from "@/components/ui/loading";
 
 export default function Loading() {
-  return (
-    <div className="min-h-[60vh] bg-[var(--background)]">
-      <CoursesLoadingSkeleton />
-    </div>
-  );
+  return <PageLoading className="min-h-[70vh]" />;
 }

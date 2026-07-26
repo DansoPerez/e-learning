@@ -2,9 +2,11 @@
 
 import { useEffect, useRef, useState } from "react";
 import { usePathname, useSearchParams } from "next/navigation";
+import { BrandLoader } from "@/components/ui/loading";
+import { NAV_LOADING_EVENT } from "@/lib/navigation-loading";
 
 /**
- * Immediate top progress bar on internal navigations.
+ * Immediate top progress bar + brand overlay on internal navigations.
  * Complements route-level loading.tsx (which only appears after the RSC request starts).
  */
 export function NavigationProgress() {
@@ -49,6 +51,10 @@ export function NavigationProgress() {
   }, [routeKey]);
 
   useEffect(() => {
+    function onNavSignal() {
+      start();
+    }
+
     function onClick(event: MouseEvent) {
       if (event.defaultPrevented) return;
       if (event.button !== 0) return;
@@ -82,8 +88,10 @@ export function NavigationProgress() {
     }
 
     document.addEventListener("click", onClick, true);
+    window.addEventListener(NAV_LOADING_EVENT, onNavSignal);
     return () => {
       document.removeEventListener("click", onClick, true);
+      window.removeEventListener(NAV_LOADING_EVENT, onNavSignal);
       clearTimers();
     };
   }, []);
@@ -91,14 +99,25 @@ export function NavigationProgress() {
   if (!visible) return null;
 
   return (
-    <div
-      aria-hidden
-      className="pointer-events-none fixed inset-x-0 top-0 z-[100] h-0.5 overflow-hidden bg-transparent"
-    >
+    <>
       <div
-        className="h-full bg-[var(--primary)] shadow-[0_0_8px_rgba(0,86,210,0.45)] transition-[width] duration-200 ease-out"
-        style={{ width: `${progress}%` }}
-      />
-    </div>
+        aria-hidden
+        className="pointer-events-none fixed inset-x-0 top-0 z-[100] h-0.5 overflow-hidden bg-transparent"
+      >
+        <div
+          className="h-full bg-[var(--primary)] shadow-[0_0_8px_rgba(0,86,210,0.45)] transition-[width] duration-200 ease-out"
+          style={{ width: `${progress}%` }}
+        />
+      </div>
+
+      <div
+        role="status"
+        aria-live="polite"
+        aria-label="Loading page"
+        className="fixed inset-0 z-[90] flex items-center justify-center bg-[var(--background)]/85 backdrop-blur-[2px]"
+      >
+        <BrandLoader label="Loading" />
+      </div>
+    </>
   );
 }
