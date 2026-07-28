@@ -14,14 +14,17 @@ import {
   countDistinctInstructorLearners,
   getLearnerCountsByCourseIds,
 } from "@/lib/learner-counts";
+import {
+  getInstructorLifetimeEarnings,
+  syncInstructorProfileBalance,
+} from "@/lib/withdrawal-balance";
 import { BookOpen, DollarSign, Plus, Users, Wallet } from "lucide-react";
 
 export default async function InstructorDashboardPage() {
   const user = await requireRole("INSTRUCTOR", "ADMIN");
 
-  const [profile, courseCount, recentCourses, payments, announcements, learnerCount] =
+  const [courseCount, recentCourses, earnings, announcements, learnerCount] =
     await Promise.all([
-      prisma.instructorProfile.findUnique({ where: { userId: user.id } }),
       prisma.course.count({ where: { instructorId: user.id } }),
       prisma.course.findMany({
         where: { instructorId: user.id },
@@ -36,13 +39,12 @@ export default async function InstructorDashboardPage() {
           thumbnailUrl: true,
         },
       }),
-      prisma.payment.aggregate({
-        where: { course: { instructorId: user.id }, status: "SUCCESS" },
-        _sum: { instructorShare: true },
-      }),
+      getInstructorLifetimeEarnings(user.id),
       getAnnouncementsForUser(user.id, "INSTRUCTOR"),
       countDistinctInstructorLearners(user.id),
     ]);
+
+  const balance = await syncInstructorProfileBalance(user.id);
 
   const learnerCountsByCourse = await getLearnerCountsByCourseIds(
     recentCourses.map((c) => c.id),
@@ -78,13 +80,13 @@ export default async function InstructorDashboardPage() {
         <StatCard label="Learners" value={learnerCount} icon={Users} tone="success" />
         <StatCard
           label="Earnings"
-          value={formatCurrency(Number(payments._sum.instructorShare ?? 0))}
+          value={formatCurrency(earnings)}
           icon={DollarSign}
           tone="accent"
         />
         <StatCard
           label="Balance"
-          value={formatCurrency(Number(profile?.balance ?? 0))}
+          value={formatCurrency(balance)}
           icon={Wallet}
         />
       </div>

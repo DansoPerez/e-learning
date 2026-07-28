@@ -6,6 +6,7 @@ import { initializePaystackPayment } from "@/lib/paystack";
 import { getPlatformCommission } from "@/lib/settings";
 import { enrollInFreeCourse, ensureEnrollment } from "@/lib/services/enrollment";
 import { notifyStudentOfSuccessfulPurchase } from "@/lib/notifications";
+import { syncInstructorProfileBalance } from "@/lib/withdrawal-balance";
 import {
   applyWelcomeDiscount,
   getWelcomeDiscountPercent,
@@ -199,25 +200,30 @@ export async function completePayment(reference: string) {
     });
 
     const instructorShare = Number(payment.instructorShare);
+    const instructorId = payment.course.instructorId;
     const profile = await tx.instructorProfile.findUnique({
-      where: { userId: payment.course.instructorId },
+      where: { userId: instructorId },
     });
 
     if (profile && !profile.earningsFrozen && profile.status === "APPROVED") {
-      await tx.instructorProfile.update({
-        where: { userId: payment.course.instructorId },
-        data: { balance: { increment: instructorShare } },
+      const existingCredit = await tx.earningsLedger.findFirst({
+        where: { type: "SALE", referenceId: payment.id },
+        select: { id: true },
       });
 
-      await tx.earningsLedger.create({
-        data: {
-          userId: payment.course.instructorId,
-          amount: instructorShare,
-          type: "SALE",
-          description: `Sale for course: ${payment.course.title}`,
-          referenceId: payment.id,
-        },
-      });
+      if (!existingCredit) {
+        await tx.earningsLedger.create({
+          data: {
+            userId: instructorId,
+            amount: instructorShare,
+            type: "SALE",
+            description: `Sale for course: ${payment.course.title}`,
+            referenceId: payment.id,
+          },
+        });
+      }
+
+      await syncInstructorProfileBalance(instructorId, tx);
     }
 
     return tx.payment.findUnique({

@@ -5,24 +5,27 @@ import { requireRole } from "@/lib/auth";
 import { getAvailablePayoutCountries } from "@/lib/payout-countries";
 import { prisma } from "@/lib/prisma";
 import { isPaystackPayoutsEnabled } from "@/lib/services/withdrawal-payout";
-import { getAvailableWithdrawalBalance } from "@/lib/withdrawal-balance";
+import {
+  getAvailableWithdrawalBalance,
+  syncInstructorProfileBalance,
+} from "@/lib/withdrawal-balance";
 
 export default async function WithdrawalsPage() {
   const user = await requireRole("INSTRUCTOR");
   const paystackPayouts = isPaystackPayoutsEnabled();
   const countries = getAvailablePayoutCountries();
 
-  const [profile, availableBalance] = await Promise.all([
+  const [profile, balance, availableBalance] = await Promise.all([
     prisma.instructorProfile.findUnique({
       where: { userId: user.id },
       select: {
-        balance: true,
         payoutCountry: true,
         payoutType: true,
         payoutAccountNumber: true,
         payoutBankCode: true,
       },
     }),
+    syncInstructorProfileBalance(user.id),
     getAvailableWithdrawalBalance(user.id),
   ]);
 
@@ -39,7 +42,7 @@ export default async function WithdrawalsPage() {
           />
         : null}
         <WithdrawalForm
-          balance={Number(profile?.balance ?? 0)}
+          balance={balance}
           availableBalance={availableBalance}
           paystackPayouts={paystackPayouts}
         />

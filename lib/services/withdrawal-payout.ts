@@ -13,6 +13,10 @@ import {
   isPaystackTransferSuccessful,
 } from "@/lib/paystack-transfers";
 import { isPaymentsEnabled } from "@/lib/paystack-config";
+import {
+  getInstructorWalletBalance,
+  syncInstructorProfileBalance,
+} from "@/lib/withdrawal-balance";
 
 export function isPaystackPayoutsEnabled(): boolean {
   if (process.env.PAYSTACK_PAYOUTS_ENABLED === "false") return false;
@@ -121,7 +125,7 @@ export async function initiateWithdrawalPaystackTransfer(withdrawalId: string) {
   throw new Error(`Paystack transfer failed with status: ${transfer.status}`);
 }
 
-/** Deduct balance and mark withdrawal completed after Paystack confirms transfer. */
+/** Mark withdrawal completed after Paystack confirms transfer, then sync wallet. */
 export async function finalizeWithdrawalPayout(
   withdrawalId: string,
   transferReference: string,
@@ -133,14 +137,8 @@ export async function finalizeWithdrawalPayout(
     });
     if (!withdrawal || withdrawal.status === "COMPLETED") return;
 
-    const deducted = await tx.instructorProfile.updateMany({
-      where: {
-        userId: withdrawal.instructorId,
-        balance: { gte: withdrawal.amount },
-      },
-      data: { balance: { decrement: withdrawal.amount } },
-    });
-    if (deducted.count === 0) {
+    const wallet = await getInstructorWalletBalance(withdrawal.instructorId, tx);
+    if (wallet < withdrawal.amount) {
       throw new Error("Instructor no longer has sufficient balance to complete this payout");
     }
 
@@ -152,6 +150,8 @@ export async function finalizeWithdrawalPayout(
         paystackTransferCode: transferCode ?? withdrawal.paystackTransferCode,
       },
     });
+
+    await syncInstructorProfileBalance(withdrawal.instructorId, tx);
   });
 }
 

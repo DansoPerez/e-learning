@@ -6,6 +6,7 @@ import {
   getLearnerCountsByCourseIds,
   learnerUserWhere,
 } from "@/lib/learner-counts";
+import { getInstructorLifetimeEarnings } from "@/lib/withdrawal-balance";
 
 export async function getAdminAnalytics() {
   const since = onlineSinceDate();
@@ -110,12 +111,8 @@ export async function getInstructorAnalytics(instructorId: string) {
 
   const courseIds = courses.map((c) => c.id);
 
-  const [payments, enrollments, attempts, studentProgress, learnerCountsByCourse, distinctLearners] =
+  const [enrollments, attempts, studentProgress, learnerCountsByCourse, distinctLearners, totalEarnings] =
     await Promise.all([
-    prisma.payment.aggregate({
-      where: { courseId: { in: courseIds }, status: "SUCCESS" },
-      _sum: { instructorShare: true },
-    }),
     prisma.enrollment.findMany({
       where: {
         courseId: { in: courseIds },
@@ -150,6 +147,7 @@ export async function getInstructorAnalytics(instructorId: string) {
     }),
     getLearnerCountsByCourseIds(courseIds),
     countDistinctInstructorLearners(instructorId),
+    getInstructorLifetimeEarnings(instructorId),
   ]);
 
   const progressByCourse = new Map(
@@ -170,7 +168,7 @@ export async function getInstructorAnalytics(instructorId: string) {
       avgProgress: progressByCourse.get(c.id)?.avgProgress ?? 0,
     })),
     distinctLearners,
-    totalEarnings: Number(payments._sum.instructorShare ?? 0),
+    totalEarnings,
     recentEnrollments: enrollments,
     recentQuizAttempts: attempts,
   };

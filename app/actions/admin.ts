@@ -18,6 +18,10 @@ import {
   initiateWithdrawalPaystackTransfer,
   isPaystackPayoutsEnabled,
 } from "@/lib/services/withdrawal-payout";
+import {
+  getInstructorWalletBalance,
+  syncInstructorProfileBalance,
+} from "@/lib/withdrawal-balance";
 import { paystackPayoutErrorCode } from "@/lib/paystack-payout-errors";
 import bcrypt from "bcryptjs";
 import { randomBytes } from "crypto";
@@ -594,11 +598,8 @@ async function processWithdrawalAction(
       throw new Error("Only pending withdrawals can be approved");
     }
 
-    const profile = await prisma.instructorProfile.findUnique({
-      where: { userId: withdrawal.instructorId },
-      select: { balance: true },
-    });
-    if (!profile || Number(profile.balance) < withdrawal.amount) {
+    const wallet = await getInstructorWalletBalance(withdrawal.instructorId);
+    if (wallet < withdrawal.amount) {
       throw new Error("Instructor no longer has sufficient balance for this withdrawal");
     }
 
@@ -612,14 +613,8 @@ async function processWithdrawalAction(
     }
 
     await prisma.$transaction(async (tx) => {
-      const deducted = await tx.instructorProfile.updateMany({
-        where: {
-          userId: withdrawal.instructorId,
-          balance: { gte: withdrawal.amount },
-        },
-        data: { balance: { decrement: withdrawal.amount } },
-      });
-      if (deducted.count === 0) {
+      const wallet = await getInstructorWalletBalance(withdrawal.instructorId, tx);
+      if (wallet < withdrawal.amount) {
         throw new Error("Instructor no longer has sufficient balance to complete this payout");
       }
 
@@ -627,6 +622,8 @@ async function processWithdrawalAction(
         where: { id: withdrawalId },
         data: { status: "COMPLETED", adminNote },
       });
+
+      await syncInstructorProfileBalance(withdrawal.instructorId, tx);
     });
   }
 
