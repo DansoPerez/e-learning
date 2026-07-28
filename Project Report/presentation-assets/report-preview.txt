@@ -1,0 +1,676 @@
+CHAPTER ONE
+INTRODUCTION
+1.1 Background of the Study
+Learning has spilled out of the classroom and now happens on the internet. Over the last one or two decades learning became virtual and instructors and students communicate digitally as they would in face to face communication, which is known as e-learning. The concept of e-learning includes that learning and teaching were introduced through digital media, while classes, testing and engagement occur through online channels rather than in personal setting.
+E-learning is of significance in the educational society because the learners located in rural areas are facing lack of educational resources due to insufficient infrastructure available on location, as to those in urban centers.
+E-learning is beneficial in overcoming the resource disparities by enabling the lectures reach to huge number of learners simultaneously, also students’ are benefited for learning the skills at leisure and as much time as required. Further, one important area of e-learning has facilitated teaching directly to those who are looking for skills with payment for example courses on Udemy or Coursera. Here teaching materials is turned to products where independent lecturers present knowledge, specify cost and are paid a percentage of payment for each product bought. On contrary with Traditional learning management system which serves one institution and their enlisted student only.
+Here, everyone who possesses know-how could make sale and everyone else can buy.
+This platforms facilitate interactions between students, lectures and administrators into a single location. This tool has support structure courses containing module and lectures, offer quizzes free as well as paid subscription and have a controlled mechanism of money transaction between purchasers, lecturers, and platform.
+1.2 Problem Statement
+Presenting e-learning does not bring together local payment solutions and role based content control in one convenient online site. When examining the site students are using and also searching big international market places the most use card organisations that a lot of of those regionally cannot find a way of using; which covertly prohibits a good number of of individuals who choose to learn. Regional settlements help accept both mobile payment or funds, plus native card, while international platforms have almost certainly no justification at all for adopting their usage.
+On a wholly free online site there isn't anyone who won't publish an account, and solely be caught once the damage has taken place, versus prior it can, at most times There's actually no assessment method to have a trainer overview a program just before it's being purchased or attended, and frequently There is not a defined difference involving the actions a student/lecturer/supervisor are capable to complete, at the lack of roles mistakes will be inevitable abuse.
+Once local payments usually are not used this decreases the likelihood of having local trainers and with no believable lecturers or assessed content there will probably be small likelihood for individuals purchasing access. The need for efficient, skills orientated online education is constantly rising and as such these holes need to become bridged.
+1.3 Aim and Objectives
+1.3.1 Aim
+The study is about the development of a web-based e-learning platform which includes security system, role based e-learning system, local payment options, automatic assessment, and transparent earning share policy to share revenue amongst stakeholders.
+1.3.2 Specific Objectives
+Following is a set of objectives the development aim will address:
+A role based access control model defining the rights for each student, teacher and admin Role based access control.
+A workflow for creating the course, allowing the instructors to upload courses which then needs to be approved before being published.
+An online local payment system allowing for paid and free courses, auto splitting revenue from each sale between instructors and the platform Local payment system.
+Role based access control, securely authenticate and protect accounts through the use of hashes, AuditTrail to track important actions, an online timed quiz, system auto logging learner progress
+Timed quiz and Auto Module, measure performance, evaluate system security needs with the aid of user testing
+1.4 Research Questions
+Our study questions are:
+How can we model student, instructor and administrator privileges?
+What workflow can be created that gives instructors freedom in creating the courses yet prevents un- reviewed content being accessible to the paying students?
+Which security mechanisms are affordable and what if they are challenged?
+How can a locally developed payment integration be used to enable enrollment and automatic revenue sharing without the need for manual reconciliation?
+How accurately does an automated quiz and progress tracking mechanism perform as against manually marked work?
+1.5 Significance of the Study
+This payment structure, transparent payment history and withdrawal process results in a transparent digital footprint. Instructors can check how much revenue they’ve accumulated as well as their revenue attribution by customer. This can provide valuable evidence in debates around access to the digital learning opportunity more generally. Learning becomes a more accessible and comfortable environment with access to approved educational resources. Let teachers do what they do – teach- And we can let them put their knowledge into money – we remove all the hassels of web prescence and creating a way of being paid on their own
+The clear revenue share mechanism, transaction history and withdrawal process provide a clear digital history with the platform: instructors can always verify how much they’ve earned and what portion of this earning comes from each individual student purchase.
+Most importantly, the article reports on research demonstrating the feasibility of a learning platform with the capacity to pay out in local currencies on limited resources, providing useful evidence for discussions concerning broad access to digital training.
+1.6 Scope of the Study
+This covers building a fully featured and functional online based e-learning market place comprising of 3 types of users (Student, instructor and Administrator). It should cater for; authentication and registration, instructor application and approval process, course building (modules and lessons), admin approval of course, paid and free enrollment, performance reports, reviews, intra application messaging and notification system, auto withdrawal (with adjustable commission plug-in) and sensitive operations audit trail. The platform is web based, but it’s mobile-friendly. No live videos, no live video calls/ classrooms or any kind of AI features (automated content generation / recommendation engine). All theVideos are embedded using 3rd party video servers not via own hosting setups.
+1.7 Limitations of the Study
+The scope of the project is limited by a few factors. In order to allow others to freely build and run the project, it relies on free plan hosting, free database, and test mode payment processor features. Hence, performance is not tested with high production traffic and a large scale of use can only be projected rather than directly tested, as is the case with the tester usage constrained by connectivity. Therefore, the team uses a smaller number of users with a lot of tester accounts and real conditions (i.e. Access is not just to some abstract database table, but the actual accounts created with a large variety of configuration options are tested).
+1.8 Organization of the Report
+The report will be divided into five main chapters:
+The first chapter would provide the background of the research, statement of problem, aims and objectives of the research, questions of research, importance of research and it's limitations. It would also indicate the presentation of this report.
+The second chapter would cover the works done by other researcher's or developer's online courses, platforms with attention given to: The important concepts studied, what the existing systems use and underlying technology, Approaches and models impacting design and what the gap in a study project addresses by researcher or designer or developer.
+Third chapter, designing of the system- will outline software development methodology and rationale for choice, establish functional requirements and non-functional requirement's, present system architecture and provide associated Diagrams and Database and Design as well as User Interaction Diagram's and user flow diagrams.
+Fourth chapter, system implementation and test – will cover implementation of the designed solution into a working application system, demonstrate some interfaces, illustrate key software implementation modules and present plan of test, test cases and result's.
+Final chapter, discusses the conclusion. It summaries finding's, illustrate if objective was reached, present comparisons with other systems available and discuss work to be done in the future and work to be improved.
+CHAPTER TWO
+LITERATURE REVIEW
+I have described the existing academic work addressing the question my research aims to answer, so you’ll hopefully also find my chapter relevant. I’m not just collating papers together, however; I’ve weighed the contribution of the papers. I approach the task broadly to begin with, outlining the basic building blocks of my design before zooming in on those technologies, those methods and those models that are the most relevant, before finally outlining the “gaps” that warrant the addition of another platform. Throughout with what I'm doing my basic query as for every item that I include in the review has consistently been “so what does this mean for an on-local payment capable course platform designed for?”.
+2.1 Conceptual Review
+The first step before going any further into a system design process is to fix the definitions of a couple of the words in common use; several of these terms are often used casually, which causes some confusion in system design work.
+2.1.1 E-Learning
+E-learning refers to the use of electronic and internet technologies to deliver teaching, learning and assessment. According to Clark and Mayer (2016), E-learning is “Instruction delivered on a digital device, intended to support learning”. The definition could include anything from an instructional video to a self-graded test. Rosenberg (2001)’s earlier, more strategic definition of the term - the “application of the internet to deliver solutions that improve both the knowledge and performance of their people” - also aligns with the definition given by Clark and Mayer (2016) (and implies the latter could include many more such solutions), the only difference being the emphasized aspect – in the former case it’s a given that e-learning has to facilitate learning to be considered an e-learning medium, in the latter it’s about achieving improvements in performance or knowledge by facilitating it. Therefore, both of those can be utilized, but with respect to our context the primary aspect of designing an e-learning platform should concern creating such a mechanism through which valuable learning experiences are facilitated for students.E-learning encompasses more than one product. It could be as simple as a self-paced training product with the possibility of live customer service or as complicated as a model containing a mixture of both online and on-location instructing classes. Through extensive and systematic studies a meta-analysis published by Means, Toyama, Murphy and Baki (2013) showed that on average, students studying online outperformed by a narrow margin students studying face-to-face, while at the same time students participating in Blended Learning obtained the best outcomes. These statistics could be quoted as an indicator that online learning works fine; however the authors made a distinction – the additional learning material available and the time allocated to students helped them exceed those in face-to-face learning; no influence of the online method itself could be derived from their data. In conclusion, for those designing a new online platform, the take home message should not be that putting training and teaching contents online directly contribute to better learning. Instead, one should focus on enabling more learning time to students, since removing hurdles related to access removes impediments for effective study. The platform if introduces additional obstacles for users, whether in terms of payment options or for reasons of the availability of insecure and unverified learning content; the positive impacts of online delivery would be negligible.
+2.1.2 Learning Management System versus Course Platform
+A learning management system (LMS) is software that administers,documents and delivers courses, usually for a single institution and its enrolled members. Moodle is the standard example. It is an open platform where independent instructors publish courses and learners from anywhere buy them, with the platform acting as broker and taking a commission (Kaplan & Haenlein, 2016). Udemy is the textbook case.
+The distinction is not hair-splitting. It changes the whole design. An LMS assumes a closed, trusted population: the institution vouches for both teachers and students. A platform assumes the opposite, an open population of strangers, where trust has to be manufactured by the platform through verification, content review, ratings and secure payment. The proposed system is a platform, not an LMS and that single fact drives most of its security and governance requirements. And so what? Features that an LMS can take for granted, such as the legitimacy of an instructor, become things the platform must actively police.
+2.1.3 Role-Based Access Control
+RBAC is based on the concept of tying permissions to roles and granting roles to users (as opposed to granting individual permissions, e.g. Sandhu, Coyne, Feinstein & Youman, 1996). A student may have permission to enroll/learn.
+An instructor may have permission to create/enroll.
+An administrator has permissions to approve/suspend/refund courses. By confining authorisation to roles RBAC reduces complexity and makes it easy to audit and this ease of management has ensured it has remained the king of access control for almost thirty years. This access model underpins the proposed system, a discussion on this access model and rationale will be present in section 2.4.
+2.1.4 Online Payment and Revenue Sharing
+For a platform, payment isn’t an add-on; payment is the service. A payment gateway is what gives authorization to complete an offer of funds from the consumer, between the consumer and the platform. This processing is conducted by gateway services; gateway services constructed for African contexts, e.g., Paystack, process and authorize both mobile money and credit cards (Paystack, 2023). Typically the Revenue Share agreement between the vendor that teaches and the platform on how the offer money is actually split on an order by order basis is structured as a percentage and this ultimately impacts whether the vendors are incentivized to put more offers on the platform based on any number of: Fairness of the split, confidence that the money actually goes to the vendor teaching and whether the orders are properly captured and visualized in an automated Fashion- not just as an Accounting mechanism, but as a Trust foundation.
+2.2 Review of Related Technologies
+What a builder does with technologies sets constraints on what the end product system is able to do, so tools and technologies are something to critically examine not put on a shopping list. Front end, these days modern course platforms are predominantly written as web applications using JavaScript frameworks, of which the de facto standards for UI development is React (Stack Overflow, 2023). However, by itself React doesn't include support for routing, server side rendering or data fetching; it's been around long enough now that the demand for full stack frameworks over and on top of React has been immense. The flagship of this is Next.js, where the creator has bundled together a comprehensive solution with Server-Side Rendering (SSR), Server Actions and API routes in one place, allowing a small team to effectively write both the user interface and all back end logic without having to connect disparate systems together. The inevitable down side is that in tying the front end to the back end you lose much of the flexibilty of being able to swap parts of the two stacks out, however in a dedicated small scale project that’s a risk worth taking.
+Data On the data front we have an age-old dispute, relational or non-relational databases?
+The answer is obvious. A course platform consists of highly relational data, for example: ‘users have courses’, ‘courses are built out of lessons’, ‘payments connect users to courses’. A relational database can help Enforce these relationships through constraints and supports atomic transactions, without which storing money becomes a perilous task indeed; a transaction ensures that a payment and its associated enrollment either both succeed or both fail. It is well documented in the area of transactional systems that “Where correctness of money is more important than raw scale [we favour] a relational store coupled with transactional semantics. [There] is no other store for which we can demonstrate correctness when money is involved.”
+Non-relational stores would give up that for increased scalibility which isn’t required here.
+Above the Application Data Storage Interface, sits Object Relational Mapping (ORM), this tool translates our raw database query results (tables, columns, rows) into code-readable objects, enabling us to interact with the data layer using a typed structure and minimizing the chances of SQL Injection attacks that have plaguing code from inception. However there comes with its own price as layers of abstraction can hide away performance issues, on the other hand in applications sensitive to security there’s really only two options to go with if your team isn’t specialized in SQL. Auth authentication is of course another of those distinct areas. Storing passwords in plain text is a capital offence for anything else to hash passwords you can simply hash it, although fast hashes will easily come apart if they’re given access to some serious number crunching.
+For that reason it’s recommended to use an intentionally slow hashed such as bcrypt; these are deliberately designed to be resource intensive to make a break by brute-force prohibitively expensive (Provos & Mazires, 1999). For the actual signing in you may well want to look into either a token-based session method or a OAuth provider to integrate with things like ‘login via Google’, in order to limit the amount of different passwords users need to manage.
+2.3 Review of Existing Systems
+Four systems are analyzed below, not for praise or damnation, but as examples: to understand their strong and weak points relative to this problem and as inspiration or caution.
+2.3.1 Udemy
+As it happens, Udemy has built the largest open platform in the world. Any instructor can publish their material and a percent of sales. There’s plenty of obvious value proposition - there’s tons of material available, the platform does work to share revenue, user-generated ratings and reviews (which are key for a learner to sift through).
+And, there’s even a slick user experience.
+It all falters in places that are important here: quality isn’t a strong control - any one can upload something. So while user reviews have some helpful value, they are reactive and have less utility than they might appear; many course instructors may just remove low reviews. The biggest thing is it’s hard for those not living where there is pervasive credit card - such as in many parts of Ghana - to easily use the service. While this platform model has shown that it will be highly successful with massive scale, it needs to focus more on effective governance at the user-end and a user-centric interface in local language.
+In addition, payments at present rely on credit card and as a result some learners cannot actually participate.
+2.3.2 Coursera
+Coursera works with universities and companies to bring courses, certificates and degrees to market. Because the courses come from branded organizations, Coursera is, if anything, somewhat more vetted than Udemy and Coursera courses are always fairly well produced. However, because Coursera is not an open platform in this sense--you can’t as an individual just post an offering to Coursera--you don’t have the option for the independent developer and “individual expert” to contribute offerings.
+Again, by framing cost in foreign currencies or via a subscription-payment vehicles many of the people in those emerging markets may not readily possess- Coursera implicitly assumes some, but not all of, the resources of a Westerner on the platform.
+We again use the insight that Coursera provides on the benefits of vetted content for the proposed workflow.
+2.3.4 Local and Regional Platforms
+Many small, community-specific sites have sprung up in the area and several student projects have created smaller-scale online-learning systems. One thing repeatedly comes up in the literature on these sites: They do a fine job with the easy content delivery parts but skip the hard, unseen, or uncool ones such as lack of distinct role management, weak password storage, missing rate-limiting and audit capabilities and eschewing the need to actually take payment or manual payment transactions (Almaiah et al., 2020). So they pass a show-and-tell but aren’t robust to money and attacks.
+That is perhaps the clearest lesson for us on this project: What we can’t simply afford is another player with content, instead the thing that may set our design apart is the payment machinery and proper policy enforcement/governance features that the others usually skip.
+All in all, Udemy delivers the platform model and the local payment issue; Coursera provides the authority of validation but can lead to hyper-curation and excess cost; while the smaller sites prove the security issue we hope to overcome. So we try to synthesize the positives from all four and address their drawbacks.
+2.4 Review of Methods, Algorithms and Models
+In addition to tools and systems, there are a few long-running models for how to do this, and these are all worth taking a good hard look at too.
+2.4.1 The Technology Acceptance Model
+Introduced by Davis (1989), the Technology Acceptance Model (TAM) posited that people would use a technology if their perceptions about its usefulness and about its ease of use, are positive. It’s been applied extensively to e-learning (e.g. Sun et al., 2008, who added “content quality” to use and usability and found their reliability/security, together with a satisfactory system experience, were most important for students to stick with an e-learning platform, Almaiah et al., 2020, who found these same concerns critical during the COVID pandemic).
+Of course, TAM has its critics, who accuse the model of being overly simplistic – for example, by neglecting “socio-cultural” and “infra-structural” issues – the very factors that cause most friction in the African context (e.g.
+Tagoe, 2012). But TAM can, arguably, be taken as a decent launching-pad, rather than definitive scripture: one can, “be conscious of the implications of usability, usefulness and security” (Almaiah et al., 2020) while also accounting for cost (in-depth below), local payment mechanisms and obvious, palpable trust signals.
+2.4.2 Role-Based Access Control as a Security Model
+RBAC (the RBAC model of Sandhu et al. 1996) is still the practically effective approach for authorisation of multi-user systems. Its main thesis is that, since it greatly reduces the number of things which can go wrong, it reduces management and, because it makes the security policy transparent, the role-based security policy should more readily understandable than the permission-based ones. As has been pointed out, RBAC cannot naturally express some fine-grained or context-dependent permissions; but a three roles/very high impact system/operation such as we described needs no more help.
+2.4.3 Automated Assessment and Auto-Grading
+This auto grading scores an answer from a learner, with no need of a human grader. Auto grading on some question formats is very simple. Multiple choice, true and false: Compare submitted answer to stored key, get score.
+“In favor of objective tests of knowledge recall and to some extent of knowledge comprehension (if test items are constructed very well)” “But they do not necessarily test all desirable skill such as the ability to produce essay, etc”.
+“Rapid feedback to students about their work is a crucial factor to foster their learning” and as this test is graded with immediacy… “Design consequence: Use auto-graded objective questions for reliable and scalable assessment of this knowledge, but apply timed exams and submission controls, because objective knowledge tests are simple to crack “
+2.4.4 Software Development Methodology
+Assessment that’s carried out automatically and doesn’t require human marker. Objective questions can easily be auto-graded – these range from multiple choice questions, right through to true/false answers; The machine automatically compares your answer to a stored key and marks accordingly. In terms of learning and assessment, objective testing is acknowledged to have strengths as a means of testing recollection and on occasion understanding (though there are limitations around open-endedness), providing the testing process has been set up thoughtfully and questions well written.
+Nicol & Macfarlane-Dick 2006 reiterate that learning is primarily fuelled by quick turnaround of information – one of the biggest benefits of auto-marking that you should make use of.
+With all of that said, auto-mark objective test-items would serve well for mass assessment with carefully built-in control systems; it being an entirely simple process to reverse-engineer an objective test for these kinds of items if unchecked, or of course that it may of course not be such a case that time limitations exist or that there's no reason why each candidate's submission can't be considered separately.
+2.5 Gaps in Existing Systems
+In sum, a predictable sequence of problems emerge from the review: A payment problem at one end: Mainstream platforms presuppose international card payments which few Ghanaian learners use. Self-hosted LMSs offer zero payments (Tagoe, 2012; Asunka, 2008). A governance gap at the other: Open platforms content audit in retrospect, self-built systems often lack reviews, clear role delineation (Almaiah et al., 2020).
+A security problem: Salted password hashing, rate limiting, rate limiting, idempotency, automatic and recorded splitting and audit trails – hard security concerns – the very ones the acceptance literature shows deter learners, are precisely the missing component from cheap to integrate systems (Sun et al., 2008; Almaiah et al., 2020).
+And all of these are symptoms of a bigger problem: The paucity of empirical work showing the synthesis of all the issues above into a single, cheap, coherent package within local contexts like Ghana, especially using currently free & open tooling; what many studies diagnose (and despair at) at demand does not always get addressed in the build.
+2.6 Summary of the Literature Review
+The platform has the artificial requirement to build trust and confidence for a process available to “ strangers through methods of authentication and certification and the implementation of secure payment and transaction”. Unlike in a learning management system (LMS) there isn’t a ‘closed community of trusting users’ to start with. Instead, we need to build that trust in the open process ourselves “against strangers via methods of authentication and certification, as well as via secure transaction and payments”. Online learning is effective in large measure because it subtracts friction from an existing process and adds time for engagement with learning material. And the addition of a system of frictional learning defeats the whole point of successful learning through online tools.
+As opposed to a learning management system, the market platform requires artificial construction of trust and confidence around a process open to “strangers through methods of authentication and certification, as well as through secure transaction and payments”.
+The adoption literature consistently yields one insight that rises repeatedly through the study: use-ability provides initial motivation, trust, security and reliability dictate stickiness; use of payment, for example, may be particularly sensitive given Ghanaian circumstances. The existing approaches do exist in stark contrast: Udemy achieves the market model but overlooks localized payments and substantive vetting; Coursera does create and vet instructional quality but locks out outside content creators. Numerous localized platforms may exist and the local content available but neither possess mechanisms to handle commercial transactions or protect financial flows. Precisely the missing gaps, for which our initiative is targeting -- i.e., locally oriented, governed and affordable systems supported by and accessible through real security measures – will be presented.
+We show how in the following chapter of the thesis.
+REFERENCES
+M. A., Al- Khasawneh, A., & Althunibat, A. (2020). Exploring the critical challenges and factors influencing the E-learning system usage during COVID-19 pandemic.  Education and Information Technologies, 25 (6), 5261–5280. https://doi.org/10.1007/s10639-020-10219-y Asunka, S. (2008).
+Online learning in higher education in Sub-Saharan Africa: Ghanaian university students' experiences and perceptions. The International Review of Research in Open and Distributed Learning, 9 (3), 1–23. https://doi.org/10.19173/irrodl.v9i3.586 Beck, K., Beedle, M., van Bennekum , A., Cockburn, A., Cunningham, W., Fowler, M., … Thomas, D. (2001).
+Manifesto for agile software development. https://agilemanifesto.org Clark, R. C., & Mayer, R. E. (2016).
+E-Learning and the science of instruction: Proven guidelines for consumers and designers of multimedia learning (4th ed.). Wiley. Date, C. J. (2003).
+An introduction to database systems (8th ed.). Addison-Wesley. Davis, F. D. (1989). Perceived usefulness, perceived ease of use and user acceptance of information technology. MIS Quarterly, 13 (3), 319–340. https://doi.org/10.2307/249008 Kaplan, A. M., & Haenlein, M. (2016). Higher education and the digital revolution: About MOOCs, SPOCs, social media and the Cookie Monster. Business Horizons, 59 (4), 441–450. https://doi.org/10.1016/j.bushor. 2016.03.008 Means, B., Toyama, Y., Murphy, R., & Baki, M. (2013).
+The effectiveness of online and blended learning: A meta-analysis of the empirical literature.  Teachers College Record, 115 (3), 1–47. https://doi.org/10.1177/016146811311500307 Nicol, D. J., & Macfarlane-Dick, D. (2006). Formative assessment and self-regulated learning: A model and seven principles of good feedback practice.
+Studies in Higher Education, 31 (2), 199–218. https://doi.org/10.1080/03075070600572090 Paystack . (2023).  Paystack documentation . https://paystack.com/docs Provos, N., &  Mazières , D. (1999). A future-adaptable password scheme. In Proceedings of the 1999 USENIX Annual Technical Conference (pp. 81–91). USENIX Association. Rosenberg, M. J. (2001).
+E-learning: Strategies for delivering knowledge in the digital age . McGraw-Hill. Sandhu, R. S., Coyne, E. J., Feinstein, H. L., & Youman, C. E. (1996). Role-based access control models.
+Computer, 29 (2), 38–47. https://doi.org/10.1109/2.485845 Stack Overflow. (2023).  Stack Overflow developer survey 2023 . https://survey.stackoverflow.co/2023 Sun, P.-C., Tsai, R. J., Finger, G., Chen, Y.-Y., & Yeh, D. (2008).
+CHAPTER THREE
+PROPOSED SYSTEM DESIGN
+3.0 Introduction
+This chapter details the process of the e-learning platform that was proposed and developed, first outlining the software development methodology that was chosen, and giving the reasoning why this was selected instead of any alternatives. Subsequently, it details the requirements (both functional and non-functional) that the system was intended to fulfill, and the tools selected to achieve this, then moving on to present the proper design: the architecture, database, UI interactions, core algorithms in pseudocode, test plan, and ethical considerations when storing and transacting financial data.
+3.1 Software Development Methodology
+3.1.1 What Methodology Was Used
+All the development of this project was done following the Agile methodology (a software development methodology). Instead of doing all the work that there is and passing the platform from end to end through a single giant process, the work was partitioned into several small parts. At the end of every pass a portion of the platform had been built and tested and added to the next design iteration. We completed authentication first, then course creation, then enrollment and learning, then payments, then quizzes, then the admin layer, then the messaging layer.
+3.1.2 Why This Methodology
+The natural choice was the Waterfall model - go from requirements to design to implementation to testing in a single, linear pass. This is great for requirements that don’t move and are well understood in advance of development (Sommerville, 2016). Unfortunately this was not that; the work was on a one-person side project involving a very nebulous idea - in many cases some requirements were not understood in advance and the need for a specific capability only became apparent when it had already been implemented and shipped to a user. An example is the server-signed quiz session token feature which was obviously missing on the first pass of requirements, only emerging as it became apparent how easy a client-side timer could be manipulated. Agile, the reality of the situation was better suited for this. Beck et al. (2001) suggests that short feedback cycles minimize the risk associated with the delivery of systems in large teams with frequently changing requirements, with any misstep revealed while still cheap to address. Rational Unified Process (RUP) was rejected as a heavier weight process; its documentation rigor was too significant to accommodate a single individual’s workload. The iterative model provided the rigour of incremental testable output with a greatly reduced ceremony overhead.
+3.1.3 How the Methodology Was Applied
+Every step revolved around the same small cycle:
+Plan - What should we do next? How will we know when it’s finished?
+Design - Sketch the schema, server code, and UI for the new feature.
+Build - Ship the new feature from database to UI.
+Test - Try the feature, fix any breakage.
+Refine - Learn for next step.
+Everything was checked into Git so the whole cycle could be undone or redeployed. The database schema also developed by applying migrations in Prisma which ensures that our data model doesn’t become desynchronized from the code.
+3.2 Requirements Analysis
+3.2.1 Functional Requirements
+Functional requirements define what the system should do. They’ve been grouped below by the job each plays.
+Table 3.1: Functional requirements of the proposed system
+ID
+Requirement
+FR-01
+Visitors can register as a student or apply as an instructor and can sign in with email/user code and password or with a Google account.
+FR-02
+The system shall verify credentials, enforce password rules and lock out accounts that are suspended or banned.
+FR-03
+Students can browse and search the catalogue of published courses and view course details before enrolling.
+FR-04
+Students can enrol in free courses directly and in paid courses after a successful payment.
+FR-05
+Enrolled students can study lessons (video, text, PDF), track their progress and resume where they left off.
+FR-06
+Students can attempt timed quizzes, receive an automatic score and view their attempt history.
+FR-07
+Students can rate and review courses and message instructors and support.
+FR-08
+Instructors can create courses with modules and lessons and submit them for administrative review.
+FR-09
+Instructors can create quizzes and questions (multiple-choice and true/false).
+FR-10
+Instructors can view earnings, request withdrawals and reply to reviews and messages.
+FR-11
+Administrators can approve, publish, reject, hide, or remove courses.
+FR-12
+Administrators can approve or reject instructor applications and manage user accounts.
+FR-13
+Administrators can set the platform commission, process withdrawals, post announcements and view analytics.
+FR-14
+The system shall record sensitive actions in an audit log.
+3.2.2 Non-Functional Requirements
+Non functional requirements explain how well the system should do.
+Table 3.2: Non-functional requirements of the proposed system
+ID
+Category
+Requirement
+NFR-01
+Security
+Passwords shall be stored only as salted bcrypt hashes; sensitive routes shall be protected by role.
+NFR-02
+Security
+Login, registration, password reset and messaging shall be rate-limited to resist abuse.
+NFR-03
+Reliability
+Payment confirmation shall be idempotent so that a repeated event never pays an instructor twice.
+NFR-04
+Usability
+The interface shall be responsive and work on mobile browsers without a separate app.
+NFR-05
+Performance
+Catalogue and dashboard pages shall load common views without noticeable delay under normal use.
+NFR-06
+Maintainability
+Business logic shall be centralised in reusable services and validated with typed schemas.
+NFR-07
+Privacy
+A user's online status shall be visible only to people with a legitimate relationship to them.
+NFR-08
+Portability
+The system shall run on free hosting and a managed PostgreSQL database.
+3.2.3 User Requirements and User Stories
+We then extracted a couple of illustrative stories that communicate those needs from a user perspective.
+For a student, I want to pay a course with a payment method which I use and not have to rely on a global card, so that I can begin taking the course in time for the starting of a batch.
+As a student, I want my quiz to be graded within minutes, so that I can instantly know whether I have passed.
+For an instructor, I want my course be peer-reviewed before it gets published, so that the end users believe what they buy.
+As an instructor, I want the exact earned amount and have a way to withdraw it, so that I believe in the platform with my work. As an admin, I want to have a log of user activity, so that I can address issues, investigations and abuse claims.
+3.3 Tools and Technologies
+The tools were chosen for three reasons that kept coming up: they are free or have a usable free tier, they are current and well-documented and they let one developer cover both the front end and the back end.
+Table 3.3: Tools and technologies used
+Layer
+Technology
+Justification
+Language
+TypeScript
+Static typing catches a large class of errors before run time, which matters for a security-sensitive app.
+Framework
+Next.js 16 (App Router)
+Combines server rendering, server actions and API routes in one framework, so a small team can build front and back together.
+UI library
+React 19
+The most widely adopted UI library, with a large ecosystem and good documentation.
+Styling
+Tailwind CSS 4
+Utility-first styling keeps the interface consistent and quick to build.
+Database
+PostgreSQL
+A relational database with transactions, which are essential when money is involved.
+ORM
+Prisma 6
+Type-safe database access and migrations that keep the schema and code in step.
+Authentication
+Auth.js (next-auth v5)
+Battle-tested handling of credentials and OAuth, so authentication is not hand-rolled.
+Payments
+Paystack
+Supports local cards and mobile money for the target market.
+File storage
+Vercel Blob / local
+Stores lesson PDFs and instructor verification photos.
+Email
+Resend
+Sends one-time codes and password-reset links.
+Hosting
+Vercel
+Free tier deployment that pairs naturally with Next.js.
+Tools
+VS Code, Git, Prisma Studio
+Editor, version control and database inspection.
+3.4 System Architecture
+My app uses a classic 3-tier client-server approach: My web browser serves as the presentation tier. It renders UI elements and sends forms from the browser. Next.js server (app tier).
+The application tier is our Next.js server that contains the application logic, including: server components to get data; server actions for data mutations (write/update/delete). API routes for webhooks and polling; and routing for protected endpoints based on user role before touching the view layer; a database to store the application's data (PostgreSQL and Prisma ORM). External services: it accesses multiple services using HTTPS. Payments are made via Paystack, emails are sent via Brevo, files are uploaded via blob storage, and logins are via OAuth with Google. Our app’s design is centered around keeping the business logic on the server-side. Any access to a database or secret key should only be possible for the server. The client does not have access to secret credentials or sensitive data. This is how we enforce access checks for student/instructors: student trying to get access to an instructors’ action through clever URL manipulation will never succeed, because the server enforces all access decisions.
+Render the following as Figure 3.1 (System Architecture):
+flowchart TB
+subgraph Client[Presentation Tier - Browser]
+UI[Pages, Forms, React Components]
+end
+subgraph Server[Application Tier - Next.js Server]
+MW[Middleware: role-based route guard]
+SC[Server Components]
+SA[Server Actions]
+API[API Routes: webhook, polling, files]
+SVC[Domain Services and Validation]
+end
+subgraph Data[Data Tier]
+DB[(PostgreSQL via Prisma)]
+end
+EXT1[Paystack]
+EXT2[Brevo Email]
+EXT3[Blob Storage]
+EXT4[Google OAuth]
+UI -->|HTTPS request| MW --> SC
+UI -->|form submit| SA
+UI -->|fetch/poll| API
+SC --> SVC
+SA --> SVC
+API --> SVC
+SVC --> DB
+SA --> EXT1
+SA --> EXT2
+SA --> EXT3
+MW --> EXT4
+Figure 3.1: System architecture of the proposed e-learning platform.
+3.5 System Design
+3.5.1 Database Design
+The data model is relational and normalized. The User entity is at its heart, providing role and status, while an instructor will have an Instructor Profile with application details and their earned money balance. An optional Category is the home of a course that has ordered modules, that has ordered lessons. An Enrollment relationship connects a User to a Course while also keeping track of progress and LessonProgress tracks that by individual lesson. A Payment tracks every transaction (split between the instructor and platform) and it drives the earnings ledger and withdrawals. Quiz with its related Question and attempt allows for assessments, while social interactions like the Review, Review Reply, Message, Conversation, Notification and Announcement add social media elements. AuditLogs ensure integrity and security concerns like EmailVerification, PasswordResetToken, RateLimitRecord and SystemSettings are looked after. A simplified ER diagram showing only core entity relationships are available below.
+A simplified entity-relationship diagram of the core entities is shown below.
+Render the following as Figure 3.2 (Entity-Relationship Diagram):
+erDiagram
+USER ||--o| INSTRUCTOR_PROFILE : has
+USER ||--o{ COURSE : teaches
+USER ||--o{ ENROLLMENT : enrols
+USER ||--o{ PAYMENT : makes
+USER ||--o{ QUIZ_ATTEMPT : attempts
+CATEGORY ||--o{ COURSE : groups
+COURSE ||--o{ MODULE : contains
+MODULE ||--o{ LESSON : contains
+COURSE ||--o{ ENROLLMENT : has
+COURSE ||--o{ PAYMENT : sold_via
+COURSE ||--o{ QUIZ : has
+QUIZ ||--o{ QUESTION : contains
+QUIZ ||--o{ QUIZ_ATTEMPT : graded_as
+COURSE ||--o{ REVIEW : receives
+ENROLLMENT ||--o{ LESSON_PROGRESS : tracks
+Figure 3.2: Entity-relationship diagram of the core entities.
+3.5.2 Use Case Diagram
+Three actors work on this platform. A student signs up, views and registers on available courses, uses learning materials, takes quizzes, review a course and messages students and instructors. An instructor also do anything that the student can do in the system and besides these can also: Apply for instructor approval -Creates and uploads course and quiz , Checks all the earnings from the submitted course and process withdrawal. An administrator administrates the system: Approves and rejection of instructors, Approves and rejection of courses, Manage all the students and instructors, Set up commission value , Process withdrawal request, Post Announcement on the Announcement Board, View Audit log for a course.
+Render the following as Figure 3.3 (Use Case Diagram):
+flowchart LR
+Student((Student))
+Instructor((Instructor))
+Admin((Administrator))
+Student --- UC1[Register / Login]
+Student --- UC2[Browse & Enrol]
+Student --- UC3[Learn & Track Progress]
+Student --- UC4[Take Quiz]
+Student --- UC5[Review & Message]
+Instructor --- UC1
+Instructor --- UC6[Apply for Approval]
+Instructor --- UC7[Create / Submit Course]
+Instructor --- UC8[Manage Quizzes]
+Instructor --- UC9[View Earnings / Withdraw]
+Admin --- UC10[Approve Instructor / Course]
+Admin --- UC11[Manage Users]
+Admin --- UC12[Set Commission / Process Withdrawals]
+Admin --- UC13[Announcements / Audit Log]
+Figure 3.3: Use case diagram of the proposed system.
+3.5.3 Activity Diagram: Course Approval Workflow
+A course has a Course Lifecycle, which is essentially the platform's core gatekeeper. When an instructor starts a new course, they're allowed to work on it while it's in DRAFT status. Once the course creator is satisfied with what they've built, they can send it in to be reviewed and promoted to PENDING status. The admin then either disapproves the course and send it back for fixes (REJECTED - The creator can make changes and resend). Or Approves the course and send it on to be published (APPROVED). An approved course is published to become accessible for sale (PUBLISHED). The teacher can make any approved course invisible from new buyers, but keep it active for previously purchased course access (HIDDEN).
+Render the following as Figure 3.4 (Activity Diagram - Course Approval):
+flowchart TD
+A[Instructor creates course - DRAFT] --> B[Add modules, lessons, quizzes]
+B --> C{Submit for review?}
+C -- No --> B
+C -- Yes --> D[Status: PENDING]
+D --> E{Admin decision}
+E -- Reject --> F[Status: REJECTED + reason]
+F --> B
+E -- Approve --> G[Status: APPROVED]
+G --> H[Admin publishes]
+H --> I[Status: PUBLISHED - visible & purchasable]
+I --> J{Hide?}
+J -- Yes --> K[Status: HIDDEN - enrolled keep access]
+K --> I
+Figure 3.4: Activity diagram of the course approval workflow.
+3.5.4 Sequence Diagram: Paid Enrollment and Payment
+For courses that are paid, when student is enrolled the system creates a pending payment, redirect the student to Paystack to complete payment and only grant access after confirming the payment. This confirmation can occur in two ways : first it occurs through a callback on the student's browser and second, through a server-to-server webhook. The system treats these two different means of confirmation as the same idempotent operation and ensures access is granted only once.
+Render the following as Figure 3.5 (Sequence Diagram - Paid Enrolment):
+sequenceDiagram
+actor Student
+participant App as Next.js Server
+participant DB as PostgreSQL
+participant PS as Paystack
+Student->>App: Enrol in paid course
+App->>DB: Create Payment (PENDING), compute split
+App->>PS: Initialize transaction
+PS-->>App: authorization_url
+App-->>Student: Redirect to Paystack
+Student->>PS: Complete payment
+PS-->>App: Callback / Webhook (reference)
+App->>PS: Verify transaction (server-side)
+App->>DB: Mark Payment SUCCESS (only if PENDING)
+App->>DB: Create Enrollment + credit instructor
+App-->>Student: Redirect to course player
+Figure 3.5: Sequence diagram of the paid enrolment and payment flow.
+3.6 Algorithm Descriptions
+In this part, the reasoning for the critical parts of the system is described. The algorithms are described in pseudocode.
+3.6.1 Automatic Quiz Grading
+When a quiz is finished the system checks again who access that page and if it is a valid time attempt (it gets from url). If both checks are true then compare the student responses and keys and the total.
+ALGORITHM GradeQuizAttempt(quizId, answers, token, user)
+quiz <- load quiz with questions
+IF NOT hasCourseAccess(user, quiz.course) THEN return AccessDenied
+IF NOT quiz.isEnabled THEN return Disabled
+startedAt <- verifyToken(token, user, quizId)
+IF startedAt is invalid THEN return InvalidSession
+IF quiz.durationMin > 0 AND elapsed(startedAt) > limit + grace THEN
+return TimeExceeded
+correct <- 0
+FOR each question q in quiz.questions DO
+IF normalize(answers[q.id]) == normalize(q.correctAnswer) THEN
+correct <- correct + 1
+score <- round(correct / count(questions) * 100)
+passed <- score >= quiz.passingScore
+save QuizAttempt(user, quiz, score, passed, answers, startedAt, now)
+updateCourseProgress(user, quiz.course)
+return (score, passed)
+3.6.2 Idempotent Payment Completion
+Payment completion is all in a transaction within the database. The switch over from PENDING to SUCCESS uses a conditional update so if 2 confs are concurrent the winner is the first
+ALGORITHM CompletePayment(reference)
+payment <- load by reference
+IF payment.status == SUCCESS THEN return        // already done
+BEGIN TRANSACTION
+updated <- UPDATE payment SET status=SUCCESS
+WHERE id = payment.id AND status = PENDING
+IF updated.count == 0 THEN return             // a duplicate event
+UPSERT enrollment(payment.user, payment.course)
+IF instructor is APPROVED AND not earningsFrozen THEN
+instructor.balance <- instructor.balance + payment.instructorShare
+INSERT EarningsLedger(SALE, instructorShare)
+COMMIT
+3.6.3 Course Progress Calculation
+Progress counts any lesson and any quiz that’s added as a Unit, whereas ‘Done’ means all units are complete.
+ALGORITHM CalculateProgress(user, course)
+lessons <- all lessons in course
+quizzes <- enabled quizzes in course that have >= 1 question
+total <- count(lessons) + count(quizzes)
+IF total == 0 THEN return 0%
+doneLessons <- count(completed LessonProgress for user in lessons)
+donePassed  <- count(distinct quizzes user has passed)
+percent <- min(100, round((doneLessons + donePassed) / total * 100))
+return percent
+3.6.4 Fixed-Window Rate Limiting
+Sensitive actions are rate-limited using a database backed fixed window counter that combats the brute force and spam attacks that would otherwise bypass the individual server instances.
+ALGORITHM CheckRateLimit(key, maxAttempts, windowMs)
+record <- load by key
+IF record is null OR record.resetAt <= now THEN
+upsert record { count: 1, resetAt: now + windowMs }
+return Allowed
+IF record.count >= maxAttempts THEN
+return Blocked(retryAfter = record.resetAt - now)
+record.count <- record.count + 1
+return Allowed
+3.7 Validation and Testing Plan
+We scheduled testing at three different layers. Unit testing focused on pure logic pieces in isolation. These included the grading calculation, progress calculation, revenue-split mathematics, and input validation schema. Integration testing tested that those pieces work together when interacting with a real database. An example is that a confirmed payment does lead to an actual enrollment and correctly credits the correct instructors, or a hidden course allows access for a pre-enrolled student. User (acceptance) testing ran the live system with three of the demo accounts to test the typical paths (registering, enrolling, learning, quizzing, paying, reviewing) as well as the admin-approving the enrollment. We verified that the system would satisfy its objectives and be user-friendly. When we threw garbage into the input forms and waited for a sensible reply we knew that input validation works for a reasonable rate.
+Chapter Four also contains an array of more detailed testing information.
+3.8 Ethical Considerations
+The platform concerns money and personal data so the design took into account a number of ethical points:
+- Privacy of data : no more data than necessary is collected. It’s composed of username, email, password in its hashed version, an instructor’s submitted skills and a picture for verification (for instructors). Never is a password saved plain. An online presence isn’t exposed to the world but only to people you directly interact with like your chat friend or an instructor from whom you take a course.
+- Consent : when they apply to a course, an instructor consents to send his data as well as an image and the role they aspire to play will be mentioned during registration, payment initiation process can be initiated by users only;
+- Security : various controls such as the mentioned ones as well as those of a password security scheme, role management, rate limitation, secure session generation of quizzes and an idempotent payment processing and tracing of operations can be attributed to those. The detailed audit log in particular helps detect misconduct and enables fairness when resolving claims.
+CHAPTER FOUR
+SYSTEM IMPLEMENTATION AND TESTING
+4.0 Introduction
+This chapter details the transformation of the design of Chapter Three into a functioning system and how the system was verified. It covers the environment in which the system was implemented, and the tools used for development, and follows the structure and organization of the code as it describes what the end user actually sees (interface) and the code that lies underneath it. The latter part of the chapter addresses the verification: testing approach, test cases and results, and evaluation of how well the developed system performed. The screenshots shown are of the finished implementation and will be embedded within the main text when the document is finally formatted and shall bear suitable, well-formed captions below them, as required by the formatting guidelines.
+4.1 Development Environment
+The following environment was used for development and testing of the application:
+Table 4.1: Development environment
+Item
+Detail
+Operating system
+Windows 11
+Editor
+Visual Studio Code
+Runtime
+Node.js 20
+Language
+TypeScript 5
+Framework
+Next.js 16, React 19
+Database
+PostgreSQL (managed, Supabase-compatible)
+ORM and tooling
+Prisma 6, Prisma Studio
+Version control
+Git
+Payment sandbox
+Paystack test mode
+Browser
+Chrome / Edge (desktop and mobile view)
+The application is deployed as a single Next.js project, run with the local development server when being developed and then deployed to Vercel using Next.js's export capability for Vercel, and is then served from a remote database accessible via environment variable.
+4.2 Structure of the Source Package
+I have arranged the codebase based on responsibility rather than just by feature in order to facilitate code reuse rather than repetition. Folder descriptions include an explanation of each folder’s purpose:
+Table 4.2: Major folders and their responsibilities
+Folder
+Contents and role
+`app/`
+Routes and pages (App Router). Holds server components for reading data and the page tree for public, auth, learning and dashboard areas.
+`app/actions/`
+Server actions, the mutation layer. Thirteen files group actions by domain (auth, courses, quiz, payments via services, reviews, messages, admin and so on).
+`app/api/`
+HTTP route handlers for things that need raw HTTP: the Paystack webhook, presence heartbeats, message polling and PDF/file serving.
+`lib/`
+Domain logic and helpers: authentication guards, validations, rate limiting, notifications, presence, analytics and small utilities.
+`lib/services/`
+Cross-cutting transactional flows that several actions share, chiefly enrolment and payment.
+`lib/validations/`
+Typed input schemas (Zod) for every form, kept separate so the same rules apply wherever data enters.
+`components/`
+Reusable React interface pieces, grouped by area (layout, forms, courses, learn, quiz, messages, admin and so on).
+`prisma/`
+The database schema, migrations and the seed script that creates demo accounts and sample courses.
+`middleware.ts`
+The route guard that runs before pages and enforces role-based access.
+The way the folders have a dependency on each other generally flows only in one direction: Pages depend on libraries, services depend on them and they in turn depend on the prisma client and validations, with nothing depending on a Page. We can maintain business logic in a single location isolated from any feature to allow the business logic - “does this user have access to this course” for instance - to be consistently applied to any interaction regardless of where the request originates, from a page, an action or a http route.
+4.3 System Interfaces
+These are the main interface in the system and what it does. The screenshots are placed in figures.
+4.3.1 Public and Authentication Interfaces
+The homepage features an overview of the service with links to the catalogue and login. The course catalogue displays published courses where visitors can search or view an individual course, with detail view to see the course details, outline and cost. Registration provides two paths; to sign up as a student, and to apply as an instructor, while login allows a user to log in using their email address or a unique user-code, along with their password, or sign up with a Google account. Recover password and reset password screens cater for lost details.
+Figure 4.1: Landing page of the platform 1Figure 4.2: Course catalogue with search 1
+Figure 4.3: Registration screen(student) Figure 4.4: Login screen
+4.3.2 Student Interfaces
+The student dashboard includes courses they are enrolled in, shortcut for “continue learning”, as well as announcements for that course. Learning Player where each student can learn by a video, a PDF and/or a text, within a given lesson’s context, and can keep tracking lessons’ completions as well as progress made within it. The Quiz player allows learning students the option to learn and solve quizzes questions (one set at a time) in which timer starts, and the results are shown after submission. The student can even see the received as well as sent messages. Other then those the student’s also has profile screen.
+Figure 4.5: Student dashboard and lesson player with progress tracking
+Figure 4.6: Quiz attempt
+4.3.3 Instructor Interfaces
+Based on the state of approval an instructor will see the application screen, the pending notification, or the complete dashboard. The dashboard features include a course editor to create lessons, quizzes and module, a withdrawals screen, an earnings and enrolments analytics report and Messages.
+Figure 4.7: Instructor Dashboard
+Figure 4.9: Course editor (modules, lessons, quizzes)Figure 4.8: Instructor application form.
+4.3.4 Administrator Interfaces
+The admin command centre brings the platform data to life with access to stats, plus a set of handy Quicklinks to a host of features. Individual pages control and are responsible for managing the user base, instructor application reviews, courses (approved, pending publication, rejected, hidden), submitted reviews, quizzes, announcements, withdrawals, the site’s settings (including the commissions structure), analytics and the audit trail.
+Figure 4.8: Admin control centre
+Figure 4.9: Audit log
+4.4 Explanation of Major Code Modules
+Authentication module. Based on Auth.js and using a JWT strategy, I integrated a Credentials provider (email & password, hashed by bcrypt with a cost factor of 12) along with a Google provider. Upon every incoming request the current session is checked in the database for relevance; if a user has had their role altered or an account has been blocked, changes are effective right away. An middleware.ts handles role-based redirection so unauthorised persons cannot navigate to content they do not have access to.  The courses module uses Server Actions defined in the courses.ts file to construct and modify courses, modules and lessons, while always ensuring all submitted data conform to its Zod schema.
+Lessons can be comprised of video (YouTube, Vimeo or url based), plain text, or a pdf that is stored in cloud storage outside the database and only served up when authorization is passed to ensure access is maintained. Any completed course submission places the course within a review pending state.
+Enrolment and access module. There is only one function - hasCourseAccess - and it’s the single gate-keeper for ALL restricted resource access. It first resolves admin override, then course owner, then free access all-time, then existing on any free, Paid/Paid and settled enrolment, finally resolving default public/publish courses rule. By putting them all at one place ensures we can never let a screen “let” a student in and forget to let others in
+Payment module. The payment service calculates instructor / platform split, fires up a paystack transaction and once confirmed execute the idempotent completion detailed in Chapter 3 above. Browser callback & server webhook both drain into the same completion routine and we authenticate webhook first with an HMAC sig from paystack before anything happens.
+Assessment module. Quiz generation and grading are handled out of quiz.ts, with an assistance of a signed session token: it links a given attempt to a user, a quiz and a start timestamp. We automatically grade questions with multiple choices and answers either true or false; when an attempt passes, we update the student’s course progress.
+Governance modules. The rest is Admin actions, audit logging, alerts, notifications, announcements, and messaging features including presence, presence and analytics. Everything with its required role or Admin tier.
+4.5 Testing of the Implemented System
+4.5.1 Test Plan
+Testing proceeded according to the three-tiered approach developed in Chapter 3: unit tests were written to check individual logical blocks, integration tests were written to check behavior with a real database, and system-acceptance tests were run by the three demo users with a complete, running system. Tests were created that covered each of the requirements defined in Section 3.2; the objective was to verify functionality, on one hand, and validate the system, preventing incorrect inputs on the other.
+4.5.2 Test Cases and Results
+Shown below are the major test cases, along with their results.
+Table 4.3: Functional test cases and results
+TC
+Test case
+Input / action
+Expected result
+Status
+TC-01
+Student registration
+Valid details
+Account created, user code issued, signed in
+Pass
+TC-02
+Weak password rejected
+Password "12345"
+Rejected with validation message
+Pass
+TC-03
+Login with user code
+Valid code + password
+Signed in and routed to dashboard
+Pass
+TC-04
+Suspended account login
+Suspended user
+Login blocked
+Pass
+TC-05
+Instructor application
+Valid bio, photo
+Application set to PENDING; admins notified
+Pass
+TC-06
+Admin approves instructor
+Approve action
+Status APPROVED; instructor gains tools
+Pass
+TC-07
+Create and submit course
+Course + modules
+Status moves DRAFT → PENDING
+Pass
+TC-08
+Admin approves & publishes
+Approve, publish
+Status PUBLISHED; course visible
+Pass
+TC-09
+Unreviewed course hidden
+DRAFT/PENDING course
+Not shown in public catalogue
+Pass
+TC-10
+Free enrolment
+Enroll in free course
+Enrolment created; learning unlocked
+Pass
+TC-11
+Paid enrolment
+Pay via Paystack (test)
+Payment SUCCESS; enrolment + instructor credited
+Pass
+TC-12
+Duplicate payment event
+Webhook fired twice
+Instructor credited once only
+Pass
+TC-13
+Quiz auto-grading
+Submit answers
+Correct percentage and pass/fail returned
+Pass
+TC-14
+Quiz time limit
+Submit after limit
+Late submission rejected
+Pass
+TC-15
+Tampered quiz token
+Forged attempt token
+Attempt rejected
+Pass
+TC-16
+Progress tracking
+Complete lessons + quiz
+Progress percent updates; course marked complete
+Pass
+TC-17
+Withdrawal request
+Amount within balance
+Balance reduced; withdrawal PENDING
+Pass
+TC-18
+Over-withdrawal blocked
+Amount > balance
+Request rejected
+Pass
+TC-19
+Role boundary
+Student opens admin URL
+Redirected away
+Pass
+TC-20
+Rate limit
+Repeated failed logins
+Further attempts throttled
+Pass
+TC-21
+Review once per course
+Second review by same user
+Existing review updated, not duplicated
+Pass
+TC-22
+Audit trail
+Sensitive admin action
+Entry recorded in audit log
+Pass
+All tests listed were passed. Defects discovered during the development process, which included the previously referenced early, insecure client-side quiz timer and a race condition that would have charged an instructor twice, were addressed and resolved by the addition of the signed session token and the idempotent payment transaction respectively, and test cases TC-12, TC-14, TC-15 then passed.
+4.5.3 System Performance Results
+We tested informally under typical single user and small multi user load as the system was hosted in the free tier and not a production cluster. Standard pages, catalogue, course view, both dashboards, and the lesson view all presented within an instant or two, server actions took not much longer to return. Pages are served already rendered so appeared instantly ready for use, rather than with the flash and refill. We didn't try to test for heavy load or large concurrent user numbers this is mentioned as a known area of investigation in chapter five
+4.6 Evaluation of the System
+The completed system delivered well when tested against the project objectives laid out in Chapter 1. The access roles model effectively split the three groups and remained resilient when challenged directly (TC-19). A simple process of verifying course content, before allowing purchase, blocked unreviewed material being offered to users (TC-07 to TC-09).
+Each of the security mechanisms – hashed password storage, limiting transaction rate, signing sessions when doing a quiz, making payment an idempotent function, logging every transaction to an audit trail - functioned as intended (TC-02, TC-12, TC-15, TC-20, TC-22).
+Both local payments, auto grading and honest, even, splitting of revenue between creators and buyer/creator were verified from end to end in the test environment (TC-11, TC-13, TC-17). The one negative point, which was down to budget and tight time constraints was that load testing was not undertaken at scale. All in all the project achieved its security and function objectives and could stand the trip that the intended real world users would take it.
+CHAPTER FIVE
+DISCUSSION, CONCLUSION AND RECOMMENDATIONS
+5.0 Introduction
+This chapter concludes the work. It briefly summarizes what was accomplished, analyzes how the results stack up against the objectives, and explores the strengths and weaknesses of the constructed system. Additionally, a conclusion will be reached and recommendations for future work will be made.
+5.1 Summary of Findings
+It all started as a need for a system that catered for a problem that wasn’t being addressed. For a number of the markets students already engage with: a payment type wasn’t included, there’s a lag for review of submitted work until there’s evidence of harm, and a range of other, for a marketplace, necessary functions is slowly reduced or altogether abandoned when it comes to small homegrown solutions. This led to a drive to build a system that did none of the foregoing issues.
+The core objective was, simply: A secured online marketplace that would host e-learning courses, enable role-based course management and ensure local payments, automated assessments and a clear revenue split, was built for local Ghanaian education system.
+From this objective six distinct and tangible aims emerged. They are described below, each generating a piece of tangible product for inspection:
+Role separation was the first. Student, instructors and administrators are segmented at every layer of the software stack. It’s guaranteed through route guarding in the client-side code, on every action performed at server and through a dedicated single function designed to manage course access by role. The team set-out to intentionally try to breach this in test, by logging in as students and manually entering the url of the admin pages to the browser. The system rebutted this effort flawlessly ensuring role separation integrity was maintained.
+Following, was approval flow. A course must pass through distinct phases of ‘draft’, ‘pending’, ‘approved’, ‘published’ with off-ramps of’reject’ and ‘hide’. The instructor can develop content freely when a course is on ‘draft’ stage until its readiness for publication by an administrator’s approval.
+The third point was account security. Passwords are not stored, only encrypted using bcrypt; logins and sensitive operations are throttled from the database to protect against credential-stuffing and other login based attacks; changing a password nullifies previous sessions; all sensitive actions are auditable by sending them to the application’s audit log. Attempts to breach security in test mode were unsuccessful, which was obviously the intent of the process.
+The forth consideration was payment and revenue sharing. We employ Paystack as payment provider, and at time of transaction we work out and automatically calculate the platform vs instructor revenue split. This information is logged for an instructor in their dashboard against the associated transaction for the month; once we get a payment confirmation, we pay the instructor for that transaction (even if a confirmation gets erroneously fired numerous times, an instructor only gets paid once per transaction).
+The fifth was assessment. Student can respond to quizzes which are timed, auto-grading, and secured against cheating via signed tokens that limit query time. A passing response automatically updates a user’s progress report along with lesson completion.
+The sixth and final piece of the equation was evaluation, addressed by chapter four which details 3 distinct levels of testing applied with success to match identified test cases.
+5.2 Interpretation of Results and Whether Objectives Were Achieved
+So, can a small team knock out a trustworthy, local-payment-friendly, well-governed course marketplace from free, modern-era tools? If you look at the evidence provided here, it appears to be possible. Each of the six goals was achieved within the stated boundaries. Any place where the system faltered, it wasn’t because the structure had collapsed, it was because the purse had run dry.
+It wasn’t tested at any significant scale and the payment process remained contained within a test environment and was not exercised against real currency with real values at any significant scale. A proper qualification though – the results of the system test demonstrates exactly two things – it do the right thing for the transactions it expected, and does the right thing – refuse the inappropriate payment that it was designed to block. It doesn’t indicate anything at all about how many people can simultaneously use the platform, since no-one chose to do it – so, confidence remains low about scalability for now.
+5.3 Comparison with Existing Systems
+So where does this platform fit in alongside the systems from Chapter Two? Around the space they leave between them. It’s a Udemy-style open marketplace where independent authors can publish and earn, but it incorporates what is absent in the marketplace for this segment: a human vetting of content before the payment occurs and a payment mechanism that the locals can readily access.
+Coursera vetting content as well, albeit by working with brand institutions, thereby precluding solitary scholars and that this platform has kept that door open.
+5.4 Advantages of the Proposed System
+Multiple features would be a step change
+Local payability. This will go to directly attack the greatest barrier of adoption.
+Governed openness. This would provide an open instructor model + gate on how and when their data will be viewed by “their community”. This will build trust while not ostracizing any of the participants.
+Security built-in: hash keys, rate limiting, signed assessments, idempotent payments, a full audit trail.
+The money flow: every sale, every dollar of revenue would be logged and visible to all participants.
+Run cheaply: coded from scratch using a free and open source stack and run for free using a free tier of hosting.
+5.5 Challenges Encountered
+None of this came easy. The framework was quite new so quite a bit of old patterns and tutorials had gone out of date so time was spent learning current docs rather than just from memory. The payment process in particular proved obstinate. Making the confirmation idempotent such that both browser-callback and server-web hook could not both let a student in, took several attempts to get correct. The quiz-timer also presented its own challenges - an initial client-side timer could be tampered with and was duly re-imagined with a server-signed token - and having to implement everything yourself from scratch (frontend, backend, database, security) within a single academic year meant refusing offers of features more often than not.
+5.6 Implications and Contribution of the Study
+To prove the concept, the project demonstrates that a low-cost, locally payabl, trusted course market-place is achievable for a small team, which would be useful to anyone with similar ambitions of scaling digital skills provision in Ghana. For the academically inclined, this is an end to end demonstration showing how some of the more fiddly bits of system design in this space might hang together – the approval pipeline, the idempotent payment-to-enrolment flow, the signed up assessment session, the audit trail etc. The studies give us a real market-place and there’s also an obvious and strong demand for trust and security: we demonstrate a viable example of how to provide it very low-budget.
+5.7 Limitations of the Study
+I must confess that this has some caveats that must keep them somewhat muted. Since there were time restrictions for the overall project, we needed to focus on what we were going to produce rather than a fully completed system. We’re constrained by costs to use free tiers as well as the payment provider's payment mode so we couldn’t test performance under the duress of real production scale and real transactions. Considering the user-acceptance sample sizes were in the very low thousands in comparison to the millions of varied and geographically spaced users using the real world and subject to different real-world network congestion, we will have to tread the usability conclusions carefully to be applicable. Don't let it distract from the most valuable points made.
+5.8 Recommendations for Future Work
+These limitations clearly indicate what should be done to address it next.
+Perform Load and scale testing. Run the platform against representative concurrency, measure the performance, and then tune the server and the database on which it is hosting. The Space to Where There is Nothing.
+Live payment functionality – Go live with payment integration – while studying report behavior of the live operations along with managing errors.
+User study on a larger scale - Perform this user study with a broader spectrum of Ghanaian students and teachers using real network configs to address contextual gap.
+More comprehensive testing. Beyond automating objective grading and pushing this to short answer and/or coding questions (which was purposely omitted in this prototype)
+Resiliency: Offline Mobile - Implement Caching to website allowing offline mobile resiliency. Keep data amounts small so it downloads quickly and is easily viewable. Maybe there should be an app to view offline .
+Recommendation and analytics. This recommendation is focused on providing enhanced features around course recommendation, and more advanced and contextual learning analytics – these are all AI type of feature, that were put out of scope in this project.
+If we achieve all of this together then we could take this from being just a proven and stable secure service to one that's been launched into the real world and delivered.
